@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Design 3 — Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" />
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-2: #f4f4f5;
+    --bg-3: #e9e9ec;
+    --ink: #111114;
+    --ink-2: #2d2d31;
+    --line: #d9d9de;
+    --line-2: #c4c4cc;
+    --muted: #71717a;
+    --accent: #ff5b1f;
+    --accent-soft: #fff1ea;
+    --pass: #047857;
+    --pass-soft: #d6f1e6;
+    --warn: #b45309;
+    --warn-soft: #fdf3df;
+    --fail: #b91c1c;
+    --fail-soft: #fbe2e2;
+    --diff-add: #d6f1e6;
+    --diff-rm: #fbe2e2;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: 'Inter', 'Noto Kufi Arabic', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 13.5px;
+    line-height: 1.55;
+    font-feature-settings: "tnum" 1, "ss01" 1;
+  }
+
+  .design-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--ink); color: white;
+    padding: 8px 18px; display: flex; gap: 4px; align-items: center;
+  }
+  .design-bar button {
+    background: transparent; border: 0; color: rgba(255,255,255,.6);
+    padding: 7px 14px; border-radius: 0; font-size: 12px; cursor: pointer;
+    font-family: inherit; font-weight: 500; letter-spacing: .02em;
+    border-bottom: 2px solid transparent;
+  }
+  .design-bar button:hover { color: white; }
+  .design-bar button.active { color: white; border-bottom-color: var(--accent); }
+  .design-bar-label {
+    font-family: var(--mono); font-size: 10.5px; color: var(--accent);
+    margin-inline-start: auto; letter-spacing: .14em; text-transform: uppercase; font-weight: 500;
+  }
+
+  main { padding-top: 44px; }
+  .screen { display: none; min-height: calc(100vh - 44px); }
+  .screen.active { display: block; }
+
+  /* ========== LOGIN ========== */
+  #login.active {
+    display: grid; place-items: center; min-height: calc(100vh - 44px);
+    background:
+      linear-gradient(0deg, var(--bg) 0%, transparent 100%),
+      repeating-linear-gradient(45deg, transparent 0, transparent 60px, rgba(255,91,31,.04) 60px, rgba(255,91,31,.04) 61px),
+      var(--ink);
+    color: white;
+  }
+  .login-card {
+    width: 380px; padding: 40px;
+    background: white; color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  .login-mark {
+    font-family: var(--mono); font-size: 10px; color: var(--accent);
+    letter-spacing: .2em; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .login-card h1 { font-size: 22px; margin: 0 0 6px; font-weight: 700; }
+  .login-card .arabic { font-size: 14px; color: var(--ink-2); margin-bottom: 30px; display: block; }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 5px; }
+  .field input {
+    width: 100%; background: var(--bg-2); border: 1px solid var(--line);
+    padding: 11px 12px; font-size: 14px; color: var(--ink); font-family: inherit;
+    border-radius: 0;
+  }
+  .field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+  .login-btn {
+    width: 100%; margin-top: 10px; background: var(--ink); color: white;
+    border: 0; padding: 12px; font-weight: 600; font-size: 13.5px; cursor: pointer;
+    font-family: inherit; letter-spacing: .02em;
+  }
+  .login-btn:hover { background: var(--accent); }
+  .login-meta {
+    margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line);
+    font-family: var(--mono); font-size: 10.5px; color: var(--muted); line-height: 1.7;
+  }
+
+  /* ========== DASHBOARD ========== */
+  .cmd-shell { display: grid; grid-template-columns: 1fr 360px; height: calc(100vh - 44px); }
+  .cmd-main { display: flex; flex-direction: column; min-width: 0; border-inline-end: 1px solid var(--line); }
+  .cmd-toolbar {
+    display: flex; align-items: center; gap: 10px; padding: 14px 22px;
+    background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .cmd-toolbar h2 { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
+  .cmd-toolbar .meta { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-inline-start: 8px; padding-inline-start: 10px; border-inline-start: 1px solid var(--line); }
+  .cmd-toolbar input {
+    margin-inline-start: auto; width: 240px; background: var(--bg-2); border: 1px solid var(--line);
+    padding: 7px 12px; font-family: var(--mono); font-size: 11.5px; color: var(--ink);
+  }
+  .cmd-tab-row { display: flex; gap: 0; border-bottom: 1px solid var(--line); background: var(--bg-2); padding: 0 16px; }
+  .cmd-tab {
+    padding: 10px 16px; font-size: 11.5px; font-family: var(--mono); letter-spacing: .04em; text-transform: uppercase;
+    color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; background: transparent; border-top: 0; border-inline-start: 0; border-inline-end: 0;
+  }
+  .cmd-tab.active { color: var(--ink); border-bottom-color: var(--accent); background: var(--bg); }
+  .cmd-tab .num { color: var(--muted); margin-inline-start: 6px; }
+  .cmd-tab.active .num { color: var(--accent); }
+
+  .cmd-table { flex: 1; overflow: auto; }
+  .cmd-table table { width: 100%; border-collapse: collapse; }
+  .cmd-table th {
+    text-align: start; padding: 9px 18px; font-family: var(--mono); font-size: 10.5px;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .12em;
+    border-bottom: 1px solid var(--line); background: var(--bg);
+    position: sticky; top: 0; font-weight: 500;
+  }
+  .cmd-table td { padding: 11px 18px; border-bottom: 1px solid var(--line); font-size: 12.5px; vertical-align: middle; }
+  .cmd-table tbody tr { cursor: pointer; }
+  .cmd-table tbody tr:hover td { background: var(--bg-2); }
+  .cmd-table tbody tr.selected td { background: var(--accent-soft); }
+  .cmd-table tbody tr.selected td:first-child { box-shadow: inset 3px 0 0 0 var(--accent); }
+
+  .verdict-cell { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; }
+  .verdict-cell.pass { background: var(--pass-soft); color: var(--pass); }
+  .verdict-cell.warn { background: var(--warn-soft); color: var(--warn); }
+  .verdict-cell.fail { background: var(--fail-soft); color: var(--fail); }
+  .num { font-family: var(--mono); }
+  .num.pos { color: var(--pass); }
+  .num.neg { color: var(--fail); }
+  .id-mono { font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 500; }
+
+  /* dashboard side panel — preview of selected row */
+  .cmd-aside { background: var(--bg-2); display: flex; flex-direction: column; min-height: 0; }
+  .cmd-aside-header { padding: 18px 22px; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .cmd-aside-header .id-mono { font-size: 10.5px; }
+  .cmd-aside-header h3 { margin: 4px 0 8px; font-size: 16px; }
+  .cmd-aside-content { flex: 1; overflow-y: auto; padding: 18px 22px; }
+  .cmd-aside-section { margin-bottom: 24px; }
+  .cmd-aside-section h5 { margin: 0 0 8px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; font-weight: 500; }
+  .mini-stat { display: grid; grid-template-columns: 1fr auto; padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 12.5px; }
+  .mini-stat:last-child { border-bottom: 0; }
+  .mini-stat span { color: var(--muted); }
+  .mini-stat strong { font-family: var(--mono); font-weight: 500; }
+
+  .cmd-aside-actions { padding: 14px 22px; border-top: 1px solid var(--line); display: flex; gap: 8px; background: var(--bg); }
+  .cmd-aside-actions button { flex: 1; padding: 10px 12px; font-size: 12px; cursor: pointer; font-family: inherit; border: 1px solid var(--line); background: white; }
+  .cmd-aside-actions .open { background: var(--ink); color: white; border-color: var(--ink); font-weight: 600; }
+
+  /* ========== INTAKE ========== */
+  .intake-shell { display: grid; grid-template-columns: 1fr 380px; min-height: calc(100vh - 44px); }
+  .intake-main { padding: 36px 48px; }
+  .intake-eyebrow { font-family: var(--mono); font-size: 10.5px; color: var(--accent); letter-spacing: .15em; text-transform: uppercase; }
+  .intake-h1 { font-size: 32px; margin: 8px 0 8px; font-weight: 700; letter-spacing: -.02em; }
+  .intake-lead { color: var(--ink-2); margin: 0 0 32px; max-width: 600px; }
+
+  .upload-row {
+    display: grid; grid-template-columns: 50px 1fr 120px;
+    border: 1px solid var(--line); padding: 16px; align-items: center; gap: 16px;
+    margin-bottom: -1px;
+  }
+  .upload-row:hover { background: var(--bg-2); }
+  .upload-row.filled { border-inline-start: 4px solid var(--pass); padding-inline-start: 13px; }
+  .upload-row.empty { border-inline-start: 4px solid var(--line-2); padding-inline-start: 13px; border-style: dashed; }
+  .upload-icon { width: 38px; height: 38px; background: var(--ink); color: white; display: grid; place-items: center; font-family: var(--mono); font-size: 11px; font-weight: 600; }
+  .upload-row.filled .upload-icon { background: var(--pass); }
+  .upload-row strong { display: block; font-size: 13.5px; }
+  .upload-row .hint { font-size: 12px; color: var(--muted); }
+  .upload-row .extracted { font-family: var(--mono); font-size: 11px; color: var(--ink-2); margin-top: 4px; }
+  .upload-row .pill {
+    display: inline-block; padding: 3px 8px; font-family: var(--mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: .08em; font-weight: 600; text-align: center;
+  }
+  .upload-row.filled .pill { background: var(--pass-soft); color: var(--pass); }
+  .upload-row.empty .pill { background: var(--bg-2); color: var(--muted); }
+
+  .live-checks { background: var(--bg-2); border: 1px solid var(--line); padding: 18px 22px; }
+  .live-checks h3 { font-size: 13px; margin: 0 0 14px; display: flex; align-items: center; gap: 10px; }
+  .live-checks h3::before { content: '●'; color: var(--accent); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+  .live-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; padding: 6px 0; font-family: var(--mono); font-size: 11.5px; align-items: center; }
+  .live-row .icon-pass { color: var(--pass); }
+  .live-row .icon-fail { color: var(--fail); }
+  .live-row .icon-run { color: var(--accent); animation: pulse 1.4s infinite; }
+  .live-row .ts { color: var(--muted); font-size: 10.5px; }
+
+  .intake-side { background: var(--ink); color: white; padding: 36px 28px; display: flex; flex-direction: column; }
+  .intake-side h3 { margin: 0; font-size: 14px; font-family: var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+  .intake-side h2 { margin: 4px 0 22px; font-size: 22px; font-weight: 700; }
+  .issue-card { padding: 14px; background: rgba(255,255,255,.06); border-inline-start: 3px solid var(--accent); margin-bottom: 10px; }
+  .issue-card.warn { border-inline-start-color: var(--accent); }
+  .issue-card.fail { border-inline-start-color: #ff7777; }
+  .issue-card.pass { border-inline-start-color: #6ee7b7; opacity: .7; }
+  .issue-card strong { display: block; }
+  .issue-card span { font-size: 12px; opacity: .75; display: block; margin-top: 2px; }
+  .intake-side-actions { margin-top: auto; padding-top: 24px; }
+  .intake-side-actions button { width: 100%; padding: 12px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
+  .btn-edit { background: rgba(255,255,255,.1); color: white; border: 1px solid rgba(255,255,255,.2); }
+  .btn-submit { background: var(--accent); color: white; border: 0; }
+
+  /* ========== REVIEW (split-screen comparison) ========== */
+  .review-shell { display: grid; grid-template-rows: auto auto 1fr auto; height: calc(100vh - 44px); }
+
+  .rv-header {
+    padding: 16px 24px; background: var(--ink); color: white;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .rv-header-id { font-family: var(--mono); font-size: 10.5px; color: var(--accent); letter-spacing: .15em; text-transform: uppercase; }
+  .rv-header-name { font-size: 17px; font-weight: 700; margin-top: 2px; }
+  .rv-header-meta { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,.6); }
+  .rv-header-meta span + span { margin-inline-start: 12px; padding-inline-start: 12px; border-inline-start: 1px solid rgba(255,255,255,.2); }
+  .rv-decision { margin-inline-start: auto; display: flex; gap: 6px; }
+  .rv-decision button { padding: 8px 16px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,.2); background: transparent; color: white; }
+  .rv-decision button.approve { background: var(--accent); border-color: var(--accent); }
+  .rv-decision button.reject { background: rgba(255,255,255,.06); }
+
+  .rv-kpi-strip {
+    display: grid; grid-template-columns: repeat(6, 1fr); border-bottom: 1px solid var(--line);
+    background: var(--bg-2);
+  }
+  .rv-kpi { padding: 14px 18px; border-inline-end: 1px solid var(--line); }
+  .rv-kpi:last-child { border-inline-end: 0; }
+  .rv-kpi-label { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+  .rv-kpi-value { font-family: var(--mono); font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .rv-kpi-sub { font-size: 11px; color: var(--muted); margin-top: 1px; font-family: var(--mono); }
+  .rv-kpi.warn .rv-kpi-value { color: var(--warn); }
+  .rv-kpi.fail .rv-kpi-value { color: var(--fail); }
+  .rv-kpi.pass .rv-kpi-value { color: var(--pass); }
+
+  /* the main body — split screen */
+  .rv-body { display: grid; grid-template-columns: 1fr 1fr 320px; min-height: 0; }
+
+  .rv-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; border-inline-end: 1px solid var(--line); }
+  .rv-col-header {
+    padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .rv-col-header h3 { margin: 0; font-size: 13px; font-weight: 700; }
+  .rv-col-header .arabic { font-family: 'Noto Kufi Arabic'; font-size: 12px; color: var(--muted); }
+  .rv-col-header .badge { margin-inline-start: auto; font-family: var(--mono); font-size: 10px; padding: 2px 8px; background: var(--bg-2); color: var(--muted); }
+
+  .rv-rows { flex: 1; overflow-y: auto; }
+  .rv-row {
+    display: grid; grid-template-columns: 1fr 90px 1fr;
+    border-bottom: 1px solid var(--line); align-items: stretch;
+  }
+  .rv-row.diff-fail { background: linear-gradient(90deg, transparent 0%, transparent 35%, rgba(185,28,28,.04) 35%, rgba(185,28,28,.04) 65%, transparent 65%); }
+  .rv-row-side { padding: 14px 18px; }
+  .rv-row-side.declared { border-inline-end: 1px solid var(--line); }
+  .rv-row-label { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+  .rv-row-value { font-family: var(--mono); font-size: 17px; font-weight: 600; }
+  .rv-row-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .rv-row-mid {
+    display: grid; place-items: center; padding: 14px 4px;
+    background: var(--bg-2); border-inline: 1px solid var(--line); position: relative;
+  }
+  .rv-row-mid .delta {
+    font-family: var(--mono); font-size: 12px; font-weight: 600; padding: 3px 8px;
+    background: white; border: 1px solid var(--line);
+  }
+  .rv-row.diff-pass .rv-row-mid .delta { color: var(--pass); border-color: var(--pass); background: var(--pass-soft); }
+  .rv-row.diff-fail .rv-row-mid .delta { color: var(--fail); border-color: var(--fail); background: var(--fail-soft); }
+  .rv-row.diff-warn .rv-row-mid .delta { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+  .rv-row-section-header {
+    padding: 8px 18px; background: var(--bg-2); border-bottom: 1px solid var(--line);
+    font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em;
+    grid-column: 1 / -1;
+  }
+
+  /* right column — visualization + activity */
+  .rv-side { display: flex; flex-direction: column; min-height: 0; }
+  .rv-side-section { border-bottom: 1px solid var(--line); padding: 16px 18px; }
+  .rv-side-section h4 { margin: 0 0 12px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; font-weight: 500; }
+  .rv-canvas-mini {
+    background: var(--bg-2); border: 1px solid var(--line); position: relative; aspect-ratio: 4/3;
+  }
+  .rv-canvas-mini svg { width: 100%; height: 100%; }
+  .rv-doc-list { font-size: 12px; }
+  .rv-doc-row { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; padding: 6px 0; align-items: center; }
+  .rv-doc-row .arabic { font-size: 11.5px; }
+  .rv-doc-row .badge { font-family: var(--mono); font-size: 9.5px; color: var(--muted); }
+
+  .rv-activity {
+    border-top: 1px solid var(--line); background: var(--ink); color: rgba(255,255,255,.7);
+    padding: 7px 22px; font-family: var(--mono); font-size: 11px; display: flex; align-items: center; gap: 12px; min-height: 30px;
+  }
+  .rv-activity .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.4s infinite; }
+  .rv-activity .meta { margin-inline-start: auto; color: rgba(255,255,255,.4); }
+
+  .arabic { font-family: 'Noto Kufi Arabic'; }
+</style>
+</head>
+<body>
+
+<nav class="design-bar">
+  <button data-screen="login">Login</button>
+  <button data-screen="dashboard" class="active">Dashboard</button>
+  <button data-screen="intake">Intake (Submitter)</button>
+  <button data-screen="review">Review (Reviewer)</button>
+  <span class="design-bar-label">Design 3 · Command Center</span>
+</nav>
+
+<main>
+
+<!-- ============================================================ LOGIN ============================================================ -->
+<section id="login" class="screen">
+  <div class="login-card">
+    <div class="login-mark">▌Permit Review · v2</div>
+    <h1>Sign in</h1>
+    <span class="arabic">منصة مراجعة طلبات الترخيص</span>
+
+    <div class="field">
+      <label>Username</label>
+      <input type="text" value="reviewer.akram" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" value="••••••••••" />
+    </div>
+    <button class="login-btn">Sign in →</button>
+
+    <div class="login-meta">
+      Demo accounts<br>
+      reviewer.akram · submitter.tareq · admin.mohammad<br>
+      pw: demo123
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ DASHBOARD ============================================================ -->
+<section id="dashboard" class="screen active">
+  <div class="cmd-shell">
+
+    <div class="cmd-main">
+      <div class="cmd-toolbar">
+        <h2>Permit review queue</h2>
+        <span class="meta">147 total · 23 pending · 8 needs revision</span>
+        <input placeholder="Search ID, plot, owner…" value="" />
+      </div>
+
+      <div class="cmd-tab-row">
+        <button class="cmd-tab active">All <span class="num">147</span></button>
+        <button class="cmd-tab">Pending <span class="num">23</span></button>
+        <button class="cmd-tab">Revision <span class="num">8</span></button>
+        <button class="cmd-tab">Approved <span class="num">12</span></button>
+        <button class="cmd-tab">Rejected <span class="num">4</span></button>
+        <button class="cmd-tab">Mine <span class="num">3</span></button>
+      </div>
+
+      <div class="cmd-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Verdict</th>
+              <th>ID</th>
+              <th>Submitter</th>
+              <th>Plot</th>
+              <th>Type</th>
+              <th>Δ Discrepancies</th>
+              <th>Violation m²</th>
+              <th>Fine JOD</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="selected">
+              <td><span class="verdict-cell warn">Warn</span></td>
+              <td><span class="id-mono">04219</span></td>
+              <td class="arabic">محمد أحمد الخطيب</td>
+              <td class="num">234 · تلاع العلي</td>
+              <td>Vacant land</td>
+              <td><span class="num neg">1 of 5</span></td>
+              <td class="num">8.4</td>
+              <td class="num">1,680</td>
+              <td>just now</td>
+            </tr>
+            <tr>
+              <td><span class="verdict-cell pass">Pass</span></td>
+              <td><span class="id-mono">04218</span></td>
+              <td class="arabic">مؤسسة الأبراج للإنشاءات</td>
+              <td class="num">812 · شفا بدران</td>
+              <td>Over existing</td>
+              <td><span class="num pos">0 of 5</span></td>
+              <td class="num">0.0</td>
+              <td class="num">0</td>
+              <td>3 min</td>
+            </tr>
+            <tr>
+              <td><span class="verdict-cell fail">Fail · serious</span></td>
+              <td><span class="id-mono">04217</span></td>
+              <td class="arabic">سلوى نواف الدلاعلة</td>
+              <td class="num">114 · أبو نصير</td>
+              <td>Additions</td>
+              <td><span class="num neg">3 of 5</span></td>
+              <td class="num">72.0</td>
+              <td class="num">14,400</td>
+              <td>11 min</td>
+            </tr>
+            <tr>
+              <td><span class="verdict-cell pass">Pass</span></td>
+              <td><span class="id-mono">04216</span></td>
+              <td class="arabic">عمر طارق نجداوي</td>
+              <td class="num">56 · ماركا</td>
+              <td>Initial consult</td>
+              <td><span class="num pos">0 of 4</span></td>
+              <td class="num">—</td>
+              <td class="num">—</td>
+              <td>34 min</td>
+            </tr>
+            <tr>
+              <td><span class="verdict-cell warn">Warn</span></td>
+              <td><span class="id-mono">04215</span></td>
+              <td class="arabic">مكتب الهندسة الذهبية</td>
+              <td class="num">991 · صويلح</td>
+              <td>Occupancy</td>
+              <td><span class="num neg">1 of 5</span></td>
+              <td class="num">1.6</td>
+              <td class="num">320</td>
+              <td>1 hr</td>
+            </tr>
+            <tr>
+              <td><span class="verdict-cell pass">Pass</span></td>
+              <td><span class="id-mono">04214</span></td>
+              <td class="arabic">شركة الفنار للمقاولات</td>
+              <td class="num">428 · الجبيهة</td>
+              <td>Vacant land</td>
+              <td><span class="num pos">0 of 5</span></td>
+              <td class="num">0.0</td>
+              <td class="num">0</td>
+              <td>2 hr</td>
+            </tr>
+            <tr>
+              <td><span class="verdict-cell fail">Fail</span></td>
+              <td><span class="id-mono">04213</span></td>
+              <td class="arabic">أحمد فؤاد العبسي</td>
+              <td class="num">772 · خلدا</td>
+              <td>Amended plan</td>
+              <td><span class="num neg">2 of 5</span></td>
+              <td class="num">16.0</td>
+              <td class="num">3,200</td>
+              <td>3 hr</td>
+            </tr>
+            <tr>
+              <td><span class="verdict-cell pass">Pass</span></td>
+              <td><span class="id-mono">04212</span></td>
+              <td class="arabic">رنا خالد العابد</td>
+              <td class="num">15 · دابوق</td>
+              <td>Vacant land</td>
+              <td><span class="num pos">0 of 5</span></td>
+              <td class="num">0.0</td>
+              <td class="num">0</td>
+              <td>4 hr</td>
+            </tr>
+            <tr>
+              <td><span class="verdict-cell warn">Warn</span></td>
+              <td><span class="id-mono">04211</span></td>
+              <td class="arabic">مكتب وصفي للهندسة</td>
+              <td class="num">301 · الياسمين</td>
+              <td>Technical consult</td>
+              <td><span class="num neg">1 of 4</span></td>
+              <td class="num">—</td>
+              <td class="num">—</td>
+              <td>5 hr</td>
+            </tr>
+            <tr>
+              <td><span class="verdict-cell pass">Pass</span></td>
+              <td><span class="id-mono">04210</span></td>
+              <td class="arabic">شركة الإعمار الحديث</td>
+              <td class="num">144 · المدينة الرياضية</td>
+              <td>Over existing</td>
+              <td><span class="num pos">0 of 5</span></td>
+              <td class="num">0.0</td>
+              <td class="num">0</td>
+              <td>6 hr</td>
+            </tr>
+            <tr>
+              <td><span class="verdict-cell pass">Pass</span></td>
+              <td><span class="id-mono">04209</span></td>
+              <td class="arabic">عبد الله سعيد المومني</td>
+              <td class="num">58 · تلاع العلي</td>
+              <td>Vacant land</td>
+              <td><span class="num pos">0 of 5</span></td>
+              <td class="num">0.0</td>
+              <td class="num">0</td>
+              <td>7 hr</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- right preview pane -->
+    <aside class="cmd-aside">
+      <div class="cmd-aside-header">
+        <span class="id-mono">APP-2026-04219 · Stage 3 · 12 sec ago</span>
+        <h3 class="arabic">محمد أحمد الخطيب · قطعة 234</h3>
+        <div><span class="verdict-cell warn">Warn · 1 violation</span></div>
+      </div>
+
+      <div class="cmd-aside-content">
+        <div class="cmd-aside-section">
+          <h5>At a glance</h5>
+          <div class="mini-stat"><span>Lot area</span><strong>4,877.17 m²</strong></div>
+          <div class="mini-stat"><span>Building footprint</span><strong>320.0 m²</strong></div>
+          <div class="mini-stat"><span>Coverage</span><strong>6.6% of 50%</strong></div>
+          <div class="mini-stat"><span>Floors total</span><strong>1,256 m² · 4 floors</strong></div>
+          <div class="mini-stat"><span>Min setback</span><strong style="color:var(--warn)">3.1 m (east)</strong></div>
+          <div class="mini-stat"><span>Violation area</span><strong style="color:var(--warn)">8.4 m²</strong></div>
+          <div class="mini-stat"><span>Estimated fine</span><strong style="color:var(--warn)">1,680 JOD</strong></div>
+        </div>
+
+        <div class="cmd-aside-section">
+          <h5>Discrepancies (1 of 5)</h5>
+          <div class="mini-stat"><span>Lot area · deed ↔ cad</span><strong style="color:var(--pass)">±0.0</strong></div>
+          <div class="mini-stat"><span>Floor totals · printed ↔ computed</span><strong style="color:var(--pass)">±0.0</strong></div>
+          <div class="mini-stat"><span>Front setback · req ↔ measured</span><strong style="color:var(--fail)">−0.3 m</strong></div>
+          <div class="mini-stat"><span>Floor count · deed ↔ plan</span><strong style="color:var(--pass)">match</strong></div>
+          <div class="mini-stat"><span>Coverage · cad ↔ allowed</span><strong style="color:var(--pass)">−43.4%</strong></div>
+        </div>
+
+        <div class="cmd-aside-section">
+          <h5>AI summary</h5>
+          <p class="arabic" style="font-size:12.5px;line-height:1.7;color:var(--ink-2)">
+            تم تحليل المخطط بنجاح. جميع المساحات متطابقة مع المستندات. الارتداد الأمامي ٤٫٧م دون الحد المطلوب ٥٫٠م، مما ينتج عنه مخالفة ٨٫٤م² وغرامة ١٬٦٨٠ دينار.
+          </p>
+        </div>
+      </div>
+
+      <div class="cmd-aside-actions">
+        <button>Quick approve</button>
+        <button class="open">Open review →</button>
+      </div>
+    </aside>
+
+  </div>
+</section>
+
+<!-- ============================================================ INTAKE ============================================================ -->
+<section id="intake" class="screen">
+  <div class="intake-shell">
+
+    <div class="intake-main">
+      <div class="intake-eyebrow">▌ New application · APP-2026-04219</div>
+      <h1 class="intake-h1">Drop your four documents.</h1>
+      <p class="intake-lead">As each file lands, the system parses it and runs the live checks on the right. You'll see issues before they become a reviewer's flag.</p>
+
+      <div>
+        <div class="upload-row filled">
+          <div class="upload-icon">CAD</div>
+          <div>
+            <strong>drawing-rev3.dwg <span style="color:var(--muted);font-weight:400">· 4.1 MB</span></strong>
+            <div class="hint">DWG / DXF / DWF · building, lot, street layers required</div>
+            <div class="extracted">12 layers · BUILDING (1) · LOT (1) · STREET (1) · all polylines closed</div>
+          </div>
+          <span class="pill">Layers OK</span>
+        </div>
+        <div class="upload-row filled">
+          <div class="upload-icon">DEED</div>
+          <div>
+            <strong class="arabic">سند التسجيل · deed.pdf</strong>
+            <div class="hint">Plot, basin, village, owner, area in dunum</div>
+            <div class="extracted arabic">قطعة 234 · حوض 12 (الياسمين) · تلاع العلي · 4 دونم 877.170 م² · المالك: محمد أحمد الخطيب</div>
+          </div>
+          <span class="pill">Extracted</span>
+        </div>
+        <div class="upload-row filled">
+          <div class="upload-icon">SITE</div>
+          <div>
+            <strong class="arabic">مخطط موقع تنظيمي · site-plan.pdf</strong>
+            <div class="hint">Required setbacks · use type · corner-lot flag</div>
+            <div class="extracted">Front 5.0 · Side 3.0 · Rear 4.0 m · Residential D · Not corner</div>
+          </div>
+          <span class="pill">Extracted</span>
+        </div>
+        <div class="upload-row filled">
+          <div class="upload-icon">FLR</div>
+          <div>
+            <strong class="arabic">خطة مساحة الطابقية · floor-plan.pdf</strong>
+            <div class="hint">Per-floor breakdown table</div>
+            <div class="extracted">4 floors · 1,256 m² grand total · 4 of 4 rows verified (printed = dim × qty)</div>
+          </div>
+          <span class="pill">Verified</span>
+        </div>
+      </div>
+
+      <div class="live-checks" style="margin-top:24px">
+        <h3>Live AI checks · stage 1 + 2 + 3</h3>
+        <div class="live-row"><span class="icon-pass">✓</span><span>Stage 1 · Structure validation — 4 of 4 documents present and parse cleanly</span><span class="ts">+0.4s</span></div>
+        <div class="live-row"><span class="icon-pass">✓</span><span>Stage 2 · Lot area · deed 4,877.170 = cad 4,877.17 (±0.0)</span><span class="ts">+12.1s</span></div>
+        <div class="live-row"><span class="icon-pass">✓</span><span>Stage 2 · Floor totals · printed 1,256 = computed 1,256 (±0.0)</span><span class="ts">+12.4s</span></div>
+        <div class="live-row"><span class="icon-pass">✓</span><span>Stage 2 · Floor count · deed 4 = plan 4 (match)</span><span class="ts">+12.5s</span></div>
+        <div class="live-row"><span class="icon-fail">✗</span><span>Stage 3 · Front setback · required 5.0 m, measured 4.7 m (−0.3 m deficit)</span><span class="ts">+18.0s</span></div>
+        <div class="live-row"><span class="icon-pass">✓</span><span>Stage 3 · Side setbacks within limits (east 3.1 / west 8.5 ≥ 3.0)</span><span class="ts">+18.1s</span></div>
+        <div class="live-row"><span class="icon-pass">✓</span><span>Stage 3 · Coverage 6.6% ≤ 50% allowed</span><span class="ts">+18.2s</span></div>
+        <div class="live-row"><span class="icon-run">●</span><span>Computing violation polygon &amp; fine…</span><span class="ts">…</span></div>
+      </div>
+    </div>
+
+    <aside class="intake-side">
+      <h3>▌ Pre-submit summary</h3>
+      <h2>1 issue likely flagged</h2>
+      <div class="issue-card warn">
+        <strong>Front setback below required</strong>
+        <span>0.3 m deficit on north edge · violation polygon 8.4 m² · estimated fine 1,680 JOD</span>
+      </div>
+      <div class="issue-card pass">
+        <strong>Lot area matches deed</strong>
+        <span>4,877.17 m² (CAD) ≡ 4 دونم 877.170 (deed)</span>
+      </div>
+      <div class="issue-card pass">
+        <strong>Floor totals verified</strong>
+        <span>4 of 4 rows · printed = computed within ±1 m²</span>
+      </div>
+      <div class="issue-card pass">
+        <strong>Coverage within allowed</strong>
+        <span>6.6% measured · 50% allowed (residential D)</span>
+      </div>
+
+      <div class="intake-side-actions">
+        <button class="btn-edit">Edit files &amp; re-upload</button>
+        <button class="btn-submit">Submit anyway · 1 issue</button>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============================================================ REVIEW (split-screen) ============================================================ -->
+<section id="review" class="screen">
+  <div class="review-shell">
+
+    <!-- header -->
+    <div class="rv-header">
+      <div>
+        <div class="rv-header-id">▌ APP-2026-04219 · Stage 3</div>
+        <div class="rv-header-name arabic">محمد أحمد الخطيب · قطعة 234 · تلاع العلي</div>
+        <div class="rv-header-meta">
+          <span>Vacant land permit</span>
+          <span>submitted 12m ago</span>
+          <span>Reviewer: Akram</span>
+        </div>
+      </div>
+      <div class="rv-decision">
+        <button class="reject">Reject</button>
+        <button>Return for revision</button>
+        <button class="approve">Approve →</button>
+      </div>
+    </div>
+
+    <!-- KPI strip — the verdict at a glance -->
+    <div class="rv-kpi-strip">
+      <div class="rv-kpi pass"><div class="rv-kpi-label">Stage 1</div><div class="rv-kpi-value">PASS</div><div class="rv-kpi-sub">4 of 4 docs OK</div></div>
+      <div class="rv-kpi pass"><div class="rv-kpi-label">Stage 2</div><div class="rv-kpi-value">PASS</div><div class="rv-kpi-sub">4 of 4 match</div></div>
+      <div class="rv-kpi warn"><div class="rv-kpi-label">Stage 3</div><div class="rv-kpi-value">WARN</div><div class="rv-kpi-sub">1 violation</div></div>
+      <div class="rv-kpi"><div class="rv-kpi-label">Lot · m²</div><div class="rv-kpi-value">4,877.17</div><div class="rv-kpi-sub">deed = cad</div></div>
+      <div class="rv-kpi warn"><div class="rv-kpi-label">Violation · m²</div><div class="rv-kpi-value">8.4</div><div class="rv-kpi-sub">front edge</div></div>
+      <div class="rv-kpi warn"><div class="rv-kpi-label">Fine · JOD</div><div class="rv-kpi-value">1,680</div><div class="rv-kpi-sub">@ 200 / m²</div></div>
+    </div>
+
+    <!-- main: split-screen comparison + side panel -->
+    <div class="rv-body">
+
+      <!-- left: declared (PDFs) -->
+      <div class="rv-col" style="grid-column: 1 / 3;">
+        <div class="rv-col-header" style="display:grid;grid-template-columns:1fr 90px 1fr;padding:0;gap:0">
+          <div style="padding:12px 22px;display:flex;align-items:baseline;gap:12px;border-inline-end:1px solid var(--line)">
+            <h3>Declared</h3>
+            <span class="arabic">من المستندات (PDF)</span>
+            <span class="badge" style="margin-inline-start:auto">SOURCE: deed · site plan · floor plan</span>
+          </div>
+          <div style="padding:12px;background:var(--bg-2);border-inline-end:1px solid var(--line);text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em">Δ delta</div>
+          <div style="padding:12px 22px;display:flex;align-items:baseline;gap:12px">
+            <h3>Measured</h3>
+            <span class="arabic">من المخطط (CAD)</span>
+            <span class="badge" style="margin-inline-start:auto">SOURCE: drawing-rev3.dwg</span>
+          </div>
+        </div>
+
+        <div class="rv-rows">
+          <div class="rv-row-section-header">▌ Identity &amp; geometry</div>
+
+          <div class="rv-row diff-pass">
+            <div class="rv-row-side declared">
+              <div class="rv-row-label arabic">مساحة القطعة (سند)</div>
+              <div class="rv-row-value">4,877.170 m²</div>
+              <div class="rv-row-meta arabic">4 دونم 877.170</div>
+            </div>
+            <div class="rv-row-mid"><span class="delta">±0.0</span></div>
+            <div class="rv-row-side">
+              <div class="rv-row-label">Lot polygon area (CAD)</div>
+              <div class="rv-row-value">4,877.17 m²</div>
+              <div class="rv-row-meta">closed polyline · 4 vertices · LOT layer</div>
+            </div>
+          </div>
+
+          <div class="rv-row diff-pass">
+            <div class="rv-row-side declared">
+              <div class="rv-row-label arabic">عدد الطوابق (سند)</div>
+              <div class="rv-row-value">4</div>
+              <div class="rv-row-meta">declared in deed</div>
+            </div>
+            <div class="rv-row-mid"><span class="delta">match</span></div>
+            <div class="rv-row-side">
+              <div class="rv-row-label arabic">عدد الطوابق (خطة الطابقية)</div>
+              <div class="rv-row-value">4</div>
+              <div class="rv-row-meta arabic">تسوية · أرضي · أول · ثاني</div>
+            </div>
+          </div>
+
+          <div class="rv-row diff-pass">
+            <div class="rv-row-side declared">
+              <div class="rv-row-label">Floor total (printed in plan)</div>
+              <div class="rv-row-value">1,256 m²</div>
+              <div class="rv-row-meta">grand total row</div>
+            </div>
+            <div class="rv-row-mid"><span class="delta">±0.0</span></div>
+            <div class="rv-row-side">
+              <div class="rv-row-label">Computed (Python)</div>
+              <div class="rv-row-value">1,256.0 m²</div>
+              <div class="rv-row-meta">Σ(dim × qty × sign) per row</div>
+            </div>
+          </div>
+
+          <div class="rv-row-section-header">▌ Setbacks (required vs. measured)</div>
+
+          <div class="rv-row diff-fail">
+            <div class="rv-row-side declared">
+              <div class="rv-row-label arabic">ارتداد أمامي · مخطط الموقع</div>
+              <div class="rv-row-value">5.0 m</div>
+              <div class="rv-row-meta">required (front, residential D)</div>
+            </div>
+            <div class="rv-row-mid"><span class="delta">−0.3 m</span></div>
+            <div class="rv-row-side">
+              <div class="rv-row-label">Front (north) setback · CAD</div>
+              <div class="rv-row-value">4.7 m</div>
+              <div class="rv-row-meta">building edge → STREET-facing lot edge</div>
+            </div>
+          </div>
+
+          <div class="rv-row diff-pass">
+            <div class="rv-row-side declared">
+              <div class="rv-row-label arabic">ارتداد جانبي · مخطط الموقع</div>
+              <div class="rv-row-value">3.0 m</div>
+              <div class="rv-row-meta">required (sides)</div>
+            </div>
+            <div class="rv-row-mid"><span class="delta">+0.1 / +5.5</span></div>
+            <div class="rv-row-side">
+              <div class="rv-row-label">Sides · CAD</div>
+              <div class="rv-row-value">3.1 / 8.5 m</div>
+              <div class="rv-row-meta">east / west</div>
+            </div>
+          </div>
+
+          <div class="rv-row diff-pass">
+            <div class="rv-row-side declared">
+              <div class="rv-row-label arabic">ارتداد خلفي · مخطط الموقع</div>
+              <div class="rv-row-value">4.0 m</div>
+              <div class="rv-row-meta">required (rear)</div>
+            </div>
+            <div class="rv-row-mid"><span class="delta">±0.0</span></div>
+            <div class="rv-row-side">
+              <div class="rv-row-label">Rear (south) · CAD</div>
+              <div class="rv-row-value">4.0 m</div>
+              <div class="rv-row-meta">building edge → rear lot edge</div>
+            </div>
+          </div>
+
+          <div class="rv-row-section-header">▌ Coverage &amp; envelope</div>
+
+          <div class="rv-row diff-pass">
+            <div class="rv-row-side declared">
+              <div class="rv-row-label">Max coverage · site plan</div>
+              <div class="rv-row-value">50%</div>
+              <div class="rv-row-meta">residential D zoning</div>
+            </div>
+            <div class="rv-row-mid"><span class="delta">−43.4%</span></div>
+            <div class="rv-row-side">
+              <div class="rv-row-label">Footprint coverage · CAD</div>
+              <div class="rv-row-value">6.6%</div>
+              <div class="rv-row-meta">320.0 / 4,877.17</div>
+            </div>
+          </div>
+
+          <div class="rv-row diff-fail">
+            <div class="rv-row-side declared">
+              <div class="rv-row-label">Buildable envelope</div>
+              <div class="rv-row-value">3,883 m²</div>
+              <div class="rv-row-meta">lot inset by required setbacks</div>
+            </div>
+            <div class="rv-row-mid"><span class="delta">8.4 m² out</span></div>
+            <div class="rv-row-side">
+              <div class="rv-row-label">Building footprint vs. envelope</div>
+              <div class="rv-row-value">−8.4 m² overlap</div>
+              <div class="rv-row-meta">front strip outside the envelope</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- right side panel -->
+      <aside class="rv-side">
+        <div class="rv-side-section">
+          <h4>▌ CAD viewport</h4>
+          <div class="rv-canvas-mini">
+            <svg viewBox="0 0 360 270" preserveAspectRatio="xMidYMid meet">
+              <polygon points="40,30 320,30 320,235 40,235" fill="rgba(255,91,31,.04)" stroke="#111114" stroke-width="1.6" />
+              <polygon points="68,55 295,55 295,210 68,210" fill="none" stroke="#71717a" stroke-width="1" stroke-dasharray="4 3" />
+              <polygon points="100,72 280,72 280,195 100,195" fill="rgba(255,91,31,.12)" stroke="#ff5b1f" stroke-width="1.6" />
+              <polygon points="100,55 280,55 280,72 100,72" fill="url(#h3)" stroke="#b91c1c" stroke-width="1.2" stroke-dasharray="2 2" />
+              <defs>
+                <pattern id="h3" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="5" stroke="#b91c1c" stroke-width="1" opacity="0.6" />
+                </pattern>
+              </defs>
+              <line x1="40" y1="22" x2="320" y2="22" stroke="#111114" stroke-width="2.4" />
+              <text x="180" y="16" fill="#111114" font-size="9" text-anchor="middle" font-family="IBM Plex Mono">STREET</text>
+              <text x="190" y="138" fill="#111114" font-size="11" font-family="Inter" font-weight="600" text-anchor="middle">320 m²</text>
+              <text x="180" y="68" fill="#b91c1c" font-size="8.5" font-family="IBM Plex Mono" text-anchor="middle">VIOLATION 8.4 m²</text>
+            </svg>
+          </div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px;line-height:1.7">
+            <div><span style="color:#111114">▬</span> Lot 4,877.17 m²</div>
+            <div><span style="color:#71717a">─ ─</span> Required envelope</div>
+            <div><span style="color:var(--accent)">▬</span> Building 320.0 m²</div>
+            <div><span style="color:var(--fail)">▦</span> Violation 8.4 m²</div>
+          </div>
+        </div>
+
+        <div class="rv-side-section">
+          <h4>▌ Source documents</h4>
+          <div class="rv-doc-list">
+            <div class="rv-doc-row"><span style="color:var(--pass)">●</span><span>drawing-rev3.dwg</span><span class="badge">12 layers</span></div>
+            <div class="rv-doc-row"><span style="color:var(--pass)">●</span><span class="arabic">سند التسجيل.pdf</span><span class="badge">parsed</span></div>
+            <div class="rv-doc-row"><span style="color:var(--pass)">●</span><span class="arabic">مخطط موقع تنظيمي.pdf</span><span class="badge">parsed</span></div>
+            <div class="rv-doc-row"><span style="color:var(--pass)">●</span><span class="arabic">خطة مساحة الطابقية.pdf</span><span class="badge">4 floors</span></div>
+          </div>
+        </div>
+
+        <div class="rv-side-section" style="border-bottom:0;flex:1;overflow-y:auto">
+          <h4>▌ AI summary</h4>
+          <p style="font-size:12.5px;line-height:1.7;color:var(--ink-2);margin:0">
+            All identity and geometry values are internally consistent. Single non-compliance: front setback 0.3 m below the 5.0 m required by the regulatory site plan, producing an 8.4 m² violation polygon along the north edge and an indicative fine of 1,680 JOD. No part of the building exits the lot.
+          </p>
+        </div>
+      </aside>
+    </div>
+
+    <!-- bottom activity log -->
+    <div class="rv-activity">
+      <span class="dot"></span>
+      <span>compute_compliance · violation_polygon area=8.4 m² · fine=1,680 JOD · serious=false</span>
+      <span class="meta">turn 9/25 · 12,840 tokens · 18.4s elapsed</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+  document.querySelectorAll('.design-bar button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.design-bar button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+      document.getElementById(b.dataset.screen).classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+
+</body>
+</html>

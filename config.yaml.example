@@ -1,0 +1,50 @@
+autocad_mcp:
+  repo_dir: autocad-mcp
+  python_exe: autocad-mcp/.venv/Scripts/python.exe
+  backend: file_ipc
+  ipc_timeout: "60"
+
+layers:
+  building: BUILDING
+  lot: LOT
+  street: STREET
+  setback_dims: SETBACK_DIMS
+  setback_violation: SETBACK_VIOLATION
+  case_insensitive: true
+
+dwf_converter:
+  command: dwgConvert
+  args:
+    - --input={input}
+    - --output={output}
+    - --outver=2018
+  timeout_seconds: 120
+
+output:
+  dim_color: yellow
+  dim_offset: 1.0
+  annotated_suffix: _annotated
+  pdf: false
+  # Compliance overlay (used when --site-plan is provided / web app uploads
+  # a مخطط موقع تنظيمي PDF). Drawn on the SETBACK_VIOLATION layer.
+  envelope_color: white
+  envelope_linetype: DASHED
+  violation_color: red
+  violation_hatch_pattern: ANSI31
+  violation_hatch_scale: 1.0
+
+# Compliance: required setbacks come from the site-plan PDF. This block
+# carries the bits that aren't in the PDF — fine rate, classifier tolerance.
+compliance:
+  fine_per_sqm_jd: 200  # configure per municipal regulations
+  street_edge_tolerance_m: 10.0
+
+# Web agent settings (the FastAPI app). The CLI ignores these.
+agent:
+  api_key_env: ANTHROPIC_API_KEY
+  model: claude-opus-4-7
+  upload_dir: uploads
+  # Seconds the CAD agent waits for the site-plan PDF extractor to finish
+  # before kicking off its own loop. The extractor result is injected into
+  # the agent's first user message so it knows which setbacks to apply.
+  site_plan_wait_seconds: 60

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Permit Platform — Nav Wireframe</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #f7f7f5;
+    color: #1f1f1f;
+    height: 100vh;
+    overflow: hidden;
+    font-size: 14px;
+  }
+
+  .app { display: flex; height: 100vh; }
+
+  /* ===== Rail ===== */
+  .rail {
+    width: 64px;
+    background: white;
+    border-right: 1px solid #e8e8e6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .brand {
+    width: 36px; height: 36px;
+    background: #2563eb;
+    color: white;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px;
+    margin-bottom: 18px;
+  }
+
+  .rail-btn {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: #666;
+    font-size: 18px;
+    border: none;
+    background: transparent;
+    position: relative;
+  }
+  .rail-btn:hover { background: #f3f3f1; color: #1f1f1f; }
+  .rail-btn.active {
+    background: #eff4ff;
+    color: #2563eb;
+  }
+  .rail-btn.cta {
+    background: #2563eb;
+    color: white;
+    font-size: 22px;
+    font-weight: 300;
+  }
+  .rail-btn.cta:hover { background: #1d4ed8; color: white; }
+
+  .rail-spacer { flex: 1; }
+
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* Tooltip */
+  .rail-btn[data-tip], .avatar[data-tip] { position: relative; }
+  .rail-btn[data-tip]:hover::after,
+  .avatar[data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: calc(100% + 14px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1f1f1f;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* ===== Main ===== */
+  .main {
+    flex: 1;
+    overflow: auto;
+    padding: 40px 48px;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .page-title { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: #888; margin-bottom: 32px; }
+
+  /* Dashboard cards */
+  .app-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 820px;
+  }
+  .app-card {
+    background: white;
+    border: 1px solid #e8e8e6;
+    border-radius: 8px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: border-color 0.1s, box-shadow 0.1s;
+  }
+  .app-card:hover {
+    border-color: #2563eb;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);
+  }
+  .app-card-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .app-card-sub { font-size: 12px; color: #888; }
+  .app-card-id {
+    font-family: ui-monospace, "SF Mono", monospace;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge.review { background: #fef3c7; color: #92400e; }
+  .badge.approved { background: #dcfce7; color: #166534; }
+  .badge.draft { background: #f3f4f6; color: #4b5563; }
+
+  /* App detail */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+    margin-bottom: 24px;
+  }
+  .back-link:hover { color: #2563eb; }
+
+  .detail-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 600px;
+    margin-bottom: 32px;
+  }
+  .info-item .lbl {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  .info-item .val {
+    font-size: 13px;
+    color: #1f1f1f;
+    font-weight: 500;
+  }
+
+  .section {
+    background: white;
+    border: 1px solid #e8e8e6;
+    border-radius: 10px;
+    padding: 22px;
+    margin-bottom: 16px;
+    max-width: 820px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 16px;
+  }
+
+  .measure-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .measure-btn:hover { background: #1d4ed8; }
+
+  /* History */
+  .history-list { display: flex; flex-direction: column; gap: 4px; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .history-item:hover { background: #fafaf9; border-color: #e8e8e6; }
+  .history-item.current {
+    background: #eff4ff;
+    border-color: #bfdbfe;
+  }
+  .history-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #d4d4d2;
+    flex-shrink: 0;
+  }
+  .history-item.current .history-dot { background: #2563eb; }
+  .history-meta { flex: 1; }
+  .history-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .history-sub { font-size: 11px; color: #888; }
+  .history-tag {
+    font-size: 11px;
+    color: #2563eb;
+    background: white;
+    border: 1px solid #bfdbfe;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Rail -->
+  <nav class="rail">
+    <div class="brand">P</div>
+    <button class="rail-btn active" data-tip="Dashboard" id="btn-dashboard" onclick="showDashboard()">
+      &#8962;
+    </button>
+    <button class="rail-btn cta" data-tip="New Application">
+      +
+    </button>
+    <div class="rail-spacer"></div>
+    <div class="avatar" data-tip="Jane Engineer">JE</div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Dashboard view -->
+    <div class="view active" id="view-dashboard">
+      <h1 class="page-title">Applications</h1>
+      <p class="page-sub">All permit applications</p>
+
+      <div class="app-list">
+        <div class="app-card" onclick="showDetail()">
+          <div>
+            <div class="app-card-title">Lot 247 &middot; Al-Abdali</div>
+            <div class="app-card-sub">Submitted 2026-04-15 &middot; <span class="app-card-id">App #2026-0418</span></div>
+          </div>
+          <div style="margin-left: auto;"><span class="badge review">Under Review</span></div>
+        </div>
+        <div class="app-card" onclick="showDetail()">
+          <div>
+            <div class="app-card-title">Lot 112 &middot; Sweifieh</div>
+            <div class="app-card-sub">Approved 2026-04-08 &middot; <span class="app-card-id">App #2026-0402</span></div>
+          </div>
+          <div style="margin-left: auto;"><span class="badge approved">Approved</span></div>
+        </div>
+        <div class="app-card" onclick="showDetail()">
+          <div>
+            <div class="app-card-title">Lot 89 &middot; Jabal Amman</div>
+            <div class="app-card-sub">Created 2026-04-22 &middot; <span class="app-card-id">App #2026-0421</span></div>
+          </div>
+          <div style="margin-left: auto;"><span class="badge draft">Draft</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App detail view -->
+    <div class="view" id="view-detail">
+      <a class="back-link" onclick="showDashboard()">&larr; Back to applications</a>
+
+      <h1 class="detail-title">
+        App #2026-0418
+        <span class="badge review">Under Review</span>
+      </h1>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="lbl">Lot</div>
+          <div class="val">247 &middot; Al-Abdali</div>
+        </div>
+        <div class="info-item">
+          <div class="lbl">Submitted</div>
+          <div class="val">2026-04-15</div>
+        </div>
+        <div class="info-item">
+          <div class="lbl">Area</div>
+          <div class="val">4,877.17 m&sup2;</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <button class="measure-btn">
+          <span>&#9707;</span>
+          Open Measurement Tool
+        </button>
+      </div>
+
+      <div class="section">
+        <div class="section-title">History</div>
+        <div class="history-list">
+          <div class="history-item current">
+            <div class="history-dot"></div>
+            <div class="history-meta">
+              <div class="history-title">v3 &middot; Front setback adjusted</div>
+              <div class="history-sub">2026-04-22 &middot; 14:32</div>
+            </div>
+            <div class="history-tag">Current</div>
+          </div>
+          <div class="history-item">
+            <div class="history-dot"></div>
+            <div class="history-meta">
+              <div class="history-title">v2 &middot; Floor area recalculated</div>
+              <div class="history-sub">2026-04-18 &middot; 09:15</div>
+            </div>
+          </div>
+          <div class="history-item">
+            <div class="history-dot"></div>
+            <div class="history-meta">
+              <div class="history-title">v1 &middot; Initial submission</div>
+              <div class="history-sub">2026-04-15 &middot; 16:08</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+  const dashboardBtn = document.getElementById('btn-dashboard');
+  const dashboardView = document.getElementById('view-dashboard');
+  const detailView = document.getElementById('view-detail');
+
+  function showDetail() {
+    dashboardView.classList.remove('active');
+    detailView.classList.add('active');
+    dashboardBtn.classList.remove('active');
+  }
+
+  function showDashboard() {
+    detailView.classList.remove('active');
+    dashboardView.classList.add('active');
+    dashboardBtn.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

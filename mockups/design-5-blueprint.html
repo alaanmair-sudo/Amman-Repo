@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Design 5 — Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Caveat:wght@500;700&family=Permanent+Marker&family=JetBrains+Mono:wght@400;500;600&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" />
+<style>
+  :root {
+    --blue: #0e3a64;
+    --blue-2: #0a2e50;
+    --blue-3: #06223e;
+    --blue-line: rgba(255,255,255,.18);
+    --blue-line-2: rgba(255,255,255,.32);
+    --paper: #fbf6e9;
+    --paper-2: #f1e9d2;
+    --paper-3: #e3d8b8;
+    --ink: #ffffff;
+    --ink-soft: rgba(255,255,255,.78);
+    --ink-mute: rgba(255,255,255,.5);
+    --red-pen: #d63a30;
+    --red-pen-2: #b32a22;
+    --green-stamp: #1e6e3c;
+    --warn: #e6a83c;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: 'Inter', 'Noto Kufi Arabic', system-ui, sans-serif;
+    background: var(--blue);
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  /* repeating tiny grid like graph paper */
+  .gridpaper {
+    background-color: var(--blue);
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+    background-size: 16px 16px, 16px 16px, 80px 80px, 80px 80px;
+  }
+
+  .design-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--blue-3); border-bottom: 1px solid var(--blue-line-2);
+    padding: 8px 18px; display: flex; gap: 4px; align-items: center;
+  }
+  .design-bar-label {
+    font-family: 'Special Elite', monospace; font-size: 12px;
+    color: var(--paper-3); margin-inline-start: auto; letter-spacing: .12em; text-transform: uppercase;
+  }
+  .design-bar button {
+    background: transparent; border: 1px solid var(--blue-line); color: var(--ink-soft);
+    padding: 6px 14px; font-size: 12px; cursor: pointer; font-family: 'Special Elite', monospace;
+    letter-spacing: .06em; text-transform: uppercase;
+  }
+  .design-bar button:hover { color: var(--ink); border-color: var(--ink-soft); }
+  .design-bar button.active { background: var(--paper); color: var(--blue-3); border-color: var(--paper); }
+
+  main { padding-top: 44px; }
+  .screen { display: none; min-height: calc(100vh - 44px); }
+  .screen.active { display: block; }
+
+  /* ============ SHARED: drawing sheet borders, ticks, title block ============ */
+  .sheet {
+    position: relative; padding: 32px;
+    min-height: calc(100vh - 44px);
+  }
+  .sheet-frame {
+    position: absolute; inset: 16px;
+    border: 1px solid var(--blue-line-2);
+    pointer-events: none;
+  }
+  .sheet-frame::before, .sheet-frame::after {
+    content: ''; position: absolute; left: 18px; right: 18px;
+    border-top: 1px solid var(--blue-line);
+  }
+  .sheet-frame::before { top: 18px; }
+  .sheet-frame::after { bottom: 18px; }
+  .sheet-content { position: relative; z-index: 2; padding: 28px; }
+
+  .tick-row {
+    position: absolute; left: 36px; right: 36px; height: 12px;
+    pointer-events: none;
+  }
+  .tick-row.top { top: 30px; }
+  .tick-row.bot { bottom: 30px; }
+  .tick-row::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 50%;
+    background-image: linear-gradient(90deg, var(--blue-line) 0 1px, transparent 1px);
+    background-size: 60px 1px; background-repeat: repeat-x; height: 1px;
+  }
+  .tick-row.top span, .tick-row.bot span {
+    position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: var(--ink-mute); letter-spacing: .12em;
+  }
+
+  .title-block {
+    position: absolute; bottom: 36px; left: 36px;
+    width: 480px; border: 1px solid var(--ink-soft);
+    background: var(--blue-3); display: grid; grid-template-columns: 1fr 1fr 1fr;
+    font-family: 'Special Elite', monospace; font-size: 11px;
+  }
+  .title-block-cell { padding: 10px 14px; border-inline-end: 1px solid var(--blue-line); }
+  .title-block-cell:last-child { border-inline-end: 0; }
+  .title-block-cell.wide { grid-column: 1 / -1; padding: 14px; border-bottom: 1px solid var(--blue-line); }
+  .tb-label { color: var(--ink-mute); font-size: 9.5px; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 4px; }
+  .tb-value { color: var(--ink); font-size: 13px; letter-spacing: .04em; }
+  .tb-project { font-size: 18px; line-height: 1.2; }
+  .tb-project .ar { font-family: 'Noto Kufi Arabic'; font-size: 14px; display: block; margin-top: 4px; color: var(--ink-soft); }
+
+  /* ============ LOGIN — entire viewport is a drafting sheet ============ */
+  #login.active { display: block; position: relative; }
+  .login-sheet { position: relative; min-height: calc(100vh - 44px); }
+  .login-sheet .gridpaper { position: absolute; inset: 0; }
+  .login-stamp {
+    position: absolute; top: 80px; left: 80px; transform: rotate(-7deg);
+    color: var(--red-pen); border: 4px double var(--red-pen);
+    padding: 18px 32px; font-family: 'Permanent Marker', cursive; font-size: 38px;
+    letter-spacing: .04em; opacity: 0.85; pointer-events: none;
+    text-shadow: 1px 1px 0 rgba(214,58,48,.2);
+  }
+  .login-stamp::after {
+    content: ''; position: absolute; inset: 4px; border: 1px solid var(--red-pen); pointer-events: none;
+  }
+
+  .login-hero {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; max-width: 640px;
+  }
+  .login-hero .eyebrow { font-family: 'Special Elite', monospace; font-size: 12px; color: var(--paper-3); letter-spacing: .25em; text-transform: uppercase; }
+  .login-hero h1 {
+    font-family: 'Special Elite', monospace; font-size: 76px; font-weight: 400;
+    letter-spacing: -.02em; line-height: .96; margin: 14px 0 14px;
+    color: var(--ink);
+    text-shadow: 2px 2px 0 var(--blue-3);
+  }
+  .login-hero h1 .ar { display: block; font-family: 'Noto Kufi Arabic'; font-size: 26px; margin-top: 16px; color: var(--paper-3); font-weight: 500; text-shadow: none; letter-spacing: 0; }
+  .login-hero p { font-family: 'Special Elite', monospace; color: var(--ink-soft); font-size: 14px; max-width: 460px; margin: 0 auto; letter-spacing: .04em; }
+
+  .login-form-block {
+    position: absolute; bottom: 36px; right: 36px;
+    width: 360px; border: 1px solid var(--ink-soft); background: var(--blue-3);
+    font-family: 'Special Elite', monospace;
+  }
+  .login-form-block-row {
+    display: grid; grid-template-columns: 110px 1fr; border-bottom: 1px solid var(--blue-line);
+  }
+  .login-form-block-row:last-child { border-bottom: 0; }
+  .login-form-block-row label {
+    padding: 12px 14px; border-inline-end: 1px solid var(--blue-line);
+    font-size: 9.5px; color: var(--ink-mute); letter-spacing: .15em; text-transform: uppercase;
+  }
+  .login-form-block-row input {
+    background: transparent; border: 0; padding: 12px 14px; color: var(--ink);
+    font-family: 'Special Elite', monospace; font-size: 14px; width: 100%;
+  }
+  .login-form-block-row input:focus { outline: 0; background: rgba(255,255,255,.04); }
+  .login-form-block-row.signbtn {
+    grid-template-columns: 1fr; cursor: pointer; background: var(--paper); color: var(--blue-3);
+  }
+  .login-form-block-row.signbtn:hover { background: var(--ink); }
+  .login-form-block-row.signbtn button {
+    background: transparent; border: 0; padding: 14px; color: var(--blue-3);
+    font-family: 'Special Elite', monospace; font-size: 14px; cursor: pointer; letter-spacing: .15em; text-transform: uppercase; font-weight: 700;
+  }
+
+  .login-corner-tag {
+    position: absolute; top: 36px; right: 36px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--ink-mute); letter-spacing: .15em; line-height: 1.7; text-align: end;
+    border-inline-end: 1px solid var(--blue-line); padding-inline-end: 14px;
+  }
+  .login-corner-tag strong { color: var(--paper-3); }
+
+  /* ============ DASHBOARD — drawing index ============ */
+  .index-shell { padding: 32px 40px 60px; }
+  .index-head {
+    display: grid; grid-template-columns: 1fr auto; gap: 30px; padding: 24px 28px;
+    background: var(--blue-2); border: 1px solid var(--blue-line-2);
+    margin-bottom: 26px; align-items: center;
+  }
+  .index-head .eyebrow {
+    font-family: 'Special Elite', monospace; font-size: 11px; color: var(--paper-3);
+    letter-spacing: .2em; text-transform: uppercase;
+  }
+  .index-head h1 {
+    font-family: 'Special Elite', monospace; font-size: 32px; margin: 6px 0 0;
+    letter-spacing: -.01em;
+  }
+  .index-stats { display: flex; gap: 18px; }
+  .index-stat { padding-inline-start: 18px; border-inline-start: 1px solid var(--blue-line-2); }
+  .index-stat .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .15em; color: var(--ink-mute); text-transform: uppercase; }
+  .index-stat .v { font-family: 'Special Elite', monospace; font-size: 30px; margin-top: 2px; }
+
+  .index-table-wrap { background: var(--blue-2); border: 1px solid var(--blue-line-2); }
+  .index-tabs {
+    display: flex; gap: 0; border-bottom: 1px solid var(--blue-line-2);
+  }
+  .index-tab {
+    padding: 12px 18px; font-family: 'Special Elite', monospace; font-size: 12px;
+    color: var(--ink-mute); cursor: pointer; background: transparent; border: 0;
+    border-bottom: 2px solid transparent; letter-spacing: .1em; text-transform: uppercase;
+  }
+  .index-tab.active { color: var(--ink); border-bottom-color: var(--paper); background: var(--blue-3); }
+
+  .index-table { width: 100%; border-collapse: collapse; }
+  .index-table th {
+    text-align: start; padding: 12px 18px; font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px; color: var(--ink-mute); text-transform: uppercase; letter-spacing: .15em;
+    border-bottom: 1px solid var(--blue-line-2); font-weight: 500;
+  }
+  .index-table td {
+    padding: 14px 18px; border-bottom: 1px solid var(--blue-line); font-size: 13px;
+    font-family: 'Special Elite', monospace;
+  }
+  .index-table tr:hover td { background: rgba(255,255,255,.03); cursor: pointer; }
+  .index-sheet-num { color: var(--paper-3); letter-spacing: .12em; }
+  .index-arabic { font-family: 'Noto Kufi Arabic'; font-weight: 500; }
+  .stamp-mini {
+    display: inline-block; padding: 3px 10px; font-family: 'Permanent Marker', cursive;
+    font-size: 12px; transform: rotate(-2deg); border: 2px solid;
+  }
+  .stamp-mini.pass { color: var(--green-stamp); border-color: var(--green-stamp); }
+  .stamp-mini.warn { color: var(--warn); border-color: var(--warn); }
+  .stamp-mini.fail { color: var(--red-pen); border-color: var(--red-pen); }
+
+  /* ============ INTAKE — sheet-issued style ============ */
+  .intake-sheet { padding: 32px 60px 80px; max-width: 1180px; margin: 0 auto; }
+  .intake-eyebrow {
+    font-family: 'Special Elite', monospace; font-size: 12px; color: var(--paper-3);
+    letter-spacing: .2em; text-transform: uppercase;
+  }
+  .intake-h1 {
+    font-family: 'Special Elite', monospace; font-size: 56px; margin: 12px 0 14px;
+    letter-spacing: -.01em; line-height: 1;
+  }
+  .intake-h1 .ar { display: block; font-family: 'Noto Kufi Arabic'; font-weight: 500; font-size: 22px; margin-top: 16px; color: var(--paper-3); }
+  .intake-lead { font-family: 'Special Elite', monospace; color: var(--ink-soft); max-width: 600px; font-size: 14px; line-height: 1.7; margin: 14px 0 36px; letter-spacing: .02em; }
+
+  .doc-issue-row {
+    display: grid; grid-template-columns: 110px 1fr 140px; gap: 22px;
+    padding: 22px 0; border-top: 1px solid var(--blue-line); align-items: center;
+  }
+  .doc-issue-row:first-of-type { border-top: 0; }
+  .doc-sheet-num {
+    font-family: 'Special Elite', monospace; font-size: 22px; color: var(--paper-3);
+    letter-spacing: .15em;
+  }
+  .doc-issue-row h3 {
+    margin: 0; font-family: 'Special Elite', monospace; font-size: 22px;
+    color: var(--ink); font-weight: 400;
+  }
+  .doc-issue-row h3 .ar { font-family: 'Noto Kufi Arabic'; font-weight: 500; font-size: 16px; }
+  .doc-issue-row .extracted { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--paper-3); margin-top: 6px; line-height: 1.7; letter-spacing: .02em; }
+  .stamp-large {
+    font-family: 'Permanent Marker', cursive; padding: 8px 18px; transform: rotate(-3deg);
+    border: 3px double; display: inline-block; font-size: 14px; letter-spacing: .04em;
+  }
+  .stamp-large.parsed { color: var(--green-stamp); border-color: var(--green-stamp); }
+
+  .reviewer-note {
+    margin-top: 36px; padding: 22px 26px; border-inline-start: 4px solid var(--red-pen);
+    background: rgba(214,58,48,.08); position: relative;
+  }
+  .reviewer-note h4 {
+    font-family: 'Caveat', cursive; font-weight: 700; font-size: 30px; color: var(--red-pen);
+    margin: 0; letter-spacing: 0;
+  }
+  .reviewer-note p {
+    font-family: 'Caveat', cursive; font-weight: 500; font-size: 22px; color: var(--ink); margin: 4px 0 0;
+    line-height: 1.4; letter-spacing: 0;
+  }
+  .reviewer-note .arrow {
+    position: absolute; top: -10px; right: 30px; font-family: 'Caveat', cursive; color: var(--red-pen); font-size: 18px;
+    transform: rotate(15deg);
+  }
+
+  .intake-actions { margin-top: 32px; display: flex; gap: 14px; }
+  .btn-stamp {
+    background: transparent; color: var(--ink); border: 2px solid var(--ink-soft);
+    padding: 13px 28px; font-family: 'Special Elite', monospace; font-size: 12px;
+    letter-spacing: .15em; text-transform: uppercase; cursor: pointer;
+  }
+  .btn-stamp.primary { background: var(--paper); color: var(--blue-3); border-color: var(--paper); font-weight: 700; }
+
+  /* ============ REVIEW — drawing sheet with title block + schedule + stamps ============ */
+  .rv-sheet {
+    padding: 32px;
+    display: grid; grid-template-rows: auto 1fr auto;
+    gap: 0;
+    height: calc(100vh - 44px); position: relative;
+  }
+  .rv-sheet-header {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 22px; align-items: center;
+    padding: 8px 0 18px; border-bottom: 1px solid var(--blue-line-2);
+  }
+  .rv-sheet-no {
+    font-family: 'Special Elite', monospace; font-size: 14px; color: var(--paper-3); letter-spacing: .15em;
+  }
+  .rv-sheet-name {
+    font-family: 'Special Elite', monospace; font-size: 24px; margin: 0;
+  }
+  .rv-sheet-name .ar { font-family: 'Noto Kufi Arabic'; font-weight: 500; font-size: 18px; margin-inline-start: 14px; color: var(--paper-3); }
+  .rv-sheet-decisions { display: flex; gap: 8px; }
+  .rv-sheet-decisions .stamp-btn {
+    padding: 8px 18px; font-family: 'Permanent Marker', cursive; font-size: 14px;
+    border: 2px double; cursor: pointer; background: transparent; letter-spacing: .04em;
+    transition: transform .12s;
+  }
+  .rv-sheet-decisions .stamp-btn:hover { transform: rotate(-2deg) scale(1.04); }
+  .rv-sheet-decisions .approve { color: var(--green-stamp); border-color: var(--green-stamp); }
+  .rv-sheet-decisions .revise { color: var(--warn); border-color: var(--warn); }
+  .rv-sheet-decisions .reject { color: var(--red-pen); border-color: var(--red-pen); }
+
+  .rv-sheet-body {
+    display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; padding: 24px 0; min-height: 0;
+  }
+  .rv-canvas-area {
+    background: var(--blue-3); border: 1px solid var(--blue-line-2); position: relative;
+    overflow: hidden;
+  }
+  .rv-canvas-area::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+    background-size: 16px 16px;
+    pointer-events: none;
+  }
+  .rv-canvas-area svg { position: relative; z-index: 1; width: 100%; height: 100%; }
+
+  .rv-canvas-stamp {
+    position: absolute; top: 24px; left: 24px;
+    padding: 10px 18px; transform: rotate(-6deg);
+    color: var(--warn); border: 3px double var(--warn);
+    font-family: 'Permanent Marker', cursive; font-size: 16px; letter-spacing: .04em;
+    background: rgba(230,168,60,.1);
+    z-index: 5;
+  }
+  .rv-canvas-stamp.fail { color: var(--red-pen); border-color: var(--red-pen); background: rgba(214,58,48,.12); }
+
+  .rv-handnote {
+    position: absolute; font-family: 'Caveat', cursive; font-weight: 700;
+    color: var(--red-pen); font-size: 22px; line-height: 1.1; letter-spacing: 0;
+    z-index: 5; max-width: 200px;
+  }
+  .rv-handnote::before {
+    content: ''; position: absolute;
+    border: 1px solid var(--red-pen);
+    pointer-events: none;
+  }
+
+  /* right column — schedule + title block */
+  .rv-side-area { display: flex; flex-direction: column; gap: 18px; min-height: 0; }
+
+  .rv-schedule {
+    background: var(--blue-2); border: 1px solid var(--blue-line-2);
+    flex: 1; overflow-y: auto; min-height: 0;
+  }
+  .rv-schedule-head {
+    padding: 14px 18px; border-bottom: 1px solid var(--blue-line-2); display: flex; justify-content: space-between; align-items: center;
+  }
+  .rv-schedule-head h4 {
+    margin: 0; font-family: 'Special Elite', monospace; font-size: 14px;
+    letter-spacing: .15em; text-transform: uppercase;
+  }
+  .rv-schedule-head .meta {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: .12em;
+  }
+  .rv-schedule table { width: 100%; border-collapse: collapse; }
+  .rv-schedule th, .rv-schedule td {
+    padding: 9px 14px; border-bottom: 1px solid var(--blue-line); font-size: 12px; text-align: start;
+  }
+  .rv-schedule th {
+    background: var(--blue-3); font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    color: var(--ink-mute); letter-spacing: .12em; text-transform: uppercase; font-weight: 500;
+  }
+  .rv-schedule td { font-family: 'Special Elite', monospace; }
+  .rv-schedule td.mono { font-family: 'JetBrains Mono', monospace; }
+  .rv-schedule .row-fail td { background: rgba(214,58,48,.06); }
+  .rv-schedule .row-fail td:first-child { box-shadow: inset 3px 0 0 0 var(--red-pen); }
+  .rv-schedule .delta-pass { color: #6dbb7a; }
+  .rv-schedule .delta-fail { color: var(--red-pen); }
+
+  .rv-title-block {
+    background: var(--blue-3); border: 1px solid var(--ink-soft);
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    font-family: 'Special Elite', monospace;
+  }
+  .rv-tb-cell { padding: 10px 14px; border-inline-end: 1px solid var(--blue-line); }
+  .rv-tb-cell:last-child { border-inline-end: 0; }
+  .rv-tb-cell.span2 { grid-column: span 2; }
+  .rv-tb-cell.span3 { grid-column: 1 / -1; padding: 14px 16px; border-bottom: 1px solid var(--blue-line); }
+  .rv-tb-cell.row2 { grid-row: span 2; }
+  .rv-tb-lbl { font-size: 9px; color: var(--ink-mute); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 4px; }
+  .rv-tb-val { font-size: 13px; color: var(--ink); letter-spacing: .04em; }
+  .rv-tb-project { font-size: 17px; line-height: 1.3; }
+  .rv-tb-project .ar { display: block; font-family: 'Noto Kufi Arabic'; font-weight: 500; font-size: 14px; margin-top: 4px; }
+
+  .rv-sheet-foot {
+    display: flex; gap: 22px; align-items: center; padding-top: 16px; border-top: 1px solid var(--blue-line-2);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-mute); letter-spacing: .12em; text-transform: uppercase;
+  }
+  .rv-sheet-foot .scale { padding-inline-end: 22px; border-inline-end: 1px solid var(--blue-line); }
+
+  .arabic { font-family: 'Noto Kufi Arabic'; }
+</style>
+</head>
+<body>
+
+<nav class="design-bar">
+  <button data-screen="login">Login</button>
+  <button data-screen="dashboard" class="active">Drawing Index</button>
+  <button data-screen="intake">Submission</button>
+  <button data-screen="review">Sheet Review</button>
+  <span class="design-bar-label">Design 5 · Blueprint</span>
+</nav>
+
+<main>
+
+<!-- ================ LOGIN ================ -->
+<section id="login" class="screen">
+  <div class="login-sheet gridpaper">
+    <div class="sheet-frame"></div>
+    <div class="tick-row top">
+      <span style="left:0">A</span><span style="left:18%">B</span><span style="left:36%">C</span><span style="left:54%">D</span><span style="left:72%">E</span><span style="left:90%">F</span>
+    </div>
+    <div class="tick-row bot">
+      <span style="left:0">1</span><span style="left:18%">2</span><span style="left:36%">3</span><span style="left:54%">4</span><span style="left:72%">5</span><span style="left:90%">6</span>
+    </div>
+
+    <div class="login-stamp">DRAFT · NOT FOR ISSUE</div>
+
+    <div class="login-corner-tag">
+      <strong>SHEET A0 · TITLE</strong><br>
+      VERSION 1.0<br>
+      DATE 2026-04-24<br>
+      CHECKED · M.N.<br>
+      DRAWN · A.A.
+    </div>
+
+    <div class="login-hero">
+      <div class="eyebrow">▍ Greater Amman Municipality</div>
+      <h1>Permits, drawn<br>and reviewed.<span class="ar">منصة مراجعة طلبات الترخيص</span></h1>
+      <p>This is your drafting board — sheets in, sheets out, every dimension reconciled before a single stamp lands.</p>
+    </div>
+
+    <div class="login-form-block">
+      <div class="login-form-block-row">
+        <label>Username</label>
+        <input type="text" value="reviewer.akram"/>
+      </div>
+      <div class="login-form-block-row">
+        <label>Password</label>
+        <input type="password" value="••••••••••"/>
+      </div>
+      <div class="login-form-block-row signbtn">
+        <button>Sign in &amp; Open Sheet →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================ DASHBOARD — DRAWING INDEX ================ -->
+<section id="dashboard" class="screen active gridpaper">
+  <div class="index-shell">
+    <div class="index-head">
+      <div>
+        <div class="eyebrow">▍ Drawing Index · Permits A.D. 2026 · Q2</div>
+        <h1>Twenty-three sheets pending stamp.</h1>
+      </div>
+      <div class="index-stats">
+        <div class="index-stat"><div class="lbl">Pending</div><div class="v">23</div></div>
+        <div class="index-stat"><div class="lbl">Today</div><div class="v">12</div></div>
+        <div class="index-stat"><div class="lbl">Auto-pass</div><div class="v">61%</div></div>
+        <div class="index-stat"><div class="lbl">Fines (wk)</div><div class="v">42,180</div></div>
+      </div>
+    </div>
+
+    <div class="index-table-wrap">
+      <div class="index-tabs">
+        <button class="index-tab active">All sheets · 147</button>
+        <button class="index-tab">Pending · 23</button>
+        <button class="index-tab">Stamped · 12</button>
+        <button class="index-tab">Returned · 8</button>
+        <button class="index-tab">Rejected · 4</button>
+      </div>
+
+      <table class="index-table">
+        <thead>
+          <tr>
+            <th>Sheet №</th>
+            <th>Submitter</th>
+            <th>Plot · District</th>
+            <th>Type</th>
+            <th>Discrepancies</th>
+            <th>Violation</th>
+            <th>Fine</th>
+            <th>Stamp</th>
+            <th>Issued</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="index-sheet-num">A04219</span></td>
+            <td class="index-arabic">محمد أحمد الخطيب</td>
+            <td>234 · Tilaa Al Ali</td>
+            <td>Vacant land</td>
+            <td>1 of 5 fail</td>
+            <td>8.4 m²</td>
+            <td>1,680 JOD</td>
+            <td><span class="stamp-mini warn">Hold</span></td>
+            <td>just now</td>
+          </tr>
+          <tr>
+            <td><span class="index-sheet-num">A04218</span></td>
+            <td class="index-arabic">مؤسسة الأبراج</td>
+            <td>812 · Shafa Badran</td>
+            <td>Over existing</td>
+            <td>0 of 5</td>
+            <td>0.0 m²</td>
+            <td>0 JOD</td>
+            <td><span class="stamp-mini pass">Pass</span></td>
+            <td>3m</td>
+          </tr>
+          <tr>
+            <td><span class="index-sheet-num">A04217</span></td>
+            <td class="index-arabic">سلوى نواف الدلاعلة</td>
+            <td>114 · Abu Nseir</td>
+            <td>Additions</td>
+            <td>3 of 5 fail</td>
+            <td>72.0 m²</td>
+            <td>14,400 JOD</td>
+            <td><span class="stamp-mini fail">Reject</span></td>
+            <td>11m</td>
+          </tr>
+          <tr>
+            <td><span class="index-sheet-num">A04216</span></td>
+            <td class="index-arabic">عمر طارق نجداوي</td>
+            <td>56 · Marka</td>
+            <td>Initial consult</td>
+            <td>0 of 4</td>
+            <td>—</td>
+            <td>—</td>
+            <td><span class="stamp-mini pass">Pass</span></td>
+            <td>34m</td>
+          </tr>
+          <tr>
+            <td><span class="index-sheet-num">A04215</span></td>
+            <td class="index-arabic">مكتب الهندسة الذهبية</td>
+            <td>991 · Sweileh</td>
+            <td>Occupancy</td>
+            <td>1 of 5 fail</td>
+            <td>1.6 m²</td>
+            <td>320 JOD</td>
+            <td><span class="stamp-mini warn">Hold</span></td>
+            <td>1h</td>
+          </tr>
+          <tr>
+            <td><span class="index-sheet-num">A04214</span></td>
+            <td class="index-arabic">شركة الفنار</td>
+            <td>428 · Jubeiha</td>
+            <td>Vacant land</td>
+            <td>0 of 5</td>
+            <td>0.0 m²</td>
+            <td>0 JOD</td>
+            <td><span class="stamp-mini pass">Pass</span></td>
+            <td>2h</td>
+          </tr>
+          <tr>
+            <td><span class="index-sheet-num">A04213</span></td>
+            <td class="index-arabic">أحمد فؤاد العبسي</td>
+            <td>772 · Khalda</td>
+            <td>Amended plan</td>
+            <td>2 of 5 fail</td>
+            <td>16.0 m²</td>
+            <td>3,200 JOD</td>
+            <td><span class="stamp-mini fail">Reject</span></td>
+            <td>3h</td>
+          </tr>
+          <tr>
+            <td><span class="index-sheet-num">A04212</span></td>
+            <td class="index-arabic">رنا خالد العابد</td>
+            <td>15 · Dabouk</td>
+            <td>Vacant land</td>
+            <td>0 of 5</td>
+            <td>0.0 m²</td>
+            <td>0 JOD</td>
+            <td><span class="stamp-mini pass">Pass</span></td>
+            <td>4h</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================ INTAKE ================ -->
+<section id="intake" class="screen gridpaper">
+  <div class="intake-sheet">
+    <div class="intake-eyebrow">▍ Sheet A04219 · in preparation</div>
+    <h1 class="intake-h1">Issue your sheets.<span class="ar">إرفع ملفات المخطط الأربعة لإصدار الطلب</span></h1>
+    <p class="intake-lead">A complete submission is a four-sheet set: drawing, deed, regulatory site plan, floor-area schedule. The system stamps each one as it parses cleanly. Anything questionable lands in the margin notes below — like a senior architect's red pen.</p>
+
+    <div class="doc-issue-row">
+      <div class="doc-sheet-num">A-101</div>
+      <div>
+        <h3>Site &amp; building drawing<span class="ar"> · رسم المخطط</span></h3>
+        <div class="extracted">drawing-rev3.dwg · 4.1 MB · 12 LAYERS · BUILDING(1) LOT(1) STREET(1) · ALL CLOSED</div>
+      </div>
+      <div><span class="stamp-large parsed">Parsed ✓</span></div>
+    </div>
+    <div class="doc-issue-row">
+      <div class="doc-sheet-num">A-102</div>
+      <div>
+        <h3>Land registration<span class="ar"> · سند التسجيل</span></h3>
+        <div class="extracted arabic">قطعة 234 · حوض 12 الياسمين · تلاع العلي · 4 دونم 877.170 م² · المالك: محمد أحمد الخطيب</div>
+      </div>
+      <div><span class="stamp-large parsed">Extracted ✓</span></div>
+    </div>
+    <div class="doc-issue-row">
+      <div class="doc-sheet-num">A-103</div>
+      <div>
+        <h3>Regulatory site plan<span class="ar"> · مخطط موقع تنظيمي</span></h3>
+        <div class="extracted">SETBACKS · FRONT 5.0 · SIDE 3.0 · REAR 4.0 m · USE: RESIDENTIAL D · NOT CORNER</div>
+      </div>
+      <div><span class="stamp-large parsed">Extracted ✓</span></div>
+    </div>
+    <div class="doc-issue-row">
+      <div class="doc-sheet-num">A-104</div>
+      <div>
+        <h3>Floor-area schedule<span class="ar"> · خطة مساحة الطابقية</span></h3>
+        <div class="extracted">4 FLOORS · 1,256 m² GRAND TOTAL · 4 OF 4 ROWS VERIFIED · printed = computed within ±1 m²</div>
+      </div>
+      <div><span class="stamp-large parsed">Verified ✓</span></div>
+    </div>
+
+    <div class="reviewer-note">
+      <div class="arrow">↓ flag this</div>
+      <h4>Front setback shy by 30 cm.</h4>
+      <p>CAD shows 4.7 m where site plan demands 5.0 m → violation strip 8.4 m² along the street-facing edge → est. 1,680 JOD. Fix the drawing or send it forward as-is.</p>
+    </div>
+
+    <div class="intake-actions">
+      <button class="btn-stamp">Revise drawing</button>
+      <button class="btn-stamp primary">Issue sheet · 1 issue acknowledged →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================ REVIEW ================ -->
+<section id="review" class="screen gridpaper">
+  <div class="rv-sheet">
+
+    <div class="rv-sheet-header">
+      <div class="rv-sheet-no">▍ SHEET A04219 · STAGE 03</div>
+      <h2 class="rv-sheet-name">Plot 234 — vacant land permit<span class="ar">محمد أحمد الخطيب</span></h2>
+      <div class="rv-sheet-decisions">
+        <button class="stamp-btn reject">REJECT</button>
+        <button class="stamp-btn revise">REVISE</button>
+        <button class="stamp-btn approve">APPROVE</button>
+      </div>
+    </div>
+
+    <div class="rv-sheet-body">
+
+      <div class="rv-canvas-area">
+        <div class="rv-canvas-stamp">UNDER REVIEW</div>
+
+        <svg viewBox="0 0 800 700" preserveAspectRatio="xMidYMid meet">
+          <!-- Lot polygon -->
+          <polygon points="80,80 720,75 728,580 88,585" fill="rgba(255,255,255,.04)" stroke="#ffffff" stroke-width="2"/>
+          <!-- buildable envelope (dashed) -->
+          <polygon points="180,180 620,176 626,485 188,489" fill="none" stroke="#fbf6e9" stroke-width="1" stroke-dasharray="6 4" opacity="0.7"/>
+          <!-- Building -->
+          <polygon points="220,210 580,206 586,455 226,460" fill="rgba(255,255,255,.12)" stroke="#fbf6e9" stroke-width="2.5"/>
+          <!-- Violation hatch (front edge, between building top and envelope top) -->
+          <polygon points="220,176 580,176 586,210 220,210" fill="url(#redhatch)" stroke="#d63a30" stroke-width="2" stroke-dasharray="3 2"/>
+          <defs>
+            <pattern id="redhatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="6" stroke="#d63a30" stroke-width="1.5" opacity="0.7"/>
+            </pattern>
+          </defs>
+          <!-- street -->
+          <line x1="80" y1="60" x2="720" y2="60" stroke="#fbf6e9" stroke-width="2.5" opacity="0.7"/>
+          <text x="400" y="48" fill="#fbf6e9" font-family="JetBrains Mono" font-size="11" text-anchor="middle" letter-spacing=".12em">FRONT · STREET</text>
+
+          <!-- dimension lines -->
+          <line x1="400" y1="80" x2="400" y2="180" stroke="#fbf6e9" stroke-width="1" marker-end="url(#tick)" marker-start="url(#tick)" opacity="0.7"/>
+          <text x="412" y="138" fill="#fbf6e9" font-family="JetBrains Mono" font-size="11">5.0 m REQ.</text>
+          <line x1="350" y1="80" x2="350" y2="210" stroke="#d63a30" stroke-width="1.4" marker-end="url(#redtick)" marker-start="url(#redtick)"/>
+          <text x="290" y="158" fill="#d63a30" font-family="JetBrains Mono" font-size="11">4.7 m ACT.</text>
+
+          <line x1="720" y1="332" x2="586" y2="332" stroke="#fbf6e9" stroke-width="1" marker-end="url(#tick)" marker-start="url(#tick)" opacity="0.7"/>
+          <text x="635" y="324" fill="#fbf6e9" font-family="JetBrains Mono" font-size="10">3.1 m</text>
+          <line x1="80" y1="332" x2="220" y2="332" stroke="#fbf6e9" stroke-width="1" marker-end="url(#tick)" marker-start="url(#tick)" opacity="0.7"/>
+          <text x="125" y="324" fill="#fbf6e9" font-family="JetBrains Mono" font-size="10">8.5 m</text>
+          <line x1="400" y1="460" x2="400" y2="582" stroke="#fbf6e9" stroke-width="1" marker-end="url(#tick)" marker-start="url(#tick)" opacity="0.7"/>
+          <text x="412" y="525" fill="#fbf6e9" font-family="JetBrains Mono" font-size="10">4.0 m</text>
+
+          <defs>
+            <marker id="tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#fbf6e9"/>
+            </marker>
+            <marker id="redtick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#d63a30"/>
+            </marker>
+          </defs>
+
+          <!-- labels -->
+          <text x="406" y="340" fill="#0a2e50" font-family="Special Elite" font-size="14" text-anchor="middle">BLDG · 320 m²</text>
+          <text x="100" y="100" fill="#fbf6e9" font-family="JetBrains Mono" font-size="10" letter-spacing=".1em">LOT · 4,877.17 m²</text>
+          <text x="295" y="194" fill="#d63a30" font-family="JetBrains Mono" font-size="10" letter-spacing=".05em">VIOLATION 8.4 m²</text>
+        </svg>
+
+        <div class="rv-handnote" style="top:130px;right:30px;width:230px">
+          0.3 m short here →<br>
+          <span style="font-size:14px;font-family:'Special Elite',monospace;color:rgba(255,255,255,.8);font-weight:400">8.4 m² hatched · 1,680 JOD</span>
+        </div>
+      </div>
+
+      <div class="rv-side-area">
+        <div class="rv-schedule">
+          <div class="rv-schedule-head">
+            <h4>▍ Schedule of dimensions</h4>
+            <div class="meta">5 ROWS · 4 PASS · 1 FAIL</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Source</th>
+                <th>Required</th>
+                <th>Actual</th>
+                <th>Δ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Lot area</td>
+                <td>Deed · A-102</td>
+                <td class="mono">4,877.170 m²</td>
+                <td class="mono">4,877.17 m²</td>
+                <td class="mono delta-pass">±0.0</td>
+              </tr>
+              <tr>
+                <td>Floor totals</td>
+                <td>Plan · A-104</td>
+                <td class="mono">1,256 m²</td>
+                <td class="mono">1,256.0 m²</td>
+                <td class="mono delta-pass">±0.0</td>
+              </tr>
+              <tr>
+                <td>Floor count</td>
+                <td>Deed · A-102</td>
+                <td class="mono">4</td>
+                <td class="mono">4</td>
+                <td class="mono delta-pass">match</td>
+              </tr>
+              <tr class="row-fail">
+                <td>Front setback</td>
+                <td>Site · A-103</td>
+                <td class="mono">5.0 m</td>
+                <td class="mono">4.7 m</td>
+                <td class="mono delta-fail">−0.3 m</td>
+              </tr>
+              <tr>
+                <td>Side setback (E)</td>
+                <td>Site · A-103</td>
+                <td class="mono">3.0 m</td>
+                <td class="mono">3.1 m</td>
+                <td class="mono delta-pass">+0.1 m</td>
+              </tr>
+              <tr>
+                <td>Side setback (W)</td>
+                <td>Site · A-103</td>
+                <td class="mono">3.0 m</td>
+                <td class="mono">8.5 m</td>
+                <td class="mono delta-pass">+5.5 m</td>
+              </tr>
+              <tr>
+                <td>Rear setback</td>
+                <td>Site · A-103</td>
+                <td class="mono">4.0 m</td>
+                <td class="mono">4.0 m</td>
+                <td class="mono delta-pass">±0.0</td>
+              </tr>
+              <tr>
+                <td>Coverage</td>
+                <td>Site · A-103</td>
+                <td class="mono">≤ 50%</td>
+                <td class="mono">6.6%</td>
+                <td class="mono delta-pass">−43.4%</td>
+              </tr>
+              <tr class="row-fail">
+                <td>Buildable envelope</td>
+                <td>Computed</td>
+                <td class="mono">3,883 m²</td>
+                <td class="mono">−8.4 m²</td>
+                <td class="mono delta-fail">violation</td>
+              </tr>
+              <tr class="row-fail">
+                <td>Estimated fine</td>
+                <td>Stage 3</td>
+                <td class="mono">—</td>
+                <td class="mono">1,680 JOD</td>
+                <td class="mono delta-fail">@ 200 / m²</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="rv-title-block">
+          <div class="rv-tb-cell span3">
+            <div class="rv-tb-lbl">Project</div>
+            <div class="rv-tb-val rv-tb-project">PROPOSED RESIDENCE · PLOT 234<span class="ar">مسكن مقترح · قطعة ٢٣٤ · تلاع العلي</span></div>
+          </div>
+          <div class="rv-tb-cell">
+            <div class="rv-tb-lbl">Sheet</div>
+            <div class="rv-tb-val">A04219 / 03</div>
+          </div>
+          <div class="rv-tb-cell">
+            <div class="rv-tb-lbl">Scale</div>
+            <div class="rv-tb-val">1:200</div>
+          </div>
+          <div class="rv-tb-cell">
+            <div class="rv-tb-lbl">Date</div>
+            <div class="rv-tb-val">2026-04-24</div>
+          </div>
+          <div class="rv-tb-cell">
+            <div class="rv-tb-lbl">Drawn by</div>
+            <div class="rv-tb-val">A.A. (consultant)</div>
+          </div>
+          <div class="rv-tb-cell">
+            <div class="rv-tb-lbl">Reviewed</div>
+            <div class="rv-tb-val">Akram (GAM)</div>
+          </div>
+          <div class="rv-tb-cell">
+            <div class="rv-tb-lbl">Status</div>
+            <div class="rv-tb-val" style="color:var(--warn)">UNDER REVIEW</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rv-sheet-foot">
+      <div class="scale">SCALE 1:200 · METRIC</div>
+      <div class="scale">31°59′12″N · 35°53′02″E</div>
+      <div class="scale">RESIDENTIAL · ZONE D</div>
+      <div style="margin-inline-start:auto;color:var(--paper-3)">Greater Amman Municipality · Permit Review · v2026.04</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+  document.querySelectorAll('.design-bar button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.design-bar button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+      document.getElementById(b.dataset.screen).classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+
+</body>
+</html>

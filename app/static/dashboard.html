@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>لوحة التحكم · النظام الذكي لامانة عمان الكبرى</title>
+<link rel="icon" type="image/png" href="/static/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="/static/app.css?v=37" />
+<link rel="stylesheet" href="/static/dashboard.css?v=12" />
+<script src="/static/auth.js?v=9"></script>
+</head>
+<body class="dash-body rtl">
+
+  <header class="dash-topbar">
+    <div class="dash-topbar-brand">
+      <a href="/dashboard" class="logo logo--img" aria-label="أمانة عمان الكبرى">
+        <img src="/static/logo.png" alt="أمانة عمان الكبرى" />
+      </a>
+      <div class="dash-topbar-titles">
+        <div class="dash-topbar-title">النظام الذكي لامانة عمان الكبرى</div>
+        <div class="dash-topbar-sub">واجهة مراجعة الرخص بالذكاء الاصطناعي</div>
+      </div>
+    </div>
+    <nav class="dash-topbar-nav">
+      <a href="/dashboard" class="dash-nav-link dash-nav-link--active">لوحة التحكم</a>
+      <a href="/app" class="dash-nav-link" id="dash-new-link" hidden>طلب جديد</a>
+    </nav>
+    <div class="dash-topbar-meta">
+      <span class="chip chip-muted" id="dash-role-chip" hidden></span>
+      <div class="dash-user">
+        <span class="dash-user-avatar" id="user-avatar">R</span>
+        <span class="dash-user-name" id="user-name">reviewer</span>
+      </div>
+      <button id="logout-btn" class="ghost-btn" type="button" title="تسجيل الخروج">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
+        <span>تسجيل الخروج</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="dash-main">
+
+    <!-- ========== Page heading ========== -->
+    <section class="dash-heading">
+      <div>
+        <h1 class="dash-h1" id="dash-heading-title">الطلبات</h1>
+        <p class="dash-sub" id="dash-heading-sub">طلبات الترخيص وحالة المراجعة لكلٍّ منها بلمحة واحدة.</p>
+      </div>
+      <a href="/app" class="primary-btn dash-new-btn" id="dash-new-btn" hidden>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12M4 10h12"/></svg>
+        <span>طلب جديد</span>
+      </a>
+    </section>
+
+    <!-- ========== Stats strip ========== -->
+    <section class="stats-grid" id="stats-grid">
+      <div class="stat-card stat-total">
+        <div class="stat-top">
+          <span class="stat-label">إجمالي الطلبات</span>
+          <span class="stat-pill stat-pill--neutral">الكل</span>
+        </div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-hint" id="stat-total-hint">&nbsp;</div>
+      </div>
+      <div class="stat-card stat-pending">
+        <div class="stat-top">
+          <span class="stat-label">قيد المراجعة</span>
+          <span class="stat-pill stat-pill--warn">مفتوحة</span>
+        </div>
+        <div class="stat-value" id="stat-pending">—</div>
+        <div class="stat-hint" id="stat-pending-hint">&nbsp;</div>
+      </div>
+      <div class="stat-card stat-needs-revision">
+        <div class="stat-top">
+          <span class="stat-label">بحاجة تعديل</span>
+          <span class="stat-pill stat-pill--warn">مفتوحة</span>
+        </div>
+        <div class="stat-value" id="stat-needs-revision">—</div>
+        <div class="stat-hint" id="stat-needs-revision-hint">&nbsp;</div>
+      </div>
+      <div class="stat-card stat-approved">
+        <div class="stat-top">
+          <span class="stat-label">موافق عليها</span>
+          <span class="stat-pill stat-pill--ok">منتهية</span>
+        </div>
+        <div class="stat-value" id="stat-approved">—</div>
+        <div class="stat-hint" id="stat-approved-hint">&nbsp;</div>
+      </div>
+      <div class="stat-card stat-rejected">
+        <div class="stat-top">
+          <span class="stat-label">مرفوضة</span>
+          <span class="stat-pill stat-pill--err">منتهية</span>
+        </div>
+        <div class="stat-value" id="stat-rejected">—</div>
+        <div class="stat-hint" id="stat-rejected-hint">&nbsp;</div>
+      </div>
+    </section>
+
+
+    <!-- ========== Filter + list ========== -->
+    <section class="list-section">
+      <div class="list-head">
+        <div class="list-head-titles">
+          <h2>جميع الطلبات</h2>
+          <span class="list-head-sub" id="list-count">&nbsp;</span>
+        </div>
+        <div class="list-controls">
+          <label class="list-search">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.5 13.5L17 17"/></svg>
+            <input id="list-search-input" type="search" placeholder="بحث بالمالك أو الحوض أو القطعة أو اسم الملف…" autocomplete="off" />
+          </label>
+          <div class="list-filter-group" role="tablist" aria-label="تصفية حسب الحالة">
+            <button class="list-filter-btn list-filter-btn--active" data-filter-status="all" type="button">الكل</button>
+            <button class="list-filter-btn" data-filter-status="pending" type="button">قيد المراجعة</button>
+            <button class="list-filter-btn" data-filter-status="needs_revision" type="button">بحاجة تعديل</button>
+            <button class="list-filter-btn" data-filter-status="approved" type="button">موافق عليها</button>
+            <button class="list-filter-btn" data-filter-status="rejected" type="button">مرفوضة</button>
+          </div>
+          <select id="list-type-filter" class="list-type-filter" aria-label="تصفية حسب النوع">
+            <option value="all">كل الأنواع</option>
+            <option value="initial_consultation">الاستشارة (موافقة مبدئية)</option>
+            <option value="technical_consultation">استشارة فنية</option>
+            <option value="permit_vacant_land">ترخيص مقترح على ارض خالية</option>
+            <option value="permit_over_existing">ترخيص مقترح فوق قائم</option>
+            <option value="amended_plan_permit">ترخيص مخطط تعديلي</option>
+            <option value="permit_cancellation">الغاء ترخيص مقترح</option>
+            <option value="occupancy_permit">اذن اشغال</option>
+            <option value="occupancy_renewal">تجديد اذن اشغال</option>
+            <option value="occupancy_doc_correction">تصحيح وثيقة اذن الاشغال</option>
+            <option value="occupancy_renewal_doc_correction">تصحيح وثيقة تجديد اذن الاشغال</option>
+            <option value="additions_permit">ترخيص زيادات</option>
+            <option value="additions_permit_with_occupancy">ترخيص زيادات + أذن اشغال</option>
+            <option value="existing_areas_permit_with_occupancy">ترخيص مساحات قائمة و إذن اشغال</option>
+            <option value="first_time_existing_building">بناء قائم لأول مرة</option>
+            <option value="deposit_forfeiture">مصادرة تأمينات</option>
+            <option value="central_committee_review">اعادة النظر بقرار لجنة التخطيط المركزية (اللوائية)</option>
+            <option value="other">أخرى</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div id="app-load-error" class="app-load-error" hidden role="status" aria-live="polite">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="10" cy="10" r="8"/><path d="M10 6v4M10 13.5h.01"/>
+          </svg>
+          <span class="app-load-error-text" id="app-load-error-text">تعذّر تحميل القائمة.</span>
+          <button type="button" id="app-load-retry" class="app-load-retry">إعادة المحاولة</button>
+        </div>
+        <table class="app-table" id="app-table">
+          <thead>
+            <tr>
+              <th>الطلب</th>
+              <th>النوع</th>
+              <th>المالك</th>
+              <th>الحالة</th>
+              <th>تاريخ الإنشاء</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="app-tbody">
+            <tr class="app-row-loading">
+              <td colspan="6">جارٍ تحميل الطلبات…</td>
+            </tr>
+          </tbody>
+        </table>
+        <div id="app-empty" class="app-empty" hidden>
+          <div class="app-empty-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="10" width="32" height="28" rx="3"/><path d="M8 18h32M14 14h.01M18 14h.01M22 14h.01"/><path d="M18 28l4 4 8-10"/></svg>
+          </div>
+          <div class="app-empty-title">لا توجد طلبات بعد</div>
+          <div class="app-empty-sub">ابدأ مراجعة جديدة لترى الطلب يظهر هنا.</div>
+          <a href="/app" class="primary-btn app-empty-btn">
+            <span>ارفع طلبًا</span>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M12 4l6 6-6 6"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/dashboard.js?v=12"></script>
+</body>
+</html>

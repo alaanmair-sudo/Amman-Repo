@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>النظام الذكي لامانة عمان الكبرى</title>
+<link rel="icon" type="image/png" href="/static/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="/static/app.css?v=65" />
+<!-- dashboard.css is loaded here too so the per-application page can
+     reuse the same .dash-topbar* styles as /dashboard. The body class
+     stays "rtl" (not "dash-body"), so the body-scoped rule in
+     dashboard.css doesn't fire — only the topbar selectors apply. -->
+<link rel="stylesheet" href="/static/dashboard.css?v=12" />
+<link rel="stylesheet" href="/static/reviewer.css?v=29" />
+<script src="/static/auth.js?v=9"></script>
+</head>
+<body class="rtl">
+<div class="app">
+
+  <!-- Topbar — uses the SAME .dash-topbar* classes as the dashboard so
+       both pages render an identical header. JS-bound IDs are kept
+       (topbar-user-avatar / topbar-user-name / topbar-logout); only the
+       wrapper class names change. The lang/history toggles that used to
+       live here are stashed in #legacy-topbar-stash below so app.js
+       still finds them by ID without them painting in the visible bar. -->
+  <header class="dash-topbar">
+    <div class="dash-topbar-brand">
+      <a href="/dashboard" class="logo logo--img" aria-label="أمانة عمان الكبرى">
+        <img src="/static/logo.png" alt="أمانة عمان الكبرى" />
+      </a>
+      <div class="dash-topbar-titles">
+        <div class="dash-topbar-title" data-i18n="app.title">النظام الذكي لامانة عمان الكبرى</div>
+        <div class="dash-topbar-sub" data-i18n="app.subtitle">واجهة مراجعة الرخص بالذكاء الاصطناعي</div>
+      </div>
+    </div>
+    <nav class="dash-topbar-nav">
+      <a href="/dashboard" class="dash-nav-link">لوحة التحكم</a>
+      <a href="/app" class="dash-nav-link dash-nav-link--active" id="dash-new-link" hidden>طلب جديد</a>
+    </nav>
+    <div class="dash-topbar-meta">
+      <div class="dash-user" id="topbar-user">
+        <span class="dash-user-avatar" id="topbar-user-avatar">R</span>
+        <span class="dash-user-name" id="topbar-user-name">reviewer</span>
+      </div>
+      <button id="topbar-logout" class="ghost-btn" type="button" title="تسجيل الخروج">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
+        <span>تسجيل الخروج</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hidden stash for JS-bound widgets that used to sit in the topbar
+       (history toggle + count, language toggle). Kept in the DOM with
+       their original IDs so app.js's getElementById lookups still
+       resolve; never painted because the wrapper is `hidden`. -->
+  <div id="legacy-topbar-stash" hidden>
+    <button id="history-toggle" class="history-toggle" type="button" data-i18n-aria-label="history.toggle" aria-label="Open analysis history">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="10" cy="10" r="7.5"/>
+        <path d="M10 5.5V10l3 1.5"/>
+      </svg>
+      <span data-i18n="history.button">History</span>
+      <span class="history-count" id="history-count" hidden>0</span>
+    </button>
+    <button id="lang-toggle" class="lang-toggle" type="button" data-i18n-aria-label="ui.lang.toggle" aria-label="Toggle language">
+      <span class="lang-opt" data-lang="en">EN</span>
+      <span class="lang-opt" data-lang="ar">ع</span>
+      <span class="lang-thumb" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <!-- History drawer (slides in from the right). DOM kept so app.js's
+       drawer-open/close logic keeps wiring; the toggle button above is
+       hidden so this drawer is unreachable from the UI for now. -->
+  <aside id="history-panel" class="history-panel" hidden aria-hidden="true">
+    <div class="history-head">
+      <div class="history-head-titles">
+        <h3 data-i18n="history.title">Past analyses</h3>
+        <span class="history-head-sub" data-i18n="history.sub">Click any to re-open. Trash to delete.</span>
+      </div>
+      <button id="history-close" class="history-close" type="button" data-i18n-aria-label="history.close" aria-label="Close history">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      </button>
+    </div>
+    <div id="history-list" class="history-list" aria-live="polite"></div>
+    <div id="history-empty" class="history-empty" hidden data-i18n="history.empty">No analyses saved yet. Run one and it'll appear here.</div>
+  </aside>
+  <div id="history-backdrop" class="history-backdrop" hidden></div>
+
+  <main class="main" id="main">
+
+    <!-- =========================  Upload view  ========================= -->
+    <section id="upload-view" class="upload-view">
+      <form id="upload-form" class="upload-form">
+        <div class="upload-shell">
+          <!-- Pre-analysis block banner — surfaced here (NOT inside the
+               work view) when the agent halts on a blocking gate
+               (missing required CAD layer, deed↔site-plan identity
+               mismatch). The user is bounced back to the upload screen
+               with the AI's blocking notes listed; they re-upload the
+               corrected files and the analysis re-runs. Hidden by
+               default; populated + revealed by showUploadViewBlocked()
+               in app.js. -->
+          <div id="upload-blocked-banner" class="upload-blocked-banner" hidden dir="rtl">
+            <div class="ubb-head">
+              <svg class="ubb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 2L1 17h18L10 2z"/>
+                <path d="M10 8v4M10 14h.01"/>
+              </svg>
+              <div class="ubb-titles">
+                <div class="ubb-title">لا يمكن متابعة التحليل قبل تصحيح الملاحظات أدناه</div>
+                <div class="ubb-sub" id="upload-blocked-sub">صحّح الملفات أدناه ثم أعد الرفع.</div>
+              </div>
+            </div>
+            <ul class="ubb-list" id="upload-blocked-list"></ul>
+          </div>
+
+          <div class="upload-eyebrow" data-i18n="upload.eyebrow">Analysis engine</div>
+          <h1 class="upload-title" data-i18n="upload.title">Drop your files</h1>
+          <p class="upload-tagline" data-i18n="upload.tagline">
+            Drop any combination — CAD drawing, سند التسجيل PDF, خطة مساحة الطابقية PDF, مخطط موقع تنظيمي PDF.
+            All pipelines run in parallel, results shown side by side.
+          </p>
+
+          <!-- Application intake: classify the permit before analysis so
+               the dashboard can group / filter by type. -->
+          <div class="intake-card">
+            <div class="intake-head">
+              <span class="intake-eyebrow" data-i18n="intake.eyebrow">Application intake</span>
+              <span class="intake-sub" data-i18n="intake.sub">Classify this permit for the dashboard</span>
+            </div>
+            <div class="intake-row">
+              <label class="intake-field">
+                <span class="intake-label" data-i18n="intake.type">Application type</span>
+                <select id="intake-type" class="intake-select">
+                  <option value="initial_consultation" selected data-i18n="apptype.initial_consultation">Initial consultation (preliminary approval)</option>
+                  <option value="technical_consultation" data-i18n="apptype.technical_consultation">Technical consultation</option>
+                  <option value="permit_vacant_land" data-i18n="apptype.permit_vacant_land">Proposed permit on vacant land</option>
+                  <option value="permit_over_existing" data-i18n="apptype.permit_over_existing">Proposed permit over existing</option>
+                  <option value="amended_plan_permit" data-i18n="apptype.amended_plan_permit">Amended plan permit</option>
+                  <option value="permit_cancellation" data-i18n="apptype.permit_cancellation">Permit cancellation</option>
+                  <option value="occupancy_permit" data-i18n="apptype.occupancy_permit">Occupancy permit</option>
+                  <option value="occupancy_renewal" data-i18n="apptype.occupancy_renewal">Occupancy renewal</option>
+                  <option value="occupancy_doc_correction" data-i18n="apptype.occupancy_doc_correction">Occupancy document correction</option>
+                  <option value="occupancy_renewal_doc_correction" data-i18n="apptype.occupancy_renewal_doc_correction">Occupancy renewal document correction</option>
+                  <option value="additions_permit" data-i18n="apptype.additions_permit">Additions permit</option>
+                  <option value="additions_permit_with_occupancy" data-i18n="apptype.additions_permit_with_occupancy">Additions permit + occupancy</option>
+                  <option value="existing_areas_permit_with_occupancy" data-i18n="apptype.existing_areas_permit_with_occupancy">Existing areas permit + occupancy</option>
+                  <option value="first_time_existing_building" data-i18n="apptype.first_time_existing_building">Existing building registered for the first time</option>
+                  <option value="deposit_forfeiture" data-i18n="apptype.deposit_forfeiture">Deposit forfeiture</option>
+                  <option value="central_committee_review" data-i18n="apptype.central_committee_review">Central Planning Committee (regional) decision review</option>
+                  <option value="other" data-i18n="apptype.other">Other</option>
+                </select>
+              </label>
+              <label class="intake-field">
+                <span class="intake-label" data-i18n="intake.submitter">Submitted by (optional)</span>
+                <input type="text" id="intake-submitter" class="intake-input" data-i18n-placeholder="intake.submitter.placeholder" placeholder="Owner / applicant name" autocomplete="off" />
+              </label>
+            </div>
+          </div>
+
+          <div class="drop-grid drop-grid-5">
+            <div class="drop-zone-wrap">
+              <label for="file-input" class="drop-zone" id="drop-zone">
+                <div class="drop-zone-inner">
+                  <div class="drop-icon-wrap">
+                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                    </svg>
+                  </div>
+                  <input type="file" id="file-input" accept=".dwg,.dxf,.dwf,.dwfx" hidden />
+                  <span class="drop-zone-eyebrow" data-i18n="upload.cad.eyebrow">CAD · required</span>
+                  <span class="drop-text" data-i18n="upload.cad.text">Drop CAD drawing</span>
+                  <span class="drop-hint">DWG · DXF · DWF · DWFx</span>
+                </div>
+              </label>
+              <div class="field-error" id="field-error-file" hidden></div>
+            </div>
+            <div class="drop-zone-wrap">
+              <label for="pdf-input" class="drop-zone drop-zone-pdf" id="pdf-drop-zone">
+                <div class="drop-zone-inner">
+                  <div class="drop-icon-wrap">
+                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                      <path d="M14 3v6h6"/>
+                      <path d="M8 13h8M8 17h5"/>
+                    </svg>
+                  </div>
+                  <input type="file" id="pdf-input" accept=".pdf,application/pdf" hidden />
+                  <span class="drop-zone-eyebrow" data-i18n="upload.pdf.eyebrow">سند التسجيل · required</span>
+                  <span class="drop-text" id="pdf-drop-text" data-i18n="upload.pdf.text">Drop سند التسجيل PDF</span>
+                  <span class="drop-hint" data-i18n="upload.pdf.hint">AI summary</span>
+                </div>
+              </label>
+              <div class="field-error" id="field-error-pdf_deed" hidden></div>
+            </div>
+            <div class="drop-zone-wrap">
+              <label for="floor-input" class="drop-zone drop-zone-floor" id="floor-drop-zone">
+                <div class="drop-zone-inner">
+                  <div class="drop-icon-wrap">
+                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3.5" y="3.5" width="17" height="17" rx="2"/>
+                      <path d="M3.5 9h17M9 3.5v17"/>
+                      <path d="M14 13h3M14 16h2"/>
+                    </svg>
+                  </div>
+                  <input type="file" id="floor-input" accept=".pdf,application/pdf" hidden />
+                  <span class="drop-zone-eyebrow" data-i18n="upload.floor.eyebrow">خطة مساحة الطابقية · required</span>
+                  <span class="drop-text" id="floor-drop-text" data-i18n="upload.floor.text">Drop floor-area plan PDF</span>
+                  <span class="drop-hint" data-i18n="upload.floor.hint">Per-floor tables vs. lot area</span>
+                </div>
+              </label>
+              <div class="field-error" id="field-error-pdf_floor" hidden></div>
+            </div>
+            <div class="drop-zone-wrap">
+              <label for="site-plan-input" class="drop-zone drop-zone-site-plan" id="site-plan-drop-zone">
+                <div class="drop-zone-inner">
+                  <div class="drop-icon-wrap">
+                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3.5" y="3.5" width="17" height="17" rx="2"/>
+                      <path d="M3.5 13l5-4 4 3 4-5 4 4"/>
+                      <circle cx="8" cy="8" r="1.5"/>
+                    </svg>
+                  </div>
+                  <input type="file" id="site-plan-input" accept=".pdf,application/pdf" hidden />
+                  <span class="drop-zone-eyebrow" data-i18n="upload.site_plan.eyebrow">مخطط موقع تنظيمي · required</span>
+                  <span class="drop-text" id="site-plan-drop-text" data-i18n="upload.site_plan.text">Drop site-plan PDF</span>
+                  <span class="drop-hint" data-i18n="upload.site_plan.hint">Required setbacks · compliance</span>
+                </div>
+              </label>
+              <div class="field-error" id="field-error-pdf_site_plan" hidden></div>
+            </div>
+            <!-- 5th slot · OPTIONAL measurement PDF — a vector PDF export
+                 of the drawing used by the in-browser measurement viewer
+                 (PDF.js + custom measure tool) on the post-analysis page.
+                 Not part of the 4 required documents and not consumed by
+                 any analysis pipeline. The viewer button only appears on
+                 the work-view when this file was provided. -->
+            <div class="drop-zone-wrap">
+              <label for="measurement-input" class="drop-zone drop-zone-measurement drop-zone-optional" id="measurement-drop-zone">
+                <div class="drop-zone-inner">
+                  <div class="drop-icon-wrap">
+                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 17l6-6 4 4 8-8"/>
+                      <path d="M14 7h7v7"/>
+                    </svg>
+                  </div>
+                  <input type="file" id="measurement-input" accept=".pdf,application/pdf" hidden />
+                  <span class="drop-zone-eyebrow" data-i18n="upload.measurement.eyebrow">PDF القياس · اختياري</span>
+                  <span class="drop-text" id="measurement-drop-text" data-i18n="upload.measurement.text">Drop a measurement PDF</span>
+                  <span class="drop-hint" data-i18n="upload.measurement.hint">View · pan · zoom · measure</span>
+                </div>
+              </label>
+              <div class="field-error" id="field-error-pdf_measurement" hidden></div>
+            </div>
+            <!-- "Additional PDFs" drop zone removed — the upload form
+                 now accepts only the four required documents (CAD, deed,
+                 floor plan, regulatory site plan). Backend still accepts
+                 pdf_extras as optional for back-compat with older
+                 saved analyses; the frontend just no longer offers a way
+                 to add them. -->
+          </div>
+          <button type="submit" id="analyze-btn" class="primary-btn" disabled>
+            <span class="btn-label" data-i18n="upload.analyze">Analyze</span>
+            <svg class="btn-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 10h12M12 4l6 6-6 6"/>
+            </svg>
+          </button>
+
+          <!-- =========================================================
+               SUBMISSION GUIDE — acceptance requirements shown to the
+               applicant AFTER the Analyze button. Every bullet below
+               mirrors a rule enforced by the review pipeline:
+                 · Section 1 → file-presence gate (FE + BE)
+                 · Section 2 → app/validation.py cad_layer_issues()
+                                + geometry_error_to_row()
+                 · Section 3 → app/site_plan_extractor.py
+                 · Section 4 → coverage_violation_row() +
+                                setback_violation_row()
+               When you add a NEW rule to any of those places, also add
+               the corresponding line to this guide so submitters know
+               about it up-front.
+               ========================================================= -->
+          <section class="submission-guide" id="submission-guide" dir="rtl">
+            <header class="sg-head">
+              <div class="sg-head-left">
+                <div class="sg-head-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 11l3 3 8-8" />
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                  </svg>
+                </div>
+                <div class="sg-head-titles">
+                  <h3 class="sg-title" data-i18n="sg.title">قبل أن تبدأ — متطلبات قبول الطلب</h3>
+                  <p class="sg-intro" data-i18n="sg.intro">لضمان قبول طلبك ومراجعته بسلاسة، راجع المتطلبات التالية قبل رفع الملفات.</p>
+                </div>
+              </div>
+              <button type="button" id="sg-toggle" class="sg-toggle" aria-expanded="true" aria-controls="sg-body" data-i18n-aria-label="sg.toggle">
+                <svg class="sg-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 8l5 5 5-5" />
+                </svg>
+              </button>
+            </header>
+
+            <div id="sg-body" class="sg-body">
+              <div class="sg-sections">
+
+                <!-- Section 1 · Required documents -->
+                <div class="sg-section">
+                  <div class="sg-section-head">
+                    <span class="sg-num">1</span>
+                    <h4 class="sg-section-title" data-i18n="sg.s1.title">الوثائق المطلوبة</h4>
+                  </div>
+                  <ul class="sg-list">
+                    <li data-i18n="sg.s1.doc_cad">ملف المخطط CAD (DWG أو DXF أو DWF)</li>
+                    <li data-i18n="sg.s1.doc_deed">سند التسجيل — ملف PDF</li>
+                    <li data-i18n="sg.s1.doc_floor">خطة مساحة الطابقية — ملف PDF</li>
+                    <li data-i18n="sg.s1.doc_site_plan">مخطط موقع تنظيمي — ملف PDF</li>
+                  </ul>
+                  <p class="sg-hint" data-i18n="sg.s1.hint">جميع الوثائق الأربع مطلوبة لبدء التحليل.</p>
+                </div>
+
+                <!-- Section 2 · CAD drawing requirements -->
+                <div class="sg-section">
+                  <div class="sg-section-head">
+                    <span class="sg-num">2</span>
+                    <h4 class="sg-section-title" data-i18n="sg.s2.title">متطلبات المخطط (CAD)</h4>
+                  </div>
+                  <ul class="sg-list">
+                    <li data-i18n-html="sg.s2.layer_building">طبقة باسم <code>BUILDING</code> أو <code>BLDG</code> تحتوي على مضلع المبنى مغلقًا</li>
+                    <li data-i18n-html="sg.s2.layer_lot">طبقة باسم <code>LOT</code> أو <code>LOT_BOUNDARY</code> تحتوي على مضلع قطعة الأرض مغلقًا</li>
+                    <li data-i18n-html="sg.s2.layer_street">طبقة باسم <code>STREET</code> أو <code>ROAD</code> على محور الشارع المحاذي</li>
+                    <li data-i18n="sg.s2.inside_lot">المبنى بأكمله داخل حدود قطعة الأرض</li>
+                    <li data-i18n="sg.s2.closed">جميع المضلعات مغلقة — تتصل نقطة النهاية بنقطة البداية</li>
+                  </ul>
+                </div>
+
+                <!-- Section 3 · Site plan requirements -->
+                <div class="sg-section">
+                  <div class="sg-section-head">
+                    <span class="sg-num">3</span>
+                    <h4 class="sg-section-title" data-i18n="sg.s3.title">مخطط الموقع التنظيمي</h4>
+                  </div>
+                  <ul class="sg-list">
+                    <li data-i18n="sg.s3.title_match">الملف يحمل العنوان الرسمي «مخطط موقع تنظيمي»</li>
+                    <li data-i18n="sg.s3.issuer">صادر عن الأمانة أو البلدية المعنية</li>
+                    <li data-i18n="sg.s3.setbacks">قيم الارتدادات (امامي / جانبي / خلفي) مقروءة تحت عمود «الارتدادات (متر)»</li>
+                  </ul>
+                </div>
+
+                <!-- Section 4 · Compliance -->
+                <div class="sg-section">
+                  <div class="sg-section-head">
+                    <span class="sg-num">4</span>
+                    <h4 class="sg-section-title" data-i18n="sg.s4.title">الالتزام التنظيمي</h4>
+                  </div>
+                  <ul class="sg-list">
+                    <li data-i18n="sg.s4.setbacks">المبنى يلتزم بالارتدادات المذكورة في مخطط الموقع التنظيمي</li>
+                    <li data-i18n="sg.s4.coverage">نسبة التغطية لا تتجاوز المسموح به في مخطط الموقع التنظيمي</li>
+                  </ul>
+                  <p class="sg-hint" data-i18n="sg.s4.hint">في حال وجود مخالفات، سيتم إعادة الطلب للتعديل مع ملاحظات المراجع.</p>
+                </div>
+
+              </div>
+            </div>
+          </section>
+        </div>
+      </form>
+    </section>
+
+    <!-- =========================  Analysis loading view  =========================
+         Shown for both new uploads and partial resubmits while the pipeline runs.
+         Replaces the reviewer-style live work-view during analysis — the user sees
+         this polished progress screen instead of the raw streaming KPIs. When the
+         pipeline emits `done`, app.js navigates to /app?a=<id> so the saved
+         analysis renders via the standard autoLoadFromQuery path. -->
+    <section id="analysis-loading-view" class="al" hidden dir="rtl">
+
+      <!-- Centered card on the existing light app shell. The dark 3D box
+           below is a contained "canvas" element — the app's topbar,
+           background, and footer remain untouched. -->
+      <div class="al-card">
+
+        <h1 class="al-title">
+          <span>جارٍ تحليل طلبك بالذكاء الاصطناعي</span>
+          <span class="al-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        </h1>
+        <p class="al-sub">يستغرق التحليل عادةً من دقيقة إلى دقيقتين. يمكنك ترك النافذة مفتوحة، وسننقلك تلقائيًا إلى تفاصيل الطلب فور الانتهاء.</p>
+
+        <!-- 3D perspective box: cyan walls + blueprint + scanning beam + 5 validation dots -->
+        <div class="al-hero" aria-hidden="true">
+          <svg viewBox="0 0 1180 620" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="al-floor-grid" x="0" y="0" width="60" height="40" patternUnits="userSpaceOnUse"><path d="M0 40 L60 40 M60 0 L60 40" stroke="rgba(62,224,255,.22)" stroke-width=".7" fill="none"/></pattern>
+              <pattern id="al-ceil-grid" x="0" y="0" width="60" height="40" patternUnits="userSpaceOnUse"><path d="M0 0 L60 0 M60 0 L60 40" stroke="rgba(62,224,255,.18)" stroke-width=".7" fill="none"/></pattern>
+              <pattern id="al-side-grid" x="0" y="0" width="40" height="60" patternUnits="userSpaceOnUse"><path d="M0 0 L0 60 M0 60 L40 60" stroke="rgba(62,224,255,.2)" stroke-width=".7" fill="none"/></pattern>
+              <linearGradient id="al-beam-grad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%"   stop-color="rgba(62,224,255,0)"/>
+                <stop offset="35%"  stop-color="rgba(124,233,255,.35)"/>
+                <stop offset="50%"  stop-color="rgba(255,255,255,.85)"/>
+                <stop offset="65%"  stop-color="rgba(124,233,255,.35)"/>
+                <stop offset="100%" stop-color="rgba(62,224,255,0)"/>
+              </linearGradient>
+              <linearGradient id="al-panel-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#091f43"/>
+                <stop offset="100%" stop-color="#06152e"/>
+              </linearGradient>
+              <radialGradient id="al-check-halo"><stop offset="0%" stop-color="#86efac" stop-opacity=".55"/><stop offset="60%" stop-color="#22c55e" stop-opacity=".18"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/></radialGradient>
+              <filter id="al-check-glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter>
+              <filter id="al-cyan-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <clipPath id="al-box-clip"><polygon points="60,40 1120,40 1120,580 60,580"/></clipPath>
+            </defs>
+
+            <!-- 4 trapezoid walls + perspective grid lines -->
+            <g>
+              <polygon points="60,40 1120,40 870,180 310,180" fill="url(#al-ceil-grid)" stroke="rgba(62,224,255,.25)" stroke-width=".5"/>
+              <polygon points="60,580 1120,580 870,440 310,440" fill="url(#al-floor-grid)" stroke="rgba(62,224,255,.3)" stroke-width=".5"/>
+              <polygon points="60,40 60,580 310,440 310,180" fill="url(#al-side-grid)" stroke="rgba(62,224,255,.22)" stroke-width=".5"/>
+              <polygon points="1120,40 1120,580 870,440 870,180" fill="url(#al-side-grid)" stroke="rgba(62,224,255,.22)" stroke-width=".5"/>
+            </g>
+            <g stroke="rgba(62,224,255,.32)" stroke-width=".8" fill="none">
+              <line x1="60" y1="580" x2="310" y2="440"/><line x1="220" y1="580" x2="380" y2="440"/><line x1="380" y1="580" x2="450" y2="440"/><line x1="540" y1="580" x2="520" y2="440"/><line x1="700" y1="580" x2="590" y2="440"/><line x1="860" y1="580" x2="660" y2="440"/><line x1="1020" y1="580" x2="730" y2="440"/><line x1="1120" y1="580" x2="870" y2="440"/>
+              <line x1="80" y1="555" x2="1100" y2="555"/><line x1="160" y1="510" x2="1020" y2="510"/><line x1="240" y1="475" x2="940" y2="475"/><line x1="290" y1="450" x2="890" y2="450"/>
+            </g>
+            <g stroke="rgba(62,224,255,.2)" stroke-width=".7" fill="none">
+              <line x1="60" y1="40" x2="310" y2="180"/><line x1="380" y1="40" x2="460" y2="180"/><line x1="700" y1="40" x2="600" y2="180"/><line x1="1020" y1="40" x2="740" y2="180"/><line x1="1120" y1="40" x2="870" y2="180"/>
+              <line x1="160" y1="80" x2="1020" y2="80"/><line x1="240" y1="120" x2="940" y2="120"/><line x1="290" y1="160" x2="890" y2="160"/>
+            </g>
+
+            <!-- back panel: blueprint -->
+            <g>
+              <rect x="310" y="180" width="560" height="260" fill="url(#al-panel-grad)"/>
+              <g transform="translate(310,180)" stroke="#7ce9ff" stroke-width="1.1" fill="none" opacity=".82">
+                <rect x="60" y="40" width="440" height="180" stroke-width="1.6"/>
+                <line x1="200" y1="40" x2="200" y2="220"/><line x1="320" y1="40" x2="320" y2="220"/>
+                <line x1="60" y1="130" x2="200" y2="130"/><line x1="200" y1="100" x2="320" y2="100"/>
+                <line x1="200" y1="160" x2="320" y2="160"/><line x1="320" y1="120" x2="500" y2="120"/>
+                <line x1="320" y1="180" x2="500" y2="180"/>
+                <line x1="410" y1="40" x2="410" y2="120"/><line x1="410" y1="180" x2="410" y2="220"/>
+                <line x1="120" y1="130" x2="120" y2="220"/>
+                <path d="M150 130 a14 14 0 0 1 14 -14" stroke-width=".9"/>
+                <path d="M260 100 a12 12 0 0 1 12 -12" stroke-width=".9"/>
+                <path d="M340 180 a14 14 0 0 0 14 14"  stroke-width=".9"/>
+                <path d="M420 120 a14 14 0 0 1 -14 14" stroke-width=".9"/>
+                <g stroke-width=".7" opacity=".8">
+                  <line x1="60" y1="20" x2="60" y2="40"/><line x1="200" y1="20" x2="200" y2="40"/>
+                  <line x1="320" y1="20" x2="320" y2="40"/><line x1="410" y1="20" x2="410" y2="40"/>
+                  <line x1="500" y1="20" x2="500" y2="40"/><line x1="60" y1="20" x2="500" y2="20"/>
+                </g>
+                <g stroke-width=".7" opacity=".8">
+                  <line x1="520" y1="40" x2="500" y2="40"/><line x1="520" y1="130" x2="500" y2="130"/>
+                  <line x1="520" y1="220" x2="500" y2="220"/><line x1="520" y1="40" x2="520" y2="220"/>
+                </g>
+                <g stroke-width=".8" opacity=".7">
+                  <circle cx="30" cy="190" r="9"/>
+                  <path d="M30 184 L33 196 L30 193 L27 196 Z" fill="#7ce9ff" stroke="none"/>
+                  <line x1="20" y1="240" x2="60" y2="240"/>
+                  <line x1="20" y1="237" x2="20" y2="243"/><line x1="60" y1="237" x2="60" y2="243"/>
+                </g>
+              </g>
+
+              <!-- 5 validation points: red dot BEFORE the matching stage flips done,
+                   green checkmark AFTER. JS mirrors the al-stage data-state onto each
+                   dot so the visual reflects real backend events. -->
+              <g class="al-dots">
+                <g class="al-dot" data-dot="documents" transform="translate(450, 280)">
+                  <g class="al-dot-pre"><circle class="al-dot-pulse" r="6" fill="none" stroke="#ef4444" stroke-width=".8" opacity=".5"/><circle r="2.5" fill="#ef4444"/></g>
+                  <g class="al-dot-post"><circle r="22" fill="url(#al-check-halo)" filter="url(#al-check-glow)"/><circle r="11" fill="#16a34a" stroke="#bbf7d0" stroke-width="1.4"/><path d="M-4.4 0.4 L-1.4 3.4 L4.6 -2.6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+                </g>
+                <g class="al-dot" data-dot="drawings" transform="translate(560, 250)">
+                  <g class="al-dot-pre"><circle class="al-dot-pulse" r="6" fill="none" stroke="#ef4444" stroke-width=".8" opacity=".5"/><circle r="2.5" fill="#ef4444"/></g>
+                  <g class="al-dot-post"><circle r="22" fill="url(#al-check-halo)" filter="url(#al-check-glow)"/><circle r="11" fill="#16a34a" stroke="#bbf7d0" stroke-width="1.4"/><path d="M-4.4 0.4 L-1.4 3.4 L4.6 -2.6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+                </g>
+                <g class="al-dot" data-dot="structural" transform="translate(610, 350)">
+                  <g class="al-dot-pre"><circle class="al-dot-pulse" r="6" fill="none" stroke="#ef4444" stroke-width=".8" opacity=".5"/><circle r="2.5" fill="#ef4444"/></g>
+                  <g class="al-dot-post"><circle r="22" fill="url(#al-check-halo)" filter="url(#al-check-glow)"/><circle r="11" fill="#16a34a" stroke="#bbf7d0" stroke-width="1.4"/><path d="M-4.4 0.4 L-1.4 3.4 L4.6 -2.6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+                </g>
+                <g class="al-dot" data-dot="safety" transform="translate(700, 270)">
+                  <g class="al-dot-pre"><circle class="al-dot-pulse" r="6" fill="none" stroke="#ef4444" stroke-width=".8" opacity=".5"/><circle r="2.5" fill="#ef4444"/></g>
+                  <g class="al-dot-post"><circle r="22" fill="url(#al-check-halo)" filter="url(#al-check-glow)"/><circle r="11" fill="#16a34a" stroke="#bbf7d0" stroke-width="1.4"/><path d="M-4.4 0.4 L-1.4 3.4 L4.6 -2.6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+                </g>
+                <g class="al-dot" data-dot="report" transform="translate(790, 360)">
+                  <g class="al-dot-pre"><circle class="al-dot-pulse" r="6" fill="none" stroke="#ef4444" stroke-width=".8" opacity=".5"/><circle r="2.5" fill="#ef4444"/></g>
+                  <g class="al-dot-post"><circle r="22" fill="url(#al-check-halo)" filter="url(#al-check-glow)"/><circle r="11" fill="#16a34a" stroke="#bbf7d0" stroke-width="1.4"/><path d="M-4.4 0.4 L-1.4 3.4 L4.6 -2.6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+                </g>
+              </g>
+            </g>
+
+            <!-- bright cyan box edges -->
+            <g filter="url(#al-cyan-glow)" stroke="#3ee0ff" stroke-width="2.2" fill="none" stroke-linecap="round">
+              <rect x="60" y="40" width="1060" height="540" rx="2"/>
+              <rect x="310" y="180" width="560" height="260" rx="2"/>
+              <line x1="60" y1="40" x2="310" y2="180"/><line x1="1120" y1="40" x2="870" y2="180"/>
+              <line x1="60" y1="580" x2="310" y2="440"/><line x1="1120" y1="580" x2="870" y2="440"/>
+            </g>
+            <!-- scanning beam (clipped inside the box) -->
+            <g clip-path="url(#al-box-clip)">
+              <g class="al-beam">
+                <rect x="560" y="20" width="60" height="580" fill="url(#al-beam-grad)"/>
+                <line x1="590" y1="20" x2="590" y2="600" stroke="rgba(255,255,255,.9)" stroke-width="1.2"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Granular progress — counter / percentage / bar / phase label.
+             Driven by SSE events through _alOnEvent → _alIncrementProgress
+             in app.js. Total is computed from the `expect` map (which docs
+             will run + estimated agent tool count + final + done). -->
+        <div class="al-progress" aria-hidden="true">
+          <div class="al-progress-row">
+            <span class="al-progress-step-label">
+              <span>الخطوة</span>
+              <span id="al-progress-step" class="al-progress-step-num">0</span>
+              <span>من</span>
+              <span id="al-progress-total" class="al-progress-step-total">14</span>
+            </span>
+            <span id="al-progress-pct" class="al-progress-pct-num">0%</span>
+          </div>
+          <div class="al-progress-bar"><div id="al-progress-fill" class="al-progress-bar-fill"></div></div>
+          <div class="al-progress-phase">
+            <span class="al-progress-phase-label">الآن:</span>
+            <span id="al-progress-phase" class="al-progress-phase-text">تحضير الملفات</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================  Work view  ========================= -->
+    <section id="work-view" class="work-view" hidden>
+
+      <!-- Work-statusbar (analysis title + steps/tokens/turn counters +
+           "+ New drawing" button) — hidden so the analysis page no
+           longer surfaces engine internals to the user. The DOM stays
+           intact because app.js writes to step-count / token-count /
+           status-title etc. as the SSE stream runs; with the parent
+           hidden the writes are inert UI-wise but the JS code path is
+           unchanged. Re-enable by removing the `hidden` attribute. -->
+      <div class="work-statusbar" hidden>
+        <div class="sb-left">
+          <div class="spinner" id="status-spinner" aria-hidden="true"></div>
+          <div class="sb-titles">
+            <div class="sb-title" id="status-title" data-i18n="status.analyzing">Analyzing your drawing…</div>
+            <div class="sb-file" id="status-file"></div>
+          </div>
+        </div>
+        <div class="sb-right">
+          <span class="chip chip-num"><span class="chip-label" data-i18n="status.steps">Steps</span><span id="step-count">0</span></span>
+          <span class="chip chip-num"><span class="chip-label" data-i18n="status.tokens">Tokens</span><span id="token-count">0</span></span>
+          <span class="chip chip-num" id="turn-pill" hidden><span class="chip-label" data-i18n="status.turn">Turn</span><span id="turn-count">1</span></span>
+          <button id="new-upload-btn" class="ghost-btn" hidden>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12M4 10h12"/></svg>
+            <span data-i18n="status.new">New drawing</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stream error banner — shown when a pipeline-time failure arrives
+           via SSE (e.g. geometry ValueError, site-plan rejected). Sits above
+           the reviewer banner so it's the first thing the reviewer sees. -->
+      <section id="stream-error-banner" class="stream-error-banner" hidden>
+        <div class="seb-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v4M12 16h.01" />
+          </svg>
+        </div>
+        <div class="seb-body">
+          <div class="seb-title" data-i18n="stream_error.title">تعذّر إتمام التحليل</div>
+          <div class="seb-msg" id="stream-error-msg"></div>
+        </div>
+        <button type="button" id="stream-error-retry" class="seb-retry">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10a7 7 0 1 1 2 4.9M3 15v-5h5"/></svg>
+          <span data-i18n="stream_error.retry">ابدأ من جديد</span>
+        </button>
+      </section>
+
+      <!-- Reviewer summary banner — full-width across the work view, above
+           both the live-thinking and results panes. Populated by reviewer.js
+           as the three pipelines stream results in, and moved here from the
+           right pane so it spans the entire screen width. -->
+      <section id="reviewer-banner" class="reviewer-banner">
+        <div class="rb-head">
+          <div class="rb-head-left">
+            <!-- Status pill stays at the top alone — it's the "what
+                 action is needed" signal, on the leading line for both
+                 reviewer + submitter views. -->
+            <div class="rb-head-pills">
+              <span class="rb-status rb-status--pending" id="rb-status">
+                <span class="rb-status-dot"></span>
+                <span id="rb-status-text" data-i18n="rb.status.pending">Pending review</span>
+              </span>
+            </div>
+            <!-- Title row: dashboard-style application name (e.g.
+                 "قطعة 2014 · بدران") with the application-type tag
+                 sitting inline next to it. The type tag uses the
+                 plain modifier (no brand color, no dot) so it reads
+                 as a quiet sub-label rather than competing with the
+                 title. -->
+            <div class="rb-title-row">
+              <h2 class="rb-title" id="rb-title" data-i18n="rb.title">Application summary</h2>
+              <span class="rb-eyebrow rb-eyebrow--plain" id="rb-type-pill">
+                <span id="rb-type-text">New construction</span>
+              </span>
+            </div>
+          </div>
+          <!-- Right side of the banner head — currently only the
+               measurement-viewer launcher. The button is hidden by
+               default and only un-hidden by app.js when the loaded
+               analysis exposes a `pdf_measurement` file slot (i.e.
+               the submitter chose to attach the optional 5th file). -->
+          <div class="rb-head-right">
+            <button type="button" id="rb-measure-btn" class="rb-measure-btn" hidden>
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 13l10-10 4 4-10 10z"/>
+                <path d="M5.5 10.5l1.5 1.5M8 8l1.5 1.5M10.5 5.5L12 7"/>
+              </svg>
+              <span data-i18n="rb.measure.open">فتح أداة القياس</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Application identity — every identity field we can extract across
+             the deed + additional PDFs, de-duplicated. Each cell is its own
+             bordered card with a bilingual label row (English on the leading
+             edge, Arabic on the trailing edge). Populated by app.js via the
+             aggregator; hidden cells drop out when the value is absent. -->
+        <!-- Application details — single consolidated section combining
+             what was previously two grids (identity + project & building).
+             Field order matches the user's intake spec. Anything else the
+             extractors surface (neighborhood, project_name, engineer, …)
+             flows into the "بيانات أخرى مستخرجة" accordion below. -->
+        <div class="rb-section-label" dir="rtl">
+          <span data-i18n="rb.section.details">تفاصيل الطلب</span>
+          <div class="spinner rb-section-spinner" id="rb-identity-spinner" aria-hidden="true"></div>
+        </div>
+        <div class="rb-identity" id="rb-identity-grid">
+          <div class="rb-id-item" data-field="plot_number">
+            <div class="rb-id-label-row">
+              <span class="rb-id-label" data-i18n="pdf.field.plot_number">Plot number</span>
+            </div>
+            <span class="rb-id-value" id="rb-plot" dir="auto">—</span>
+          </div>
+          <div class="rb-id-item" data-field="basin_number">
+            <div class="rb-id-label-row">
+              <span class="rb-id-label" data-i18n="pdf.field.basin_number">Basin number</span>
+            </div>
+            <span class="rb-id-value" id="rb-basin-number" dir="auto">—</span>
+          </div>
+          <div class="rb-id-item" data-field="basin_name">
+            <div class="rb-id-label-row">
+              <span class="rb-id-label" data-i18n="pdf.field.basin_name">Basin name</span>
+            </div>
+            <span class="rb-id-value" id="rb-basin-name" dir="auto">—</span>
+          </div>
+          <!-- village_name tile removed — اسم ورقم القرية below carries
+               the same info plus the village number, and the bare name
+               flows into the "بيانات أخرى مستخرجة" accordion. -->
+          <!-- Combined village number + name — derived: prefers site
+               plan's pre-combined `village` (e.g. "118 بدران"), falls
+               back to deed `village_name` alone. -->
+          <div class="rb-id-item" data-field="village_combined">
+            <div class="rb-id-label-row">
+              <span class="rb-id-label" data-i18n="pdf.field.village_combined">Village (number + name)</span>
+            </div>
+            <span class="rb-id-value" id="rb-village-combined" dir="auto">—</span>
+          </div>
+          <div class="rb-id-item" data-field="owner">
+            <div class="rb-id-label-row">
+              <span class="rb-id-label" data-i18n="pdf.field.owner">Owner</span>
+            </div>
+            <span class="rb-id-value" id="rb-owner" dir="auto">—</span>
+          </div>
+          <!-- building_type tile removed — folded into the
+               "بيانات أخرى مستخرجة" accordion when the extractor finds
+               it (it isn't reliably present on a land deed). -->
+          <div class="rb-id-item" data-field="zoning_region">
+            <div class="rb-id-label-row">
+              <span class="rb-id-label" data-i18n="pdf.field.zoning_region">Zoning region</span>
+            </div>
+            <span class="rb-id-value" id="rb-zoning-region" dir="auto">—</span>
+          </div>
+          <!-- Street name — extracted from the regulatory site plan and/or
+               deed where available. Renders "—" until extraction surfaces it.
+               Sits in the slot رقم التسجيل used to occupy; registration_number
+               now renders inside the "بيانات أخرى مستخرجة" accordion. -->
+          <div class="rb-id-item" data-field="street_name">
+            <div class="rb-id-label-row">
+              <span class="rb-id-label" data-i18n="pdf.field.street_name">Street name</span>
+            </div>
+            <span class="rb-id-value" id="rb-street-name" dir="auto">—</span>
+          </div>
+          <div class="rb-id-item" data-field="document_date">
+            <div class="rb-id-label-row">
+              <span class="rb-id-label" data-i18n="pdf.field.document_date">Document date</span>
+            </div>
+            <span class="rb-id-value" id="rb-document-date" dir="auto">—</span>
+          </div>
+          <!-- Building number — extracted from the regulatory site plan
+               and/or deed where available. Renders "—" until extraction
+               surfaces it. -->
+          <div class="rb-id-item" data-field="building_number">
+            <div class="rb-id-label-row">
+              <span class="rb-id-label" data-i18n="pdf.field.building_number">Building number</span>
+            </div>
+            <span class="rb-id-value" id="rb-building-number" dir="auto">—</span>
+          </div>
+          <!-- Number of streets — derived from the CAD geometry (count of
+               lot edges classified as street-facing by street_classifier).
+               Populated by reviewer.js applyCad from
+               cad.compliance.edge_classifications. Stays "—" until the
+               compliance pipeline runs (i.e. site plan was extractable). -->
+          <div class="rb-id-item" data-field="num_streets">
+            <div class="rb-id-label-row">
+              <span class="rb-id-label" data-i18n="pdf.field.num_streets">Number of streets</span>
+            </div>
+            <span class="rb-id-value" id="rb-num-streets" dir="auto">—</span>
+          </div>
+        </div>
+
+        <!-- Building & project section was merged into the unified
+             "تفاصيل الطلب" grid above. The hidden anchors remain only so
+             legacy code paths that look up rb-building-label /
+             rb-building-grid don't crash; they're never displayed. -->
+        <div id="rb-building-label" hidden></div>
+        <div id="rb-building-grid" hidden></div>
+
+        <!-- Other extracted data — anything else the extractor surfaced that
+             isn't one of the structured fields above, deduped across every
+             uploaded PDF. Hidden entirely when empty. -->
+        <details class="rb-other" id="rb-other" hidden>
+          <summary dir="rtl">بيانات أخرى مستخرجة</summary>
+          <!-- Renders as tiles in the same grid layout as the top
+               "تفاصيل الطلب" section, but stays collapsed inside the
+               accordion until the reviewer expands it. -->
+          <div class="rb-identity rb-other-grid" id="rb-other-list"></div>
+        </details>
+
+        <!-- Main analysis: setback chart (left) + KPIs + per-side setbacks (right).
+             The chart img#drawing-img was relocated here from the results pane;
+             this is now its only location. -->
+        <div class="rb-main-analysis">
+          <div class="rb-analysis-chart">
+            <div class="drawing-panel">
+              <!-- Loading placeholder — reserves the chart's space from the
+                   moment the page loads so the layout doesn't shift when the
+                   image arrives. Hidden by JS once drawing-img.src is set. -->
+              <div class="drawing-loading" id="drawing-loading">
+                <div class="spinner spinner--large" aria-hidden="true"></div>
+                <span data-i18n="drawing.loading">Preparing setback visualization…</span>
+              </div>
+              <!-- Interactive SVG renderer. Pure geometry + mouse
+                   navigation: wheel to zoom (cursor-anchored), drag to
+                   pan. The only chrome is a single ruler button that
+                   opens the full-screen measurement viewer. Hidden when
+                   no geometry_json exists (old archived analyses) — the
+                   PNG fallback below takes over in that case. -->
+              <div class="drawing-svg-wrap" id="drawing-svg-wrap" hidden>
+                <svg id="drawing-svg" xmlns="http://www.w3.org/2000/svg"
+                     preserveAspectRatio="xMidYMid meet"
+                     role="img"
+                     aria-label="Setback visualization">
+                </svg>
+                <button type="button" class="smv-launcher" id="smv-launcher"
+                        title="تفعيل / إلغاء وضع القياس" aria-label="Toggle measurement mode" aria-pressed="false">
+                  <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="2.5" y="7.5" width="15" height="5" rx="1.2"/>
+                    <path d="M5.5 7.5v2M8.5 7.5v2M11.5 7.5v2M14.5 7.5v2"/>
+                  </svg>
+                </button>
+                <!-- Inline measurement tool selector — a small vertical
+                     stack that sits directly under the ruler launcher.
+                     Two icon-only buttons (distance / area). Hint text
+                     and undo/clear/exit are intentionally omitted —
+                     keyboard shortcuts (Z = undo, ESC = exit, M/A =
+                     tool switch) cover the same actions. -->
+                <div class="smv-bar" id="smv-bar" hidden role="tablist" aria-label="أدوات القياس">
+                  <button type="button" class="smv-bar-btn smv-bar-btn-tool is-active" id="smv-tool-distance" data-tool="distance"
+                          role="tab" aria-selected="true"
+                          title="قياس المسافة (M)" aria-label="قياس المسافة">
+                    <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6v8M16 6v8M4 10h12"/></svg>
+                  </button>
+                  <button type="button" class="smv-bar-btn smv-bar-btn-tool" id="smv-tool-area" data-tool="area"
+                          role="tab" aria-selected="false"
+                          title="قياس المساحة (A)" aria-label="قياس المساحة">
+                    <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3.5,7 10,3 16.5,7.5 14,16 6,15.5"/></svg>
+                  </button>
+                </div>
+                <!-- Measurement list — appears under the tool selector when
+                     measure mode is on AND at least one measurement has
+                     been placed. Each row shows an icon (matching the
+                     tool that made it), the value, and a × to delete.
+                     Hovering a row highlights the corresponding mark on
+                     the chart. Hidden when empty so it stays out of the
+                     way. Populated by _renderMeasurementList() in app.js. -->
+                <div class="smv-list" id="smv-list" hidden role="list" aria-label="القياسات"></div>
+              </div>
+              <img id="drawing-img" alt="Setback visualization" />
+              <!-- Chart-expand handle — vertical pill on the panel-facing
+                   edge of the drawing. Click to expand the chart so it
+                   spans the full width of the analysis section, hiding
+                   the KPI/setbacks column beside it. Click again to
+                   collapse back to the two-column layout. The
+                   `is-chart-expanded` class is toggled on
+                   .rb-main-analysis (handled in app.js). -->
+              <button type="button" class="rb-chart-expand-toggle" id="rb-chart-expand-toggle"
+                      title="توسيع/طيّ المخطط" aria-label="Toggle chart expansion" aria-pressed="false">
+                <svg viewBox="0 0 12 16" width="10" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M8 3l-4 5 4 5"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="rb-analysis-right">
+            <!-- Key numbers: coverage, fines, totals -->
+            <div class="rb-section-label" dir="rtl">
+              <span data-i18n="rb.section.kpis">المؤشرات الرئيسية</span>
+              <div class="spinner rb-section-spinner" id="rb-kpis-spinner" aria-hidden="true"></div>
+            </div>
+            <div class="rb-kpis">
+              <!-- Building area — single tile comparing CAD-actual vs the
+                   allowed maximum, derived as deed lot area × site-plan
+                   coverage ratio (i.e. the same constraint as the Coverage
+                   tile but expressed in m² for fast eyeballing). -->
+              <div class="rb-kpi rb-kpi--compare" id="rb-building-area-card" data-state="pending">
+                <div class="rb-kpi-label" data-i18n="rb.kpi.building_area">Building area</div>
+                <div class="rb-kpi-compare-row">
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-building-area">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.actual_cad">Actual (CAD)</div>
+                  </div>
+                  <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-building-area-allowed">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.allowed_derived">Allowed (deed × coverage %)</div>
+                  </div>
+                </div>
+                <div class="rb-kpi-compare-status" id="rb-building-area-status" data-state="pending" dir="rtl">
+                  <span data-i18n="rb.compare.pending">Waiting for values</span>
+                </div>
+              </div>
+              <!-- Lot area — single tile, two values inside.
+                   Left = CAD geometry, right = deed; status strip below
+                   says whether they agree. Tolerance matches the
+                   server-side deed_cad_lot_area_mismatch validator. -->
+              <div class="rb-kpi rb-kpi--compare" id="rb-lot-area-card" data-state="pending">
+                <div class="rb-kpi-label" data-i18n="rb.kpi.lot_area">Lot area</div>
+                <div class="rb-kpi-compare-row">
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-lot-area">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.hint.from_cad">From CAD</div>
+                  </div>
+                  <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-lot-area-deed">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.hint.from_deed">From سند التسجيل</div>
+                  </div>
+                </div>
+                <div class="rb-kpi-compare-status" id="rb-lot-area-status" data-state="pending" dir="rtl">
+                  <span data-i18n="rb.lotcheck.pending">Waiting for both values</span>
+                </div>
+              </div>
+              <!-- Coverage ratio — single tile comparing CAD-actual vs the
+                   max allowed by the regulatory site plan. -->
+              <div class="rb-kpi rb-kpi--compare" id="rb-coverage-card" data-state="pending">
+                <div class="rb-kpi-label" data-i18n="rb.kpi.coverage">Coverage</div>
+                <div class="rb-kpi-compare-row">
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-coverage">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.actual_cad">Actual (CAD)</div>
+                  </div>
+                  <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-coverage-allowed">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.allowed_site_plan">Allowed (site plan)</div>
+                  </div>
+                </div>
+                <div class="rb-kpi-compare-status" id="rb-coverage-status" data-state="pending" dir="rtl">
+                  <span data-i18n="rb.compare.pending">Waiting for values</span>
+                </div>
+              </div>
+              <!-- Number of floors — single tile comparing the floor plan's
+                   counted floors vs the regulatory max from the site plan. -->
+              <div class="rb-kpi rb-kpi--compare" id="rb-num-floors-card" data-state="pending">
+                <div class="rb-kpi-label" data-i18n="rb.kpi.num_floors">Number of floors</div>
+                <div class="rb-kpi-compare-row">
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-num-floors-actual">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.actual_floor_plan">Actual (floor plan)</div>
+                  </div>
+                  <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-num-floors-allowed">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.allowed_site_plan">Allowed (site plan)</div>
+                  </div>
+                </div>
+                <div class="rb-kpi-compare-status" id="rb-num-floors-status" data-state="pending" dir="rtl">
+                  <span data-i18n="rb.compare.pending">Waiting for values</span>
+                </div>
+              </div>
+              <!-- Floor coverage ratio — single tile comparing the
+                   computed ratio (Σ floor area ÷ lot area) vs the allowed
+                   floor_ratio_pct from the regulatory site plan. Placed
+                   here (before the setbacks / fine / printed-total row)
+                   so it shares a row with another compare tile rather
+                   than landing alone at the bottom of the grid. -->
+              <div class="rb-kpi rb-kpi--compare" id="rb-floor-coverage-card" data-state="pending">
+                <div class="rb-kpi-label" data-i18n="rb.kpi.floor_coverage">Floor coverage ratio</div>
+                <div class="rb-kpi-compare-row">
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-floor-computed">—</div>
+                    <div class="rb-kpi-compare-source" id="rb-floor-hint" data-i18n="rb.hint.floors_over_lot">Floors ÷ lot</div>
+                  </div>
+                  <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-floor-coverage-allowed">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.allowed_site_plan">Allowed (site plan)</div>
+                  </div>
+                </div>
+                <div class="rb-kpi-compare-status" id="rb-floor-coverage-status" data-state="pending" dir="rtl">
+                  <span data-i18n="rb.compare.pending">Waiting for values</span>
+                </div>
+              </div>
+              <!-- Compliance tiles: required setbacks (from site-plan PDF) +
+                   actual fine computed by the geometry engine. The fine here
+                   is the authoritative compliance number — distinct from the
+                   threshold-based "Setback fines" tile above which is the
+                   reviewer's quick what-if. Hidden until the site-plan PDF
+                   has been extracted. -->
+              <div class="rb-kpi rb-kpi--required" id="rb-required-tile" hidden>
+                <div class="rb-kpi-label" data-i18n="rb.kpi.required_setbacks">Required setbacks</div>
+                <div class="rb-kpi-value rb-kpi-value--small" id="rb-required-values">—</div>
+                <div class="rb-kpi-hint" data-i18n="rb.hint.from_site_plan">From مخطط موقع تنظيمي</div>
+              </div>
+              <div class="rb-kpi rb-kpi--compliance" id="rb-compliance-tile" hidden>
+                <div class="rb-kpi-label" data-i18n="rb.kpi.compliance_fine">Compliance fine</div>
+                <div class="rb-kpi-value" id="rb-compliance-fine">—</div>
+                <div class="rb-kpi-hint" id="rb-compliance-hint" data-i18n="rb.hint.compliance_clean">Within required setbacks</div>
+              </div>
+              <div class="rb-kpi">
+                <div class="rb-kpi-label" data-i18n="rb.kpi.floor_printed">Floors total (printed)</div>
+                <div class="rb-kpi-value" id="rb-floor-printed">—</div>
+                <div class="rb-kpi-hint" data-i18n="rb.hint.from_floor_plan">From floor-area plan</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Review panel — reviewer-facing card. Moved here as a sibling
+             of .rb-main-analysis (out of the right-side column) so it
+             spans the full banner width below the chart + KPIs row. When
+             the pipeline
+             surfaces missing-data rows, the table appears here and the
+             action bar flips to "إعادة للمقدّم للتعديل". When no issues
+             exist, only Approve / Reject are shown. -->
+        <section id="review-panel" class="review-panel review-panel--full">
+          <div class="rp-head" dir="rtl">
+            <span class="rp-title" data-i18n="rp.title">مراجعة الطلب</span>
+            <!-- Status pill moved up to the banner head (rb-head-pills,
+                 next to the application-type eyebrow). reviewer.js's
+                 setStatusOnBanner() looks up by id, so the move is
+                 transparent to JS. -->
+          </div>
+
+          <!-- Rounds panel — round-centric consolidation of the legacy
+               timeline + documents + issues sections. Each round renders
+               as one card containing: header (round#, status, actors,
+               date), files (with AI/reviewer note count badges), and
+               (for the active round) the existing #issues-panel docked
+               at the bottom so all action wiring keeps working. Past
+               rounds collapse into a <details> summary. Rendered by
+               app.js's renderRoundsPanel(). -->
+          <div id="rounds-panel" class="rounds-panel" hidden dir="rtl"></div>
+
+          <!-- Legacy communication timeline — kept in DOM as fallback
+               but hidden by .rp-legacy-hidden once the rounds panel
+               renders. Populated by app.js's renderReviewTimeline. -->
+          <div id="rp-timeline" class="rp-timeline rp-legacy">
+            <div class="rp-timeline-head" dir="rtl">
+              <span class="rp-timeline-title">سجل الاتصالات والقرارات</span>
+              <span class="rp-timeline-count" id="rp-timeline-count"></span>
+            </div>
+            <ol class="rp-timeline-list" id="rp-timeline-list">
+              <li class="rp-timeline-empty" dir="rtl">لا توجد أحداث بعد.</li>
+            </ol>
+          </div>
+
+          <!-- Documents panel — current-round files (downloadable) +
+               collapsible previous-round versions. Populated by
+               app.js's renderDocumentsPanel from /api/analyses/{id}/history.
+               Hidden until the first fetch lands. Shows for both
+               reviewer (audit) and submitter (verify what was sent). -->
+          <section id="documents-panel" class="dp rp-legacy" hidden dir="rtl">
+            <header class="dp-header">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M11 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4z"/>
+                <path d="M11 2v2h2"/>
+              </svg>
+              <span class="dp-title" data-i18n="dp.title">وثائق الطلب</span>
+              <span class="dp-round-badge" id="dp-round-badge" hidden></span>
+            </header>
+            <ul class="dp-files" id="dp-files-current"></ul>
+            <details class="dp-prev" id="dp-prev-rounds" hidden>
+              <summary class="dp-prev-summary">
+                <svg class="dp-chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 3l4 5-4 5"/>
+                </svg>
+                <span data-i18n="dp.prev.toggle">عرض النسخ السابقة من الوثائق</span>
+                <span class="dp-prev-count" id="dp-prev-count"></span>
+              </summary>
+              <ol class="dp-prev-list" id="dp-prev-list"></ol>
+            </details>
+          </section>
+
+          <!-- ========================================================
+               Issues panel — single shell that owns:
+                 · header chip with status + count + primary CTA
+                 · the reviewer's freeform overall note (returned apps)
+                 · the per-issue cards (replaces the old 4-col table)
+                 · the "✓ resolved" strip for keys gone since last round
+                 · the role-aware action footer (approve / needs-rev / reject
+                   for reviewer; edit-files / submit / submit-anyway for
+                   submitter — with inline confirms, no separate dialogs)
+                 · the inline partial-resubmit form (slides in when the
+                   submitter clicks "edit files")
+               Rendered by app.js's renderIssuesPanel(); state machine
+               in reviewer.js's initSubmitterActions/initReviewerActions.
+               ======================================================== -->
+          <section id="issues-panel" class="ip" dir="rtl" hidden>
+
+            <!-- Header — status line + count + primary CTA pinned right.
+                 The CTA is shown only when the active role has one
+                 (submitter w/ open issues → "edit files"; reviewer with
+                 no issues → "approve" gets promoted into the footer). -->
+            <header class="ip-header">
+              <div class="ip-status">
+                <svg class="ip-status-icon" id="ip-status-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="10" cy="10" r="8"/>
+                  <path d="M10 6v4M10 13.5h.01"/>
+                </svg>
+                <div class="ip-status-text">
+                  <div class="ip-status-title" id="ip-status-title"></div>
+                  <div class="ip-status-sub" id="ip-status-sub" hidden></div>
+                </div>
+              </div>
+              <button type="button" id="ip-cta" class="ip-btn ip-btn--primary" hidden>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 13l3-3 6-6 3 3-6 6-3 3zM3 13l-1 1h2l3-1"/>
+                </svg>
+                <span id="ip-cta-label" data-i18n="ip.cta.edit">تعديل الملفات وإعادة الرفع</span>
+              </button>
+            </header>
+
+            <!-- Pre-analysis block banner — shown only when the agent was
+                 halted by a blocking issue (missing required CAD layer or
+                 deed↔site-plan identity mismatch). Drives a focused
+                 "fix before analysis" view: chart/KPIs hidden via the
+                 body.analysis-blocked class, only blocking rows shown,
+                 the existing تعديل الملفات وإعادة الرفع CTA stays as the
+                 single forward action. -->
+            <div id="ip-blocked-banner" class="ip-blocked-banner" hidden dir="rtl">
+              <svg class="ip-blocked-banner-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 2L1 17h18L10 2z"/>
+                <path d="M10 8v4M10 14h.01"/>
+              </svg>
+              <div class="ip-blocked-banner-text">
+                <div class="ip-blocked-banner-title">بحاجة إلى تصحيح قبل التحليل</div>
+                <div class="ip-blocked-banner-sub" id="ip-blocked-banner-sub">لا يمكن متابعة التحليل قبل معالجة الملاحظات أدناه. صحّح الملفات وأعد الرفع.</div>
+              </div>
+            </div>
+
+            <!-- Reviewer-only chip: "submitter sent this with known
+                 issues". Replaces the old #rp-known-issues-banner block. -->
+            <div id="ip-known-chip" class="ip-chip ip-chip--known" hidden>
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 2L1 14h14L8 2z"/>
+                <path d="M8 6.5v3.5M8 12h.01"/>
+              </svg>
+              <span data-i18n="ip.chip.known_issues">أُرسل هذا الطلب رغم وجود ملاحظات معلومة من المقدّم</span>
+            </div>
+
+            <!-- Reviewer's overall freeform note — visible only to the
+                 submitter when status === needs_revision. The auto-
+                 composed [doc]: issue — action concatenation is GONE;
+                 this stripe holds only what the reviewer typed. -->
+            <div id="ip-reviewer-note" class="ip-rn" hidden>
+              <div class="ip-rn-head">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.5 4h11v8h-7l-2.5 2.5V12h-1.5z"/>
+                </svg>
+                <div class="ip-rn-titles">
+                  <span class="ip-rn-title" data-i18n="ip.rn.title">ملاحظة عامة من المراجع</span>
+                  <span class="ip-rn-by" id="ip-rn-by"></span>
+                </div>
+              </div>
+              <div class="ip-rn-body" id="ip-rn-body"></div>
+            </div>
+
+            <!-- Mandatory cards — populated by renderIssuesPanel() with
+                 only the AI rows the reviewer has pushed (endorsed=true)
+                 and any rows the consultant must address. Un-pushed AI
+                 rows render below in #ip-suggestions instead. -->
+            <ol class="ip-cards" id="ip-cards"></ol>
+
+            <!-- Advisory suggestions — un-pushed AI notes. Reviewer sees a
+                 "push to mandatory" button per row; the consultant sees
+                 the same list as advisory only (no actions). Collapsed
+                 by default; opened state survives re-renders by JS. -->
+            <details id="ip-suggestions" class="ip-suggestions" hidden dir="rtl">
+              <summary class="ip-suggestions-summary">
+                <svg class="ip-suggestions-chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 3l4 5-4 5"/>
+                </svg>
+                <svg class="ip-suggestions-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
+                  <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+                </svg>
+                <span class="ip-suggestions-title" id="ip-suggestions-title"></span>
+              </summary>
+              <ol class="ip-suggestions-list" id="ip-suggestions-list"></ol>
+            </details>
+
+            <!-- Resolved strip — keys that were in the previous round's
+                 missing_data but disappeared this round. Hidden until
+                 renderIssuesPanel() finds at least one. -->
+            <div id="ip-resolved" class="ip-resolved" hidden>
+              <div class="ip-resolved-head">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 8.5l3.3 3L13 5"/>
+                </svg>
+                <span class="ip-resolved-title" id="ip-resolved-title"></span>
+              </div>
+              <ul class="ip-resolved-list" id="ip-resolved-list"></ul>
+            </div>
+
+            <!-- Reviewer action footer. Owns the freeform overall-note
+                 textarea + the three decision buttons + the inline
+                 approve-with-open-issues confirm. The legacy
+                 #rp-actions-reviewer / #rp-notes blocks are gone — this
+                 is the single home for reviewer decisions. -->
+            <footer id="ip-actions-reviewer" class="ip-actions ip-actions--reviewer" hidden>
+              <label class="ip-rev-note-label" for="ip-rev-note-input">
+                <span data-i18n="ip.rev.note_label">ملاحظة عامة للمقدّم</span>
+                <span class="ip-rev-note-optional" data-i18n="ip.rev.note_optional">(اختياري)</span>
+              </label>
+              <textarea
+                id="ip-rev-note-input"
+                class="ip-rev-note-input"
+                rows="2"
+                maxlength="2000"
+                dir="rtl"
+                data-i18n-placeholder="ip.rev.note_placeholder"
+                placeholder="اكتب ملاحظة موجزة (اختياري). الملاحظات التفصيلية لكل بند تُكتب داخل البطاقات أعلاه."
+              ></textarea>
+              <div class="ip-rev-buttons">
+                <button type="button" id="ip-approve" class="ip-btn ip-btn--approve">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.3 3L13 5"/></svg>
+                  <span id="ip-approve-label" data-i18n="rb.approve">موافقة</span>
+                </button>
+                <button type="button" id="ip-needs-revision" class="ip-btn ip-btn--revision">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a5 5 0 0 1 9-3M12 5v3h-3"/><path d="M13 5a5 5 0 0 1-9 3M4 11V8h3"/></svg>
+                  <span data-i18n="rp.needs_revision">إعادة للمقدّم للتعديل</span>
+                </button>
+                <button type="button" id="ip-reject" class="ip-btn ip-btn--reject">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+                  <span data-i18n="rb.reject">رفض</span>
+                </button>
+              </div>
+              <!-- Inline confirm — slides in when reviewer clicks Approve
+                   while open issues exist. Persists approved_with_open_issues=true. -->
+              <div id="ip-confirm-approve" class="ip-confirm" hidden>
+                <p>
+                  <span data-i18n="ip.confirm.approve.msg_pre">هذا الطلب يحتوي</span>
+                  <strong id="ip-confirm-approve-count">0</strong>
+                  <span data-i18n="ip.confirm.approve.msg_post">بنود لم تُحلَّ. هل تريد الموافقة رغم ذلك؟</span>
+                </p>
+                <div class="ip-confirm-actions">
+                  <button type="button" id="ip-confirm-approve-cancel" class="ip-btn ip-btn--ghost" data-i18n="ip.confirm.cancel">إلغاء</button>
+                  <button type="button" id="ip-confirm-approve-yes" class="ip-btn ip-btn--warn" data-i18n="ip.confirm.approve.yes">نعم، موافقة مع ملاحظات</button>
+                </div>
+              </div>
+              <!-- Inline confirm for Reject (writes the freeform note as
+                   reason for rejection). Reused for Needs-Revision when
+                   the reviewer skipped the textarea. -->
+              <div id="ip-confirm-reject" class="ip-confirm" hidden>
+                <p data-i18n="ip.confirm.reject.msg">سيتم رفض الطلب نهائيًا — هذا قرار لا يمكن التراجع عنه. هل أنت متأكد؟</p>
+                <div class="ip-confirm-actions">
+                  <button type="button" id="ip-confirm-reject-cancel" class="ip-btn ip-btn--ghost" data-i18n="ip.confirm.cancel">إلغاء</button>
+                  <button type="button" id="ip-confirm-reject-yes" class="ip-btn ip-btn--reject" data-i18n="ip.confirm.reject.yes">نعم، رفض</button>
+                </div>
+              </div>
+            </footer>
+
+            <!-- Submitter action footer. Owns the clean / has-issues
+                 sub-states + the inline submit-anyway confirm. -->
+            <footer id="ip-actions-submitter" class="ip-actions ip-actions--submitter" hidden>
+              <p class="ip-sub-clean-msg" id="ip-sub-clean-msg" hidden data-i18n="sub.preview.clean">
+                لم يرصد النظام الذكي أي ملاحظات على طلبك. يمكنك الآن إرساله للمراجع.
+              </p>
+              <div class="ip-sub-buttons">
+                <button type="button" id="ip-sub-submit-clean" class="ip-btn ip-btn--approve" hidden>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                  <span data-i18n="sub.preview.send">إرسال للمراجعة</span>
+                </button>
+                <button type="button" id="ip-sub-edit-files" class="ip-btn ip-btn--primary" hidden>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l3-3 6-6 3 3-6 6-3 3zM3 13l-1 1h2l3-1"/></svg>
+                  <span data-i18n="sub.preview.edit">تعديل الملفات وإعادة الرفع</span>
+                </button>
+                <button type="button" id="ip-sub-submit-anyway" class="ip-btn ip-btn--warn-ghost" hidden>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                  <span data-i18n="sub.preview.send_anyway">إرسال رغم الملاحظات</span>
+                </button>
+              </div>
+              <div id="ip-confirm-anyway" class="ip-confirm" hidden>
+                <p data-i18n="sub.preview.confirm.msg">
+                  تأكيد الإرسال: سيظهر طلبك في قائمة المراجع مع تنبيه «أُرسل مع ملاحظات معروفة من النظام الذكي»، وقد يستغرق القرار وقتًا أطول من المعتاد. هل تريد المتابعة؟
+                </p>
+                <div class="ip-confirm-actions">
+                  <button type="button" id="ip-confirm-anyway-cancel" class="ip-btn ip-btn--ghost" data-i18n="sub.preview.confirm.cancel">إلغاء</button>
+                  <button type="button" id="ip-confirm-anyway-yes" class="ip-btn ip-btn--warn" data-i18n="sub.preview.confirm.yes">نعم، إرسال للمراجعة</button>
+                </div>
+              </div>
+            </footer>
+
+            <!-- Inline partial-resubmit form — same drop zones as before
+                 (reused IDs so reviewer.js's initInlineEditForm keeps
+                 working unchanged), wrapped in the new panel shell.
+                 Opened by the panel's "edit files" CTA via reviewer.js's
+                 openInlineEditForm(); pre-checks specific slots when the
+                 user clicked an in-card "edit this document" link. -->
+            <div class="ip-edit" id="rp-submitter-edit" hidden dir="rtl">
+              <div class="rp-submitter-edit-head">
+                <h4 class="rp-submitter-edit-title" data-i18n="sub.preview.edit.title">رفع نسخة معدّلة من الملفات المعنيّة</h4>
+                <p class="rp-submitter-edit-sub" data-i18n="sub.preview.edit.sub">ارفع فقط الملفات التي رصد النظام ملاحظات عليها — سنحتفظ بالملفات الأخرى كما هي ونعيد تحليل المستجدّات.</p>
+              </div>
+              <form id="rp-submitter-edit-form" class="rp-submitter-edit-form">
+                <div class="rp-edit-grid drop-grid">
+                  <div class="drop-zone-wrap" id="rp-edit-cad-wrap" hidden>
+                    <label for="rp-edit-cad" class="drop-zone">
+                      <div class="drop-zone-inner">
+                        <div class="drop-icon-wrap">
+                          <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+                        </div>
+                        <input type="file" id="rp-edit-cad" accept=".dwg,.dxf,.dwf,.dwfx" hidden />
+                        <span class="drop-zone-eyebrow">CAD · مطلوب</span>
+                        <span class="drop-text" id="rp-edit-cad-text">تحميل رسم CAD</span>
+                        <span class="drop-hint">DWG · DXF · DWF · DWFx</span>
+                      </div>
+                    </label>
+                    <div class="rp-edit-current" id="rp-edit-cad-current"></div>
+                  </div>
+                  <div class="drop-zone-wrap" id="rp-edit-pdf_deed-wrap" hidden>
+                    <label for="rp-edit-pdf_deed" class="drop-zone drop-zone-pdf">
+                      <div class="drop-zone-inner">
+                        <div class="drop-icon-wrap">
+                          <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+                        </div>
+                        <input type="file" id="rp-edit-pdf_deed" accept=".pdf,application/pdf" hidden />
+                        <span class="drop-zone-eyebrow">سند التسجيل · PDF</span>
+                        <span class="drop-text" id="rp-edit-pdf_deed-text">تحميل سند التسجيل PDF</span>
+                        <span class="drop-hint">PDF</span>
+                      </div>
+                    </label>
+                    <div class="rp-edit-current" id="rp-edit-pdf_deed-current"></div>
+                  </div>
+                  <div class="drop-zone-wrap" id="rp-edit-pdf_floor-wrap" hidden>
+                    <label for="rp-edit-pdf_floor" class="drop-zone drop-zone-floor">
+                      <div class="drop-zone-inner">
+                        <div class="drop-icon-wrap">
+                          <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 9h17M9 3.5v17"/></svg>
+                        </div>
+                        <input type="file" id="rp-edit-pdf_floor" accept=".pdf,application/pdf" hidden />
+                        <span class="drop-zone-eyebrow">خطة مساحة الطابقية · PDF</span>
+                        <span class="drop-text" id="rp-edit-pdf_floor-text">تحميل خطة مساحة الطابقية PDF</span>
+                        <span class="drop-hint">PDF</span>
+                      </div>
+                    </label>
+                    <div class="rp-edit-current" id="rp-edit-pdf_floor-current"></div>
+                  </div>
+                  <div class="drop-zone-wrap" id="rp-edit-pdf_site_plan-wrap" hidden>
+                    <label for="rp-edit-pdf_site_plan" class="drop-zone drop-zone-site-plan">
+                      <div class="drop-zone-inner">
+                        <div class="drop-icon-wrap">
+                          <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 13l5-4 4 3 4-5 4 4"/></svg>
+                        </div>
+                        <input type="file" id="rp-edit-pdf_site_plan" accept=".pdf,application/pdf" hidden />
+                        <span class="drop-zone-eyebrow">مخطط موقع تنظيمي · PDF</span>
+                        <span class="drop-text" id="rp-edit-pdf_site_plan-text">تحميل مخطط موقع تنظيمي PDF</span>
+                        <span class="drop-hint">PDF</span>
+                      </div>
+                    </label>
+                    <div class="rp-edit-current" id="rp-edit-pdf_site_plan-current"></div>
+                  </div>
+                </div>
+
+                <div class="rp-edit-notes">
+                  <label for="rp-edit-notes-input" class="rp-edit-notes-label" dir="rtl">
+                    ملاحظات للمراجع <span class="rp-edit-notes-optional">(اختياري)</span>
+                  </label>
+                  <textarea
+                    id="rp-edit-notes-input"
+                    class="rp-edit-notes-input"
+                    rows="3"
+                    maxlength="2000"
+                    dir="auto"
+                    placeholder="اشرح ما تم تعديله في هذه النسخة لمساعدة المراجع."
+                  ></textarea>
+                  <div class="rp-edit-notes-hint" dir="rtl">
+                    <span id="rp-edit-notes-count">0</span> / 2000 حرف
+                  </div>
+                </div>
+                <div class="rp-submitter-edit-actions">
+                  <button type="button" id="rp-edit-cancel" class="rp-btn rp-btn--ghost" data-i18n="sub.preview.edit.cancel">إلغاء</button>
+                  <button type="submit" id="rp-edit-submit" class="rp-btn rp-btn--primary" disabled>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4 4 6-8"/></svg>
+                    <span data-i18n="sub.preview.edit.submit">رفع وإعادة التحليل</span>
+                  </button>
+                </div>
+                <div id="rp-edit-msg" class="rp-edit-msg" hidden></div>
+              </form>
+            </div>
+          </section>
+          <!-- /issues-panel -->
+        </section>
+      </section>
+
+      <!-- Full-width stack below the banner. Replaces the old two-column
+           work-grid (thinking | results). Live thinking became a collapsible
+           section that sits directly above Document intelligence. -->
+      <div class="work-stack">
+
+        <!-- Live thinking — collapsible, sits above Document intelligence.
+             Keeps its existing #feed wiring and streaming pulse intact. -->
+        <details id="live-thinking-section" class="live-thinking-section" open>
+          <summary class="live-thinking-summary">
+            <svg class="summary-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 3l3 3-3 3"/></svg>
+            <div class="live-thinking-head-text">
+              <h2 data-i18n="think.label">Live thinking</h2>
+              <span class="pane-sub" data-i18n="think.sub">Every tool call and AI reasoning, as it streams</span>
+            </div>
+            <div class="live-thinking-head-right">
+              <span class="pane-pulse" aria-hidden="true"></span>
+              <span class="pane-pulse-label" data-i18n="think.streaming">Streaming</span>
+            </div>
+          </summary>
+          <div class="live-thinking-body">
+            <div id="feed" class="feed" aria-live="polite"></div>
+          </div>
+        </details>
+
+        <!-- Document intelligence — lives OUTSIDE #result-content so each
+             PDF card is pre-rendered from the moment the work view loads.
+             Data arrives into the already-visible blocks, so the layout
+             never shifts as sections appear. Each card is full-width and
+             stacks vertically. -->
+        <section class="dash-row">
+          <div class="dash-row-head">
+            <span class="dash-row-dot dash-row-dot--docs" aria-hidden="true"></span>
+            <span class="dash-row-label" data-i18n="dash.docs">Document intelligence</span>
+            <span class="dash-row-hint" data-i18n="dash.docs.hint">extracted by AI from your PDFs</span>
+          </div>
+          <div class="dash-docs-grid">
+            <!-- The consolidated "Application data" view lives in the
+                 top reviewer banner (see #reviewer-banner above). The
+                 per-PDF cards below remain for traceability. -->
+
+            <!-- Floor-area plan section — always rendered; JS fills in content as it arrives -->
+            <details id="floor-section" class="pdf-section floor-section">
+              <summary class="pdf-head">
+                <svg class="summary-chevron pdf-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 3l3 3-3 3"/></svg>
+                <div class="pdf-head-left">
+                  <span class="pdf-label" data-i18n="floor.summary">Floor-area plan</span>
+                  <span class="pdf-sub" id="floor-sub" data-i18n="floor.reading">Reading the floor-area plan PDF…</span>
+                </div>
+                <div class="pdf-head-right">
+                  <span class="pdf-status" id="floor-status" data-i18n="step.status.running">running</span>
+                </div>
+              </summary>
+              <div class="pdf-body">
+                <div id="floor-loading" class="pdf-loading">
+                  <div class="spinner" aria-hidden="true"></div>
+                  <span data-i18n="floor.claude_reading">Reading the floor-area plan…</span>
+                </div>
+                <div id="floor-content" class="pdf-content floor-content" hidden>
+                  <div id="floor-totals" class="floor-totals"></div>
+                  <div id="floor-comparison" class="floor-comparison" hidden></div>
+                  <div id="floor-floors" class="floor-floors"></div>
+                </div>
+                <div id="floor-error-box" class="pdf-error" hidden></div>
+              </div>
+            </details>
+
+            <!-- PDF summary section — always rendered; JS fills in content as it arrives -->
+            <details id="pdf-section" class="pdf-section">
+              <summary class="pdf-head">
+                <svg class="summary-chevron pdf-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 3l3 3-3 3"/></svg>
+                <div class="pdf-head-left">
+                  <span class="pdf-label" data-i18n="pdf.summary">PDF summary</span>
+                  <span class="pdf-sub" id="pdf-sub" data-i18n="pdf.reading">Reading the land-record PDF…</span>
+                </div>
+                <div class="pdf-head-right">
+                  <span class="pdf-status" id="pdf-status" data-i18n="step.status.running">running</span>
+                </div>
+              </summary>
+              <div class="pdf-body">
+                <div id="pdf-loading" class="pdf-loading">
+                  <div class="spinner" aria-hidden="true"></div>
+                  <span data-i18n="pdf.claude_reading">Reading the PDF…</span>
+                </div>
+                <div id="pdf-content" class="pdf-content" hidden>
+                  <p id="pdf-summary-text" class="pdf-summary-text"></p>
+                  <div id="pdf-fields" class="pdf-fields"></div>
+                  <details id="pdf-other" class="pdf-other" hidden>
+                    <summary data-i18n="pdf.other">Other fields extracted</summary>
+                    <div id="pdf-other-list" class="pdf-other-list"></div>
+                  </details>
+                </div>
+                <div id="pdf-error-box" class="pdf-error" hidden></div>
+              </div>
+            </details>
+
+            <!-- Site-plan section (مخطط موقع تنظيمي) — always rendered, hidden body until extraction completes -->
+            <details id="site-plan-section" class="pdf-section site-plan-section" hidden>
+              <summary class="pdf-head">
+                <svg class="summary-chevron pdf-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 3l3 3-3 3"/></svg>
+                <div class="pdf-head-left">
+                  <span class="pdf-label" data-i18n="site_plan.summary">Regulatory site plan</span>
+                  <span class="pdf-sub" id="site-plan-sub" data-i18n="site_plan.reading">Reading the مخطط موقع تنظيمي…</span>
+                </div>
+                <div class="pdf-head-right">
+                  <span class="pdf-status" id="site-plan-status" data-i18n="step.status.running">running</span>
+                </div>
+              </summary>
+              <div class="pdf-body">
+                <div id="site-plan-loading" class="pdf-loading">
+                  <div class="spinner" aria-hidden="true"></div>
+                  <span data-i18n="site_plan.claude_reading">Reading the site-plan PDF…</span>
+                </div>
+                <div id="site-plan-content" class="pdf-content site-plan-content" hidden>
+                  <p id="site-plan-summary-text" class="pdf-summary-text"></p>
+                  <div id="site-plan-fields" class="pdf-fields"></div>
+                </div>
+                <div id="site-plan-error-box" class="pdf-error" hidden></div>
+              </div>
+            </details>
+
+            <!-- Additional PDFs section — always rendered; cards for each uploaded file appear inside -->
+            <details id="extras-section" class="pdf-section extras-section">
+              <summary class="pdf-head">
+                <svg class="summary-chevron pdf-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 3l3 3-3 3"/></svg>
+                <div class="pdf-head-left">
+                  <span class="pdf-label" data-i18n="extras.summary">Additional PDFs</span>
+                  <span class="pdf-sub" id="extras-sub" data-i18n="extras.reading">Reading additional PDFs…</span>
+                </div>
+                <div class="pdf-head-right">
+                  <span class="pdf-status" id="extras-status" data-i18n="step.status.running">running</span>
+                </div>
+              </summary>
+              <div class="pdf-body">
+                <div id="extras-list" class="extras-list"></div>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <!-- Real result — shown on `final`. Contains Claude's summary +
+             raw output (markdown / JSON). The PDF sections were moved up
+             so they always reserve their space. -->
+        <div id="result-content" class="result-content dashboard" hidden>
+
+          <!-- Hero: Claude's summary, full width -->
+          <details class="summary-details">
+            <summary class="summary-summary">
+              <svg class="summary-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 3l3 3-3 3"/></svg>
+              <span class="summary-summary-label" data-i18n="summary.claude">AI summary</span>
+            </summary>
+            <div id="summary-box" class="summary-box"></div>
+          </details>
+
+          <!-- Zone 4 — Raw output: markdown + JSON collapsibles -->
+          <section class="dash-row">
+            <div class="dash-row-head">
+              <span class="dash-row-dot dash-row-dot--reports" aria-hidden="true"></span>
+              <span class="dash-row-label" data-i18n="dash.reports">Raw output</span>
+              <span class="dash-row-hint" data-i18n="dash.reports.hint">full markdown report · raw JSON</span>
+            </div>
+            <div class="dash-reports-grid">
+              <details class="collapsible">
+                <summary data-i18n="report.markdown">Full markdown report</summary>
+                <pre id="report-md"></pre>
+              </details>
+              <details class="collapsible">
+                <summary data-i18n="report.json">Raw JSON</summary>
+                <pre id="report-json"></pre>
+              </details>
+            </div>
+          </section>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================  Error view  ========================= -->
+    <section id="error-card" class="error-card" hidden>
+      <div class="error-inner">
+        <div class="error-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v4M12 16h.01" />
+          </svg>
+        </div>
+        <div class="error-body">
+          <h2 data-i18n="error.title">Something went wrong</h2>
+          <pre id="error-message"></pre>
+          <button id="retry-btn" class="ghost-btn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10a7 7 0 1 1 2 4.9M3 15v-5h5"/></svg><span data-i18n="error.start_over">Start over</span></button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Image lightbox: clicking #drawing-img opens this overlay with the same
+       image scaled up (~2× the inline view, capped to viewport). Click the
+       backdrop, the × button, or press Escape to close. -->
+  <div id="img-lightbox" class="img-lightbox" hidden role="dialog" aria-modal="true" aria-labelledby="img-lightbox-img">
+    <button id="img-lightbox-close" class="img-lightbox-close" type="button" aria-label="Close enlarged view">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+    </button>
+    <img id="img-lightbox-img" alt="Setback visualization (enlarged)" />
+  </div>
+
+  <!-- =========================================================
+       Measurement viewer · in-browser PDF.js viewer for the
+       OPTIONAL measurement PDF that the submitter can attach as
+       the 5th upload. Pan / zoom / page nav + a custom measure
+       tool with first-use calibration. Opens via the "فتح أداة
+       القياس" button on the reviewer banner. Behaves like a route
+       change: slides in from the right and fully replaces the
+       work-view, so the user feels they navigated to a separate
+       page rather than opened a popup. × / Escape close it. The
+       viewer is only mounted when the analysis JSON exposes a
+       `pdf_measurement` slot.
+       ========================================================= -->
+  <div id="mv-modal" class="mv-modal" role="dialog" aria-modal="true" aria-labelledby="mv-title">
+    <div class="mv-shell" role="document">
+      <header class="mv-toolbar" dir="ltr">
+        <div class="mv-toolbar-left">
+          <h2 class="mv-title" id="mv-title" dir="rtl">أداة القياس</h2>
+          <span class="mv-filename" id="mv-filename" dir="auto"></span>
+        </div>
+        <div class="mv-toolbar-mid">
+          <button type="button" class="mv-btn" id="mv-prev" title="Previous page (←)" aria-label="Previous page">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l-6 6 6 6"/></svg>
+          </button>
+          <span class="mv-page" id="mv-page" dir="ltr">1 / 1</span>
+          <button type="button" class="mv-btn" id="mv-next" title="Next page (→)" aria-label="Next page">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l6 6-6 6"/></svg>
+          </button>
+          <span class="mv-divider" aria-hidden="true"></span>
+          <button type="button" class="mv-btn" id="mv-zoom-out" title="Zoom out (−)" aria-label="Zoom out">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6"/><path d="M14 14l3 3M6 9h6"/></svg>
+          </button>
+          <span class="mv-zoom" id="mv-zoom" title="Click for 100% (1)">100%</span>
+          <button type="button" class="mv-btn" id="mv-zoom-in" title="Zoom in (+)" aria-label="Zoom in">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6"/><path d="M14 14l3 3M9 6v6M6 9h6"/></svg>
+          </button>
+          <button type="button" class="mv-btn" id="mv-fit" title="Fit to window (0)" aria-label="Fit to window">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V4h4M16 8V4h-4M4 12v4h4M16 12v4h-4"/></svg>
+          </button>
+          <span class="mv-divider" aria-hidden="true"></span>
+          <button type="button" class="mv-btn mv-btn-mode" id="mv-tool-pan" data-mode="pan" title="Pan (P · hold Space for temporary pan · middle-mouse drag)" aria-label="Pan">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V5a1.5 1.5 0 0 1 3 0v4M10 8V4a1.5 1.5 0 0 1 3 0v5M13 8V5a1.5 1.5 0 0 1 3 0v8a4 4 0 0 1-4 4H9a3 3 0 0 1-2.4-1.2L4 12.5"/></svg>
+          </button>
+          <button type="button" class="mv-btn mv-btn-mode" id="mv-tool-measure" data-mode="measure" title="Measure (M · hold Shift for orthogonal lock)" aria-label="Measure">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l10-10 4 4-10 10z"/><path d="M5.5 10.5l1.5 1.5M8 8l1.5 1.5M10.5 5.5L12 7"/></svg>
+          </button>
+          <button type="button" class="mv-btn mv-btn-mode" id="mv-tool-area" data-mode="area" title="Area (A · click vertices, click first vertex / Enter / double-click to close)" aria-label="Area">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="3.5,7 10,3 16.5,7.5 14,16 6,15.5"/></svg>
+          </button>
+          <button type="button" class="mv-btn mv-btn-mode" id="mv-tool-calibrate" data-mode="calibrate" title="Calibrate scale (C)" aria-label="Calibrate scale">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h14M5 7v6M9 7v6M13 7v6M17 7v6"/></svg>
+          </button>
+          <button type="button" class="mv-btn mv-btn-mode" id="mv-tool-slope" data-mode="slope" title="Slope (S · pick 2 points then enter the height at each point — slope = (h₁ − h₂) ÷ length × 100%)" aria-label="Slope">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16h14"/><path d="M4 15L16 5"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="16" cy="5" r="1.4" fill="currentColor"/></svg>
+          </button>
+          <button type="button" class="mv-btn" id="mv-undo" title="Undo last measurement (Z)" aria-label="Undo last measurement">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10a6 6 0 0 1 12 0v1"/><path d="M4 10l3-3M4 10l3 3"/></svg>
+          </button>
+          <button type="button" class="mv-btn" id="mv-clear" title="Clear all measurements" aria-label="Clear all measurements">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10"/></svg>
+          </button>
+        </div>
+        <div class="mv-toolbar-right">
+          <button type="button" class="mv-close" id="mv-close" aria-label="Close measurement viewer">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+          </button>
+        </div>
+      </header>
+      <div class="mv-statusbar" id="mv-statusbar" dir="rtl">
+        <span class="mv-status-msg" id="mv-status-msg">حدد نقطتين لتقدير المسافة. للحصول على القيم الحقيقية، عاير المقياس أولاً.</span>
+        <span class="mv-status-scale" id="mv-status-scale" hidden>المقياس: <b id="mv-scale-text">—</b></span>
+
+        <!-- Inline calibrate prompt · takes over the status bar during
+             calibration instead of opening a modal. No backdrop, no
+             centered card — just the existing strip swapping into an
+             input row. Hidden by default. -->
+        <div class="mv-cal-inline" id="mv-cal-inline" hidden>
+          <span class="mv-cal-inline-label">أدخِل القيمة الحقيقية للبُعد المحدَّد:</span>
+          <span class="mv-cal-picked-inline" id="mv-cal-picked-inline" dir="ltr"></span>
+          <input type="text" class="mv-cal-input" id="mv-cal-input" inputmode="decimal" autocomplete="off" placeholder="مثال: 5 أو 5.25" />
+          <select class="mv-cal-unit" id="mv-cal-unit">
+            <option value="m" selected>متر</option>
+            <option value="cm">سم</option>
+            <option value="mm">مم</option>
+          </select>
+          <button type="button" class="mv-cal-btn mv-cal-btn-primary" id="mv-cal-confirm">تطبيق</button>
+          <button type="button" class="mv-cal-btn" id="mv-cal-cancel">إلغاء</button>
+        </div>
+      </div>
+      <div class="mv-stage" id="mv-stage" dir="ltr">
+        <div class="mv-canvas-wrap" id="mv-canvas-wrap">
+          <canvas id="mv-canvas" class="mv-canvas"></canvas>
+          <canvas id="mv-overlay" class="mv-overlay"></canvas>
+        </div>
+        <div class="mv-empty" id="mv-empty" hidden>جاري تحميل المستند…</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script src="/static/lib/pdfjs/pdf.min.js"></script>
+<script>
+  // PDF.js workerSrc must point at the matching worker file. Set on the
+  // namespace as soon as the library script loads so any subsequent
+  // getDocument() call can locate the worker.
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "/static/lib/pdfjs/pdf.worker.min.js";
+  }
+</script>
+<script src="/static/app.js?v=76"></script>
+<script src="/static/reviewer.js?v=35"></script>
+<script src="/static/measurement_viewer.js?v=14"></script>
+</body>
+</html>

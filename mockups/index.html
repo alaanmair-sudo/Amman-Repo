@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UI Design Proposals — Permit Review Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Archivo+Black&family=Special+Elite&family=JetBrains+Mono:wght@400;500&display=swap" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #0a0a0a;
+    color: #fafafa;
+    font-size: 14px;
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 60px 32px 80px; }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; color: #ccff00; font-size: 11px; letter-spacing: .25em; text-transform: uppercase; }
+  h1 { font-family: 'Archivo Black', sans-serif; font-size: 80px; line-height: 0.92; letter-spacing: -.04em; margin: 14px 0 18px; }
+  h1 .acid { color: #ccff00; }
+  .lead { color: #a0a0a0; max-width: 720px; margin: 0 0 14px; font-size: 15px; line-height: 1.7; }
+  .lead-meta { color: #707070; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .04em; max-width: 720px; line-height: 1.7; }
+
+  .section-h {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #ccff00;
+    letter-spacing: .25em; text-transform: uppercase; margin: 60px 0 18px;
+    padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,.1);
+    display: flex; align-items: baseline;
+  }
+  .section-h .small { color: #707070; margin-inline-start: 14px; font-size: 10.5px; letter-spacing: .12em; text-transform: none; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+
+  .card {
+    background: #141414; border: 1px solid rgba(255,255,255,.1); padding: 0;
+    transition: all .2s; text-decoration: none; color: inherit;
+    display: flex; flex-direction: column; min-height: 480px;
+    overflow: hidden; position: relative;
+  }
+  .card:hover { border-color: #ccff00; transform: translateY(-2px); }
+  .card:hover .card-num { color: #ccff00; }
+
+  .card-preview {
+    height: 180px; position: relative; overflow: hidden;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+
+  .preview-atlas {
+    background:
+      radial-gradient(ellipse 600px 400px at 30% 20%, rgba(255,180,80,.18), transparent 60%),
+      radial-gradient(ellipse 400px 300px at 70% 80%, rgba(212,165,116,.15), transparent 60%),
+      linear-gradient(135deg, #2a3a52 0%, #3d4d68 30%, #5a6b80 60%, #4a5870 100%);
+  }
+  .preview-blueprint {
+    background-color: #0e3a64;
+    background-image:
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px);
+    background-size: 16px 16px, 16px 16px, 80px 80px, 80px 80px;
+  }
+  .preview-reactor {
+    background: #0a0a0a;
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(255,255,255,.02) 3px, rgba(255,255,255,.02) 4px),
+      linear-gradient(rgba(204,255,0,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(204,255,0,.06) 1px, transparent 1px);
+    background-size: 100% 100%, 80px 80px, 80px 80px;
+  }
+  .preview-ide {
+    background: #0d1117;
+    background-image:
+      linear-gradient(rgba(0,184,212,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,184,212,.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .preview-cream {
+    background:
+      radial-gradient(ellipse at top, rgba(45,92,242,.06) 0%, transparent 50%),
+      linear-gradient(135deg, #efe9dc 0%, #f7f4ee 100%);
+  }
+  .preview-mono {
+    background: #ffffff;
+    background-image:
+      linear-gradient(rgba(0,0,0,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .preview-stamp {
+    position: absolute; padding: 8px 16px; transform: rotate(-6deg);
+    font-family: 'Special Elite', monospace; letter-spacing: .04em;
+    font-size: 18px; border: 3px double;
+  }
+  .preview-headline {
+    position: absolute; bottom: 20px; left: 22px; right: 22px;
+    font-family: 'Archivo Black', sans-serif; font-size: 30px; line-height: 0.95;
+    letter-spacing: -.02em;
+  }
+  .preview-headline.dark { color: #fafafa; }
+  .preview-headline.light { color: #1d2433; }
+  .preview-headline.acid { color: #ccff00; }
+  .preview-headline.gold { color: #d4a574; font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; }
+  .preview-headline .acid { color: #ccff00; }
+  .preview-headline .gold { color: #d4a574; }
+
+  .preview-pin {
+    position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 3px solid white;
+    box-shadow: 0 0 24px currentColor;
+  }
+
+  .card-body { padding: 24px 26px; flex: 1; display: flex; flex-direction: column; }
+  .card-num {
+    font-family: 'Archivo Black', sans-serif; font-size: 56px; line-height: 1;
+    color: rgba(255,255,255,.3); letter-spacing: -.04em; margin-bottom: 8px;
+    transition: color .15s;
+  }
+  .card .tag {
+    font-size: 10.5px; color: #707070; text-transform: uppercase; letter-spacing: .12em;
+    margin-bottom: 6px; font-family: 'JetBrains Mono', monospace;
+  }
+  .card h2 { font-family: 'Archivo Black', sans-serif; font-size: 24px; margin: 0 0 10px; letter-spacing: -.02em; }
+  .card.serif h2 { font-family: 'Fraunces', serif; font-weight: 600; letter-spacing: 0; }
+  .card p { color: #a0a0a0; margin: 0 0 16px; flex: 1; font-size: 13px; line-height: 1.7; }
+  .card ul { margin: 0; padding: 0 0 0 18px; color: #a0a0a0; font-size: 12px; line-height: 1.85; list-style: '— '; }
+  .card ul li { padding-inline-start: 4px; }
+  .card .open {
+    margin-top: 18px; padding-top: 14px; color: #fafafa; font-weight: 600; font-size: 12px;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: .15em; text-transform: uppercase;
+    border-top: 1px solid rgba(255,255,255,.1);
+  }
+  .card .open::after { content: ' →'; color: #ccff00; }
+
+  .swatch-row { display: flex; gap: 3px; margin-top: 10px; }
+  .swatch-row span { display: block; height: 14px; flex: 1; }
+
+  .meta {
+    margin-top: 60px; padding: 22px 26px; background: #141414;
+    border: 1px solid rgba(255,255,255,.08); font-size: 13px; color: #a0a0a0; line-height: 1.7;
+  }
+  .meta strong { color: #fafafa; }
+  .meta code { background: #0a0a0a; padding: 1px 7px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: #ccff00; }
+
+  .conservative-grid { opacity: .7; }
+  .conservative-grid .card { min-height: 380px; }
+  .conservative-grid .card-preview { height: 100px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">▍ UI redesign · 6 directions · 4 screens each</div>
+  <h1>Pick a <span class="acid">direction</span>.</h1>
+  <p class="lead">Six self-contained UI mockups for the permit review platform. Each covers four screens — Login, Dashboard, Submitter Intake, Reviewer Review — accessible via a tab bar inside the file. Same sample case across all (Plot 234 · Tilaa Al Ali · 0.3m front-setback deficit · 8.4 m² violation · 1,680 JOD fine) so you compare UI personalities, not data.</p>
+  <p class="lead-meta">// the bolder concepts are at the top. the conservative drafts are below for reference.</p>
+
+  <h3 class="section-h">▍ Bolder concepts <span class="small">domain-specific · opinionated · hard to ignore</span></h3>
+  <div class="grid">
+
+    <a class="card" href="design-4-atlas.html">
+      <div class="card-preview preview-atlas">
+        <span class="preview-pin" style="top:36%;left:28%;background:#6dbb7a;color:#6dbb7a"></span>
+        <span class="preview-pin" style="top:62%;left:54%;background:#e8a534;color:#e8a534"></span>
+        <span class="preview-pin" style="top:24%;left:74%;background:#d65a4f;color:#d65a4f"></span>
+        <div class="preview-headline gold">Every permit,<br>on the map.</div>
+      </div>
+      <div class="card-body">
+        <div class="card-num">04</div>
+        <div class="tag">Map-first · Spatial · Civic gravitas</div>
+        <h2>Atlas</h2>
+        <p>The dashboard is an aerial view of Amman, with applications represented as glowing pins at their actual lot locations. The reviewer screen splits between satellite imagery and the CAD drawing georeferenced on top. The platform anchored to the city it serves.</p>
+        <ul>
+          <li>Dashboard = stylized aerial of Amman with verdict pins</li>
+          <li>Cormorant serif + JetBrains Mono</li>
+          <li>Compass roses, scale bars, coordinate readouts</li>
+          <li>Best when civic stature matters</li>
+        </ul>
+        <div class="swatch-row">
+          <span style="background:#0a1628"></span><span style="background:#1a2c47"></span><span style="background:#d4a574"></span><span style="background:#c87f3e"></span><span style="background:#f5ecd9"></span><span style="background:#6dbb7a"></span><span style="background:#d65a4f"></span>
+        </div>
+        <div class="open">Open Atlas</div>
+      </div>
+    </a>
+
+    <a class="card" href="design-5-blueprint.html">
+      <div class="card-preview preview-blueprint">
+        <span class="preview-stamp" style="top:30%;left:50%;color:#d63a30;border-color:#d63a30">UNDER REVIEW</span>
+        <div class="preview-headline" style="color:#fbf6e9;font-family:'Special Elite',monospace;font-weight:400">Permits, drawn<br>and reviewed.</div>
+      </div>
+      <div class="card-body">
+        <div class="card-num">05</div>
+        <div class="tag">Drafting sheet · Domain-specific · Memorable</div>
+        <h2>Blueprint</h2>
+        <p>The entire app is rendered as an architect's drafting sheet. Title block in the corner, dimension callouts with leader lines, a "schedule of dimensions" in place of a discrepancy table, red-pen reviewer markup, and rubber stamps for approve/reject. Pays homage to the medium being reviewed.</p>
+        <ul>
+          <li>Cyanotype blueprint background · graph-paper grid</li>
+          <li>Special Elite (typewriter) + Caveat (handwriting) + Permanent Marker (stamps)</li>
+          <li>Drawing index dashboard · sheet review for each application</li>
+          <li>Best for visual identity — distinctive on first sight</li>
+        </ul>
+        <div class="swatch-row">
+          <span style="background:#0e3a64"></span><span style="background:#06223e"></span><span style="background:#fbf6e9"></span><span style="background:#e3d8b8"></span><span style="background:#d63a30"></span><span style="background:#1e6e3c"></span><span style="background:#e6a83c"></span>
+        </div>
+        <div class="open">Open Blueprint</div>
+      </div>
+    </a>
+
+    <a class="card" href="design-6-reactor.html">
+      <div class="card-preview preview-reactor">
+        <div style="position:absolute;top:24px;left:22px;font-family:'JetBrains Mono',monospace;color:#ccff00;font-size:10px;letter-spacing:.25em">▍ AGENT ONLINE</div>
+        <div class="preview-headline acid">WHO ARE <span style="color:#fafafa">YOU</span><span style="display:inline-block;width:14px;height:24px;background:#ccff00;vertical-align:-3px;margin-inline-start:4px"></span></div>
+      </div>
+      <div class="card-body">
+        <div class="card-num">06</div>
+        <div class="tag">Brutalist · AI-protagonist · Cinematic</div>
+        <h2>Reactor</h2>
+        <p>The AI is the protagonist. Brutalist oversized typography, terminal-style command surface, live reasoning stream as the hero. The review screen leads with a colossal headline number — the verdict becomes a single, unmissable moment. Made for the Linear / v0 / Cursor era.</p>
+        <ul>
+          <li>Pitch black · electric acid green accent</li>
+          <li>Archivo Black + JetBrains Mono · oversized type</li>
+          <li>Command-K palette · streaming agent feed · cinematic verdicts</li>
+          <li>Best for an AI-first product narrative</li>
+        </ul>
+        <div class="swatch-row">
+          <span style="background:#0a0a0a"></span><span style="background:#141414"></span><span style="background:#ccff00"></span><span style="background:#fafafa"></span><span style="background:#45e57e"></span><span style="background:#ffb13a"></span><span style="background:#ff4d4d"></span>
+        </div>
+        <div class="open">Open Reactor</div>
+      </div>
+    </a>
+
+  </div>
+
+  <h3 class="section-h">▍ Earlier drafts <span class="small">conservative · safer · for reference</span></h3>
+  <div class="grid conservative-grid">
+
+    <a class="card serif" href="design-1-inspector-cockpit.html">
+      <div class="card-preview preview-ide"></div>
+      <div class="card-body">
+        <div class="tag">Dense · Technical · IDE</div>
+        <h2>Inspector's Cockpit</h2>
+        <p>3-pane technical layout. Documents and CAD layers on the left, drawing canvas in the center, KPIs on the right. Dark slate with cyan accent. High information density.</p>
+        <div class="open">Open</div>
+      </div>
+    </a>
+
+    <a class="card serif" href="design-2-guided-review.html">
+      <div class="card-preview preview-cream"></div>
+      <div class="card-body">
+        <div class="tag">Narrative · Spacious · Cards</div>
+        <h2>Guided Review</h2>
+        <p>Vertical scroll narrative. Each pipeline stage is its own card with a verdict header. Cream palette, serif headlines.</p>
+        <div class="open">Open</div>
+      </div>
+    </a>
+
+    <a class="card serif" href="design-3-command-center.html">
+      <div class="card-preview preview-mono"></div>
+      <div class="card-body">
+        <div class="tag">Comparison · Tactical · Diff view</div>
+        <h2>Command Center</h2>
+        <p>Split-screen "Declared vs. Measured" diff view. Black + amber accent, tabular figures, reconciliation-tool feel.</p>
+        <div class="open">Open</div>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="meta">
+    <strong>// how to compare:</strong> open the file in your browser, then use the tab bar inside each design to flip between <code>Login</code> · <code>Dashboard</code> · <code>Intake</code> · <code>Review</code>. Same data across all six. None of these touch the live application.
+  </div>
+
+</div>
+</body>
+</html>

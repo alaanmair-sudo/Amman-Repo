@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>جاري تحليل المخطط الهندسي · النظام الذكي لامانة عمان الكبرى</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg-deep:#0a1834;
+  --bg-mid:#102544;
+  --bg-soft:#16315c;
+  --cyan:#3ee0ff;
+  --cyan-soft:#7ce9ff;
+  --cyan-dim:rgba(62,224,255,.18);
+  --cyan-line:rgba(62,224,255,.55);
+  --gold:#e1c98a;
+  --gold-soft:#f6e4ad;
+  --text:#eaf2ff;
+  --text-dim:rgba(234,242,255,.78);
+  --text-muted:rgba(234,242,255,.5);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;overflow:hidden}
+body{
+  font-family:"Noto Kufi Arabic","Inter",Tahoma,Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(1200px 700px at 50% 35%, #16315c 0%, #0c1f42 45%, #08152e 100%);
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  position:relative;
+}
+
+/* ───────── decorative skyline silhouette behind everything ───────── */
+.skyline{
+  position:absolute;left:0;right:0;bottom:0;
+  width:100%;height:42%;
+  pointer-events:none;
+  opacity:.18;
+  z-index:0;
+}
+.skyline svg{width:100%;height:100%;display:block}
+
+/* ───────── corner marks ───────── */
+.corner-mark{
+  position:absolute;z-index:5;display:flex;align-items:center;gap:14px;
+}
+.corner-mark--tl{top:34px;inset-inline-start:48px}
+.corner-mark--tr{top:28px;inset-inline-end:48px}
+.tl-text{
+  font-size:18px;font-weight:600;color:var(--text);
+  letter-spacing:.005em;line-height:1.4;
+}
+.tl-text .ai-tag{
+  display:inline-block;color:var(--cyan-soft);font-weight:700;
+  margin-inline-start:4px;
+}
+
+.brand{
+  display:flex;align-items:center;gap:14px;
+  text-align:start;
+}
+.brand-text{
+  display:flex;flex-direction:column;line-height:1.15;
+  color:var(--gold);
+}
+.brand-text .b-top{font-size:20px;font-weight:700;letter-spacing:.005em}
+.brand-text .b-bot{font-size:20px;font-weight:700;letter-spacing:.005em}
+.brand-shield{
+  width:62px;height:62px;flex-shrink:0;color:var(--gold);
+}
+.brand-shield svg{width:100%;height:100%;display:block}
+
+/* small diamond ornament bottom-right */
+.diamond{
+  position:absolute;bottom:46px;inset-inline-end:60px;
+  width:18px;height:18px;color:var(--cyan-soft);opacity:.65;
+  z-index:3;
+}
+.diamond svg{width:100%;height:100%}
+
+/* ───────── stage container ───────── */
+.stage{
+  position:relative;z-index:2;
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;
+  padding:120px 48px 40px;
+  gap:30px;
+}
+
+/* main title */
+.title{
+  margin:0;font-size:42px;font-weight:800;
+  letter-spacing:-.005em;line-height:1.25;color:var(--text);
+  text-align:center;
+  text-shadow:0 1px 0 rgba(255,255,255,.04),0 0 30px rgba(62,224,255,.06);
+}
+.title .dots{
+  display:inline-flex;gap:4px;margin-inline-start:6px;vertical-align:middle;
+}
+.title .dots i{
+  width:8px;height:8px;border-radius:50%;background:var(--text);
+  display:inline-block;
+  animation:dot 1.4s ease-in-out infinite;
+}
+.title .dots i:nth-child(2){animation-delay:.2s}
+.title .dots i:nth-child(3){animation-delay:.4s}
+@keyframes dot{
+  0%,80%,100%{opacity:.25;transform:translateY(0)}
+  40%{opacity:1;transform:translateY(-3px)}
+}
+
+/* ───────── 3D box hero ───────── */
+.hero{
+  width:min(1180px,86vw);
+  aspect-ratio:1180/620;
+  position:relative;
+  filter:drop-shadow(0 30px 60px rgba(0,0,0,.45));
+}
+.hero svg{width:100%;height:100%;display:block;overflow:visible}
+
+/* scanning beam — one-directional sweep, then fade off-screen and reset.
+   Synced to the 10s validation cycle: 0-60% sweep, 60-65% fade out,
+   65-92% hold (all 5 checks visible), 92-100% reset. */
+.beam{
+  transform-origin:center;
+  animation:beam-sweep 10s linear infinite;
+  mix-blend-mode:screen;
+}
+@keyframes beam-sweep{
+  0%   {transform:translateX(-540px); opacity:0}
+  3%   {opacity:1}
+  60%  {transform:translateX(540px);  opacity:1}
+  65%  {transform:translateX(540px);  opacity:0}
+  100% {transform:translateX(-540px); opacity:0}
+}
+
+/* Scanner-driven validation — each point shows a tiny red dot BEFORE the
+   scanner reaches it, then transforms into a green checkmark AS the
+   scanner passes. All 5 share the same 10s cycle so they reset together. */
+.check-pre,.check-post{transform-origin:center;transform-box:fill-box}
+.check-pre-pulse{transform-origin:center;transform-box:fill-box;animation:dot-pulse 2.2s ease-in-out infinite}
+@keyframes dot-pulse{
+  0%,100%{opacity:.55;transform:scale(1)}
+  50%    {opacity:1;  transform:scale(1.4)}
+}
+
+/* Check 1 (x=450, ~22% of cycle) */
+.check-1 .check-pre {animation:pre-fade-1  10s linear   infinite}
+.check-1 .check-post{animation:post-stamp-1 10s ease-out infinite}
+@keyframes pre-fade-1  { 0%,20%{opacity:1} 23%,93%{opacity:0} 96%,100%{opacity:1} }
+@keyframes post-stamp-1{
+  0%,20% {opacity:0;transform:scale(.3)}
+  23%    {opacity:1;transform:scale(1.18)}
+  27%,90%{opacity:1;transform:scale(1)}
+  94%,100%{opacity:0;transform:scale(.85)}
+}
+/* Check 2 (x=560, ~28%) */
+.check-2 .check-pre {animation:pre-fade-2  10s linear   infinite}
+.check-2 .check-post{animation:post-stamp-2 10s ease-out infinite}
+@keyframes pre-fade-2  { 0%,26%{opacity:1} 29%,93%{opacity:0} 96%,100%{opacity:1} }
+@keyframes post-stamp-2{
+  0%,26% {opacity:0;transform:scale(.3)}
+  29%    {opacity:1;transform:scale(1.18)}
+  33%,90%{opacity:1;transform:scale(1)}
+  94%,100%{opacity:0;transform:scale(.85)}
+}
+/* Check 3 (x=610, ~31%) */
+.check-3 .check-pre {animation:pre-fade-3  10s linear   infinite}
+.check-3 .check-post{animation:post-stamp-3 10s ease-out infinite}
+@keyframes pre-fade-3  { 0%,29%{opacity:1} 32%,93%{opacity:0} 96%,100%{opacity:1} }
+@keyframes post-stamp-3{
+  0%,29% {opacity:0;transform:scale(.3)}
+  32%    {opacity:1;transform:scale(1.18)}
+  36%,90%{opacity:1;transform:scale(1)}
+  94%,100%{opacity:0;transform:scale(.85)}
+}
+/* Check 4 (x=700, ~36%) */
+.check-4 .check-pre {animation:pre-fade-4  10s linear   infinite}
+.check-4 .check-post{animation:post-stamp-4 10s ease-out infinite}
+@keyframes pre-fade-4  { 0%,34%{opacity:1} 37%,93%{opacity:0} 96%,100%{opacity:1} }
+@keyframes post-stamp-4{
+  0%,34% {opacity:0;transform:scale(.3)}
+  37%    {opacity:1;transform:scale(1.18)}
+  41%,90%{opacity:1;transform:scale(1)}
+  94%,100%{opacity:0;transform:scale(.85)}
+}
+/* Check 5 (x=790, ~41%) */
+.check-5 .check-pre {animation:pre-fade-5  10s linear   infinite}
+.check-5 .check-post{animation:post-stamp-5 10s ease-out infinite}
+@keyframes pre-fade-5  { 0%,39%{opacity:1} 42%,93%{opacity:0} 96%,100%{opacity:1} }
+@keyframes post-stamp-5{
+  0%,39% {opacity:0;transform:scale(.3)}
+  42%    {opacity:1;transform:scale(1.18)}
+  46%,90%{opacity:1;transform:scale(1)}
+  94%,100%{opacity:0;transform:scale(.85)}
+}
+
+/* corner brackets on the box (gold accents) */
+.bracket{stroke:var(--gold);stroke-width:1.4;fill:none;opacity:.92}
+
+/* ───────── stages list ───────── */
+.stages{
+  list-style:none;margin:0;padding:0;
+  display:flex;flex-direction:column;gap:14px;
+  width:min(700px,82vw);
+  text-align:start;
+  margin-top:6px;
+}
+.stage-item{
+  display:grid;grid-template-columns:34px 1fr;align-items:center;
+  gap:14px;color:var(--text-dim);font-size:18px;font-weight:500;
+  letter-spacing:.002em;line-height:1.5;
+  transition:color .35s ease;
+}
+.stage-icon{
+  width:32px;height:32px;border-radius:50%;
+  border:1.4px solid rgba(225,201,138,.5);
+  display:grid;place-items:center;color:var(--gold);
+  background:rgba(225,201,138,.05);
+  transition:all .35s ease;
+}
+.stage-icon svg{width:17px;height:17px}
+.stage-text::after{
+  content:"...";color:var(--text-muted);
+  margin-inline-start:3px;
+}
+.stage-item.is-active{color:var(--text)}
+.stage-item.is-active .stage-icon{
+  color:#0a1834;background:var(--gold);border-color:var(--gold);
+  box-shadow:0 0 0 4px rgba(225,201,138,.18),0 0 20px rgba(225,201,138,.35);
+}
+
+/* Stage list synced to the scanner. Each stage activates when the scanner
+   reaches its checkmark; stage 5 ("preparing the final report") stays
+   active through the post-scan hold phase. */
+.stage-item:nth-child(1){animation:stage-1 10s linear infinite}
+.stage-item:nth-child(2){animation:stage-2 10s linear infinite}
+.stage-item:nth-child(3){animation:stage-3 10s linear infinite}
+.stage-item:nth-child(4){animation:stage-4 10s linear infinite}
+.stage-item:nth-child(5){animation:stage-5 10s linear infinite}
+.stage-item:nth-child(1) .stage-icon{animation:icon-1 10s linear infinite}
+.stage-item:nth-child(2) .stage-icon{animation:icon-2 10s linear infinite}
+.stage-item:nth-child(3) .stage-icon{animation:icon-3 10s linear infinite}
+.stage-item:nth-child(4) .stage-icon{animation:icon-4 10s linear infinite}
+.stage-item:nth-child(5) .stage-icon{animation:icon-5 10s linear infinite}
+
+@keyframes stage-1 { 0%,21%{color:var(--text-dim)} 23%,28%{color:var(--text)} 30%,100%{color:var(--text-dim)} }
+@keyframes stage-2 { 0%,27%{color:var(--text-dim)} 29%,31%{color:var(--text)} 33%,100%{color:var(--text-dim)} }
+@keyframes stage-3 { 0%,30%{color:var(--text-dim)} 32%,36%{color:var(--text)} 38%,100%{color:var(--text-dim)} }
+@keyframes stage-4 { 0%,35%{color:var(--text-dim)} 37%,41%{color:var(--text)} 43%,100%{color:var(--text-dim)} }
+@keyframes stage-5 { 0%,40%{color:var(--text-dim)} 42%,92%{color:var(--text)} 95%,100%{color:var(--text-dim)} }
+
+@keyframes icon-1 {
+  0%,21%,30%,100%{color:var(--gold);background:rgba(225,201,138,.05);border-color:rgba(225,201,138,.5);box-shadow:none}
+  23%,28%        {color:#0a1834;background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 4px rgba(225,201,138,.18),0 0 20px rgba(225,201,138,.35)}
+}
+@keyframes icon-2 {
+  0%,27%,33%,100%{color:var(--gold);background:rgba(225,201,138,.05);border-color:rgba(225,201,138,.5);box-shadow:none}
+  29%,31%        {color:#0a1834;background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 4px rgba(225,201,138,.18),0 0 20px rgba(225,201,138,.35)}
+}
+@keyframes icon-3 {
+  0%,30%,38%,100%{color:var(--gold);background:rgba(225,201,138,.05);border-color:rgba(225,201,138,.5);box-shadow:none}
+  32%,36%        {color:#0a1834;background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 4px rgba(225,201,138,.18),0 0 20px rgba(225,201,138,.35)}
+}
+@keyframes icon-4 {
+  0%,35%,43%,100%{color:var(--gold);background:rgba(225,201,138,.05);border-color:rgba(225,201,138,.5);box-shadow:none}
+  37%,41%        {color:#0a1834;background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 4px rgba(225,201,138,.18),0 0 20px rgba(225,201,138,.35)}
+}
+@keyframes icon-5 {
+  0%,40%,95%,100%{color:var(--gold);background:rgba(225,201,138,.05);border-color:rgba(225,201,138,.5);box-shadow:none}
+  42%,92%        {color:#0a1834;background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 4px rgba(225,201,138,.18),0 0 20px rgba(225,201,138,.35)}
+}
+
+/* ───────── overall progress (synced to the same 10s scan cycle) ─────────
+   Uses @property so the integer custom-properties interpolate smoothly,
+   and counter()/counter-reset to print them as text inside ::after. */
+@property --progress-pct  { syntax:'<integer>'; initial-value:0; inherits:false }
+@property --progress-step { syntax:'<integer>'; initial-value:1; inherits:false }
+
+.progress-display{
+  width:min(700px,82vw);
+  --progress-pct:0;
+  --progress-step:1;
+  counter-reset:pct var(--progress-pct) step var(--progress-step);
+  animation:
+    progress-pct-anim  10s linear   infinite,
+    progress-step-anim 10s step-end infinite;
+}
+.progress-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:9px;
+  font-size:14px;font-weight:500;color:var(--text-dim);
+  letter-spacing:.01em;
+}
+.progress-step-label{display:inline-flex;align-items:baseline;gap:6px}
+.progress-step-num{
+  color:var(--gold-soft);font-weight:800;font-size:18px;
+  font-variant-numeric:tabular-nums;
+  min-width:14px;display:inline-block;text-align:center;
+  text-shadow:0 0 12px rgba(225,201,138,.45);
+}
+.progress-step-num::after{content:counter(step)}
+.progress-step-total{color:var(--text);font-weight:700}
+.progress-pct-num{
+  color:var(--cyan-soft);font-weight:700;font-size:16px;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 0 12px rgba(62,224,255,.45);
+}
+.progress-pct-num::after{content:counter(pct) "%"}
+
+.progress-bar{
+  height:7px;background:rgba(62,224,255,.1);
+  border:1px solid rgba(62,224,255,.22);border-radius:4px;
+  overflow:hidden;position:relative;
+}
+.progress-bar-fill{
+  height:100%;width:0;
+  background:linear-gradient(90deg,var(--gold),var(--cyan-soft));
+  box-shadow:0 0 14px rgba(62,224,255,.55);
+  border-radius:3px;
+  animation:progress-fill 10s linear infinite;
+}
+
+@keyframes progress-pct-anim{
+  0%  {--progress-pct:0}
+  100%{--progress-pct:100}
+}
+/* Granular step jumps — counts 14 backend events for a typical full
+   upload (3 doc-done + ~9 agent tool calls + final + done). Spaced
+   roughly to match how the real pipeline burns time: docs are quick
+   (steps 1-3 in first 18% of cycle), agent loop is the long phase
+   (steps 4-12 across 18-78%), final + report are the last two beats. */
+@keyframes progress-step-anim{
+  0%   {--progress-step:1}
+  6%   {--progress-step:2}
+  12%  {--progress-step:3}
+  20%  {--progress-step:4}
+  28%  {--progress-step:5}
+  36%  {--progress-step:6}
+  44%  {--progress-step:7}
+  52%  {--progress-step:8}
+  60%  {--progress-step:9}
+  68%  {--progress-step:10}
+  76%  {--progress-step:11}
+  84%  {--progress-step:12}
+  92%  {--progress-step:13}
+  100% {--progress-step:14}
+}
+@keyframes progress-fill{
+  0%  {width:0%}
+  100%{width:100%}
+}
+
+/* Current-phase line (single rotating label below the bar — generic
+   names only, no operation detail). 5 phases mapped to the 10s cycle. */
+.progress-phase{
+  margin-top:14px;
+  display:flex;align-items:baseline;gap:8px;
+  font-size:14px;color:var(--text-muted);
+  font-weight:500;letter-spacing:.005em;
+}
+.progress-phase-label{color:var(--text-muted)}
+.progress-phase-text{
+  color:var(--cyan-soft);font-weight:700;
+  text-shadow:0 0 12px rgba(62,224,255,.35);
+}
+.progress-phase-text::after{
+  content:"تحضير الملفات";
+  animation:phase-cycle 10s step-end infinite;
+}
+@keyframes phase-cycle{
+  0%  {content:"تحضير الملفات"}
+  18% {content:"قراءة المستندات"}
+  43% {content:"تحليل المخطط الهندسي"}
+  72% {content:"مراجعة الاشتراطات"}
+  90% {content:"إعداد التقرير النهائي"}
+}
+
+/* respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .beam,.check-pre,.check-post,.check-pre-pulse,
+  .title .dots i,.stage-item,.stage-item .stage-icon,
+  .progress-display,.progress-bar-fill{animation:none}
+  .check-pre{opacity:0}            /* skip the "before" red dot */
+  .check-post{opacity:1}            /* show all green checks landed */
+  .stage-item:nth-child(5){color:var(--text)}  /* report-prep is the resting active state */
+  .stage-item:nth-child(5) .stage-icon{
+    color:#0a1834;background:var(--gold);border-color:var(--gold);
+  }
+  .progress-display{--progress-pct:100;--progress-step:5}
+  .progress-bar-fill{width:100%}
+}
+
+/* small viewports — keep the screen usable on narrower laptops */
+@media (max-width:1100px){
+  .title{font-size:34px}
+  .stage{padding:96px 28px 30px;gap:24px}
+  .corner-mark--tl{top:24px;inset-inline-start:24px}
+  .corner-mark--tr{top:20px;inset-inline-end:24px}
+  .tl-text{font-size:14px}
+  .brand-text .b-top,.brand-text .b-bot{font-size:16px}
+  .brand-shield{width:50px;height:50px}
+  .stages{font-size:16px}
+  .progress-row{font-size:13px}
+  .progress-step-num{font-size:16px}
+  .progress-pct-num{font-size:14px}
+}
+@media (max-width:760px){
+  body{overflow:auto}
+  .corner-mark{position:relative;top:0;inset-inline-start:0;inset-inline-end:0;justify-content:center;padding:14px 0}
+  .corner-mark--tl,.corner-mark--tr{position:relative;top:auto;inset-inline-start:auto;inset-inline-end:auto}
+  .stage{padding:20px 16px 60px}
+  .title{font-size:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- decorative skyline silhouette -->
+<div class="skyline" aria-hidden="true">
+  <svg viewBox="0 0 1600 320" preserveAspectRatio="xMidYMax slice">
+    <defs>
+      <linearGradient id="skyFade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#e1c98a" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#e1c98a" stop-opacity=".55"/>
+      </linearGradient>
+    </defs>
+    <g fill="url(#skyFade)">
+      <!-- left cluster: arches + roman amphitheater -->
+      <path d="M0,320 L0,250 L40,250 L40,210 L70,210 L70,180 L100,180 L100,220 L140,220 L140,250 L180,250 L180,200 Q200,180 220,200 L220,250 L260,250 L260,220 L300,220 L300,260 L340,260 L340,210 Q360,180 380,210 L380,260 L420,260 L420,240 L470,240 L470,260 L500,260 L500,200 Q530,170 560,200 L560,260 L0,320 Z"/>
+      <!-- amphitheater arches -->
+      <g opacity=".7">
+        <path d="M120,260 Q140,240 160,260 M165,260 Q185,240 205,260 M210,260 Q230,240 250,260 M255,260 Q275,240 295,260" stroke="#e1c98a" stroke-width="1.2" fill="none"/>
+      </g>
+
+      <!-- center cluster: domes + minarets -->
+      <path d="M620,320 L620,260 L660,260 L660,220 L700,220 Q720,200 740,220 L740,260 L770,260
+               Q775,200 800,170 Q825,140 830,160 L830,180 L860,180 Q870,140 880,180
+               L880,210 L920,210 Q930,180 940,210 L940,260 L980,260 L980,230 L1010,230 L1010,260
+               L1050,260 Q1060,210 1080,210 L1080,260 L1120,260 L1120,240 L1160,240 L1160,260
+               L620,320 Z"/>
+      <!-- a couple of crescents -->
+      <circle cx="815" cy="135" r="3" fill="#e1c98a" opacity=".75"/>
+      <circle cx="935" cy="195" r="2.5" fill="#e1c98a" opacity=".7"/>
+
+      <!-- right cluster -->
+      <path d="M1180,320 L1180,250 L1220,250 L1220,220 L1260,220 Q1280,200 1300,220 L1300,260
+               L1340,260 L1340,230 L1380,230 L1380,260 L1420,260 Q1440,210 1470,210 L1470,260
+               L1520,260 L1520,240 L1560,240 L1560,260 L1600,260 L1600,320 Z"/>
+    </g>
+    <!-- a few fine line accents on top of silhouette -->
+    <g stroke="#e1c98a" stroke-width=".8" fill="none" opacity=".25">
+      <line x1="800" y1="170" x2="800" y2="135"/>
+      <line x1="880" y1="180" x2="880" y2="160"/>
+      <line x1="1080" y1="210" x2="1080" y2="195"/>
+    </g>
+  </svg>
+</div>
+
+<!-- top-left small text -->
+<div class="corner-mark corner-mark--tl">
+  <div class="tl-text">نظام المراجعة الذكية للرخص <span class="ai-tag">(AI)</span></div>
+</div>
+
+<!-- top-right brand: shield + name in gold -->
+<div class="corner-mark corner-mark--tr">
+  <div class="brand">
+    <div class="brand-text">
+      <span class="b-top">أمانة عمان</span>
+      <span class="b-bot">الكبرى</span>
+    </div>
+    <div class="brand-shield" aria-hidden="true">
+      <svg viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="shieldFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f6e4ad"/>
+            <stop offset="100%" stop-color="#c9a85e"/>
+          </linearGradient>
+        </defs>
+        <!-- shield outline -->
+        <path d="M32 4 L56 12 L56 30 Q56 50 32 60 Q8 50 8 30 L8 12 Z"
+              fill="none" stroke="url(#shieldFill)" stroke-width="2.2"/>
+        <!-- inner double frame -->
+        <path d="M32 9 L52 16 L52 30 Q52 47 32 56 Q12 47 12 30 L12 16 Z"
+              fill="none" stroke="url(#shieldFill)" stroke-width="1"/>
+        <!-- central dome with two arches -->
+        <g fill="none" stroke="url(#shieldFill)" stroke-width="1.6" stroke-linecap="round">
+          <path d="M22 40 L22 30 Q22 22 32 22 Q42 22 42 30 L42 40"/>
+          <path d="M26 40 L26 33 Q26 28 32 28 Q38 28 38 33 L38 40"/>
+          <line x1="20" y1="40" x2="44" y2="40" stroke-width="1.4"/>
+          <!-- finial -->
+          <line x1="32" y1="22" x2="32" y2="17"/>
+          <circle cx="32" cy="15.5" r="1.4" fill="url(#shieldFill)"/>
+        </g>
+        <!-- side flourishes -->
+        <g fill="url(#shieldFill)" opacity=".85">
+          <path d="M14 22 q3 -2 6 0 q-3 1 -6 0 z"/>
+          <path d="M44 22 q3 -2 6 0 q-3 1 -6 0 z"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- main stage -->
+<main class="stage">
+
+  <h1 class="title">
+    <span>جاري تحليل المخطط الهندسي بدقة</span>
+    <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+  </h1>
+
+  <!-- 3D perspective box with blueprint inside + scanning beam -->
+  <div class="hero" aria-hidden="true">
+    <svg viewBox="0 0 1180 620" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- per-wall grid patterns (perspective grids) -->
+        <pattern id="floorGrid" x="0" y="0" width="60" height="40" patternUnits="userSpaceOnUse">
+          <path d="M0 40 L60 40 M60 0 L60 40" stroke="rgba(62,224,255,.22)" stroke-width=".7" fill="none"/>
+        </pattern>
+        <pattern id="ceilGrid" x="0" y="0" width="60" height="40" patternUnits="userSpaceOnUse">
+          <path d="M0 0 L60 0 M60 0 L60 40" stroke="rgba(62,224,255,.18)" stroke-width=".7" fill="none"/>
+        </pattern>
+        <pattern id="sideGrid" x="0" y="0" width="40" height="60" patternUnits="userSpaceOnUse">
+          <path d="M0 0 L0 60 M0 60 L40 60" stroke="rgba(62,224,255,.2)" stroke-width=".7" fill="none"/>
+        </pattern>
+
+        <!-- scanning beam gradient -->
+        <linearGradient id="beamGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%"  stop-color="rgba(62,224,255,0)"/>
+          <stop offset="35%" stop-color="rgba(124,233,255,.35)"/>
+          <stop offset="50%" stop-color="rgba(255,255,255,.85)"/>
+          <stop offset="65%" stop-color="rgba(124,233,255,.35)"/>
+          <stop offset="100%" stop-color="rgba(62,224,255,0)"/>
+        </linearGradient>
+
+        <!-- back panel deep blue -->
+        <linearGradient id="panelGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#091f43"/>
+          <stop offset="100%" stop-color="#06152e"/>
+        </linearGradient>
+
+        <!-- soft green halo for the verification checkmarks -->
+        <radialGradient id="checkHalo"><stop offset="0%" stop-color="#86efac" stop-opacity=".55"/><stop offset="60%" stop-color="#22c55e" stop-opacity=".18"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/></radialGradient>
+
+        <filter id="checkGlow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="2.4"/>
+        </filter>
+
+        <!-- soft edge glow for the cyan box -->
+        <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+
+        <!-- clip the beam to the inside of the box -->
+        <clipPath id="boxClip">
+          <polygon points="60,40 1120,40 1120,580 60,580"/>
+        </clipPath>
+      </defs>
+
+      <!-- ─── walls (4 trapezoids around the back panel) ─── -->
+      <g>
+        <!-- top wall -->
+        <polygon points="60,40 1120,40 870,180 310,180" fill="url(#ceilGrid)" stroke="rgba(62,224,255,.25)" stroke-width=".5"/>
+        <!-- bottom wall (floor) -->
+        <polygon points="60,580 1120,580 870,440 310,440" fill="url(#floorGrid)" stroke="rgba(62,224,255,.3)" stroke-width=".5"/>
+        <!-- left wall -->
+        <polygon points="60,40 60,580 310,440 310,180" fill="url(#sideGrid)" stroke="rgba(62,224,255,.22)" stroke-width=".5"/>
+        <!-- right wall -->
+        <polygon points="1120,40 1120,580 870,440 870,180" fill="url(#sideGrid)" stroke="rgba(62,224,255,.22)" stroke-width=".5"/>
+      </g>
+
+      <!-- ─── perspective grid lines on the floor (more visible) ─── -->
+      <g stroke="rgba(62,224,255,.32)" stroke-width=".8" fill="none">
+        <!-- vertical-ish lines from bottom front to bottom back -->
+        <line x1="60"   y1="580" x2="310" y2="440"/>
+        <line x1="220"  y1="580" x2="380" y2="440"/>
+        <line x1="380"  y1="580" x2="450" y2="440"/>
+        <line x1="540"  y1="580" x2="520" y2="440"/>
+        <line x1="700"  y1="580" x2="590" y2="440"/>
+        <line x1="860"  y1="580" x2="660" y2="440"/>
+        <line x1="1020" y1="580" x2="730" y2="440"/>
+        <line x1="1120" y1="580" x2="870" y2="440"/>
+        <!-- horizontal floor lines (perspective compressed near back) -->
+        <line x1="80"  y1="555" x2="1100" y2="555"/>
+        <line x1="160" y1="510" x2="1020" y2="510"/>
+        <line x1="240" y1="475" x2="940"  y2="475"/>
+        <line x1="290" y1="450" x2="890"  y2="450"/>
+      </g>
+
+      <!-- ─── ceiling perspective lines ─── -->
+      <g stroke="rgba(62,224,255,.2)" stroke-width=".7" fill="none">
+        <line x1="60"   y1="40"  x2="310" y2="180"/>
+        <line x1="380"  y1="40"  x2="460" y2="180"/>
+        <line x1="700"  y1="40"  x2="600" y2="180"/>
+        <line x1="1020" y1="40"  x2="740" y2="180"/>
+        <line x1="1120" y1="40"  x2="870" y2="180"/>
+        <line x1="160" y1="80"  x2="1020" y2="80"/>
+        <line x1="240" y1="120" x2="940"  y2="120"/>
+        <line x1="290" y1="160" x2="890"  y2="160"/>
+      </g>
+
+      <!-- ─── back panel: blueprint ─── -->
+      <g>
+        <rect x="310" y="180" width="560" height="260" fill="url(#panelGrad)"/>
+
+        <!-- floor plan paths (cyan/blue, schematic) -->
+        <g transform="translate(310,180)" stroke="#7ce9ff" stroke-width="1.1" fill="none" opacity=".82">
+          <!-- outer building wall -->
+          <rect x="60" y="40" width="440" height="180" stroke-width="1.6"/>
+          <!-- internal walls -->
+          <line x1="200" y1="40"  x2="200" y2="220"/>
+          <line x1="320" y1="40"  x2="320" y2="220"/>
+          <line x1="60"  y1="130" x2="200" y2="130"/>
+          <line x1="200" y1="100" x2="320" y2="100"/>
+          <line x1="200" y1="160" x2="320" y2="160"/>
+          <line x1="320" y1="120" x2="500" y2="120"/>
+          <line x1="320" y1="180" x2="500" y2="180"/>
+          <line x1="410" y1="40"  x2="410" y2="120"/>
+          <line x1="410" y1="180" x2="410" y2="220"/>
+          <line x1="120" y1="130" x2="120" y2="220"/>
+
+          <!-- door arcs -->
+          <path d="M150 130 a14 14 0 0 1 14 -14" stroke-width=".9"/>
+          <path d="M260 100 a12 12 0 0 1 12 -12" stroke-width=".9"/>
+          <path d="M340 180 a14 14 0 0 0 14 14"  stroke-width=".9"/>
+          <path d="M420 120 a14 14 0 0 1 -14 14" stroke-width=".9"/>
+
+          <!-- dimension ticks (top edge) -->
+          <g stroke-width=".7" opacity=".8">
+            <line x1="60"  y1="20" x2="60"  y2="40"/>
+            <line x1="200" y1="20" x2="200" y2="40"/>
+            <line x1="320" y1="20" x2="320" y2="40"/>
+            <line x1="410" y1="20" x2="410" y2="40"/>
+            <line x1="500" y1="20" x2="500" y2="40"/>
+            <line x1="60"  y1="20" x2="500" y2="20"/>
+          </g>
+          <!-- dimension ticks (right edge) -->
+          <g stroke-width=".7" opacity=".8">
+            <line x1="520" y1="40"  x2="500" y2="40"/>
+            <line x1="520" y1="130" x2="500" y2="130"/>
+            <line x1="520" y1="220" x2="500" y2="220"/>
+            <line x1="520" y1="40"  x2="520" y2="220"/>
+          </g>
+
+          <!-- tiny dimension numbers -->
+          <g fill="#7ce9ff" opacity=".55" font-family="Inter" font-size="6" text-anchor="middle">
+            <text x="130" y="14">3.20</text>
+            <text x="260" y="14">2.80</text>
+            <text x="365" y="14">2.10</text>
+            <text x="455" y="14">2.10</text>
+            <text x="528" y="88" transform="rotate(90 528 88)">2.10</text>
+            <text x="528" y="178" transform="rotate(90 528 178)">2.10</text>
+          </g>
+
+          <!-- a north arrow + scale bar -->
+          <g stroke-width=".8" opacity=".7">
+            <circle cx="30" cy="190" r="9"/>
+            <path d="M30 184 L33 196 L30 193 L27 196 Z" fill="#7ce9ff" stroke="none"/>
+            <line x1="20" y1="240" x2="60" y2="240"/>
+            <line x1="20" y1="237" x2="20" y2="243"/>
+            <line x1="60" y1="237" x2="60" y2="243"/>
+          </g>
+
+          <!-- subtle text labels -->
+          <g fill="#7ce9ff" opacity=".4" font-family="Inter" font-size="5">
+            <text x="130" y="90">LIVING</text>
+            <text x="130" y="180">KITCHEN</text>
+            <text x="260" y="75">BED 1</text>
+            <text x="260" y="135">BATH</text>
+            <text x="260" y="195">BED 2</text>
+            <text x="365" y="80">STUDY</text>
+            <text x="455" y="80">CORR.</text>
+            <text x="410" y="155">HALL</text>
+            <text x="455" y="200">STORE</text>
+          </g>
+        </g>
+
+        <!-- Validation points: each one shows a tiny red dot BEFORE the
+             scanner reaches it, then transforms into a green checkmark
+             AS the scanner sweeps across. Positions are left-to-right
+             so they validate in sequence. -->
+        <g class="checkmarks">
+          <g class="check check-1" transform="translate(450, 280)">
+            <g class="check-pre">
+              <circle class="check-pre-pulse" r="6" fill="none" stroke="#ef4444" stroke-width=".8" opacity=".5"/>
+              <circle r="2.5" fill="#ef4444"/>
+            </g>
+            <g class="check-post">
+              <circle r="22" fill="url(#checkHalo)" filter="url(#checkGlow)"/>
+              <circle r="11" fill="#16a34a" stroke="#bbf7d0" stroke-width="1.4"/>
+              <path d="M-4.4 0.4 L-1.4 3.4 L4.6 -2.6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </g>
+          </g>
+          <g class="check check-2" transform="translate(560, 250)">
+            <g class="check-pre">
+              <circle class="check-pre-pulse" r="6" fill="none" stroke="#ef4444" stroke-width=".8" opacity=".5"/>
+              <circle r="2.5" fill="#ef4444"/>
+            </g>
+            <g class="check-post">
+              <circle r="22" fill="url(#checkHalo)" filter="url(#checkGlow)"/>
+              <circle r="11" fill="#16a34a" stroke="#bbf7d0" stroke-width="1.4"/>
+              <path d="M-4.4 0.4 L-1.4 3.4 L4.6 -2.6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </g>
+          </g>
+          <g class="check check-3" transform="translate(610, 350)">
+            <g class="check-pre">
+              <circle class="check-pre-pulse" r="6" fill="none" stroke="#ef4444" stroke-width=".8" opacity=".5"/>
+              <circle r="2.5" fill="#ef4444"/>
+            </g>
+            <g class="check-post">
+              <circle r="22" fill="url(#checkHalo)" filter="url(#checkGlow)"/>
+              <circle r="11" fill="#16a34a" stroke="#bbf7d0" stroke-width="1.4"/>
+              <path d="M-4.4 0.4 L-1.4 3.4 L4.6 -2.6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </g>
+          </g>
+          <g class="check check-4" transform="translate(700, 270)">
+            <g class="check-pre">
+              <circle class="check-pre-pulse" r="6" fill="none" stroke="#ef4444" stroke-width=".8" opacity=".5"/>
+              <circle r="2.5" fill="#ef4444"/>
+            </g>
+            <g class="check-post">
+              <circle r="22" fill="url(#checkHalo)" filter="url(#checkGlow)"/>
+              <circle r="11" fill="#16a34a" stroke="#bbf7d0" stroke-width="1.4"/>
+              <path d="M-4.4 0.4 L-1.4 3.4 L4.6 -2.6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </g>
+          </g>
+          <g class="check check-5" transform="translate(790, 360)">
+            <g class="check-pre">
+              <circle class="check-pre-pulse" r="6" fill="none" stroke="#ef4444" stroke-width=".8" opacity=".5"/>
+              <circle r="2.5" fill="#ef4444"/>
+            </g>
+            <g class="check-post">
+              <circle r="22" fill="url(#checkHalo)" filter="url(#checkGlow)"/>
+              <circle r="11" fill="#16a34a" stroke="#bbf7d0" stroke-width="1.4"/>
+              <path d="M-4.4 0.4 L-1.4 3.4 L4.6 -2.6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- ─── bright cyan edges (the "frame" of the box) ─── -->
+      <g filter="url(#cyanGlow)" stroke="var(--cyan)" stroke-width="2.2" fill="none" stroke-linecap="round">
+        <!-- outer (front) rectangle -->
+        <rect x="60" y="40" width="1060" height="540" rx="2"/>
+        <!-- inner (back) rectangle -->
+        <rect x="310" y="180" width="560" height="260" rx="2"/>
+        <!-- 4 connecting edges -->
+        <line x1="60"   y1="40"  x2="310" y2="180"/>
+        <line x1="1120" y1="40"  x2="870" y2="180"/>
+        <line x1="60"   y1="580" x2="310" y2="440"/>
+        <line x1="1120" y1="580" x2="870" y2="440"/>
+      </g>
+
+      <!-- gold corner brackets on outer frame -->
+      <g class="bracket" stroke-linecap="square">
+        <path d="M60 70 L60 40 L100 40"/>
+        <path d="M1080 40 L1120 40 L1120 70"/>
+        <path d="M60 550 L60 580 L100 580"/>
+        <path d="M1080 580 L1120 580 L1120 550"/>
+      </g>
+
+      <!-- ─── scanning beam (clipped inside the box) ─── -->
+      <g clip-path="url(#boxClip)">
+        <g class="beam">
+          <rect x="560" y="20" width="60" height="580" fill="url(#beamGrad)"/>
+          <line x1="590" y1="20" x2="590" y2="600" stroke="rgba(255,255,255,.9)" stroke-width="1.2"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <!-- overall progress (mirrors the 10s scan cycle) -->
+  <div class="progress-display" aria-hidden="true">
+    <div class="progress-row">
+      <span class="progress-step-label">
+        <span>الخطوة</span>
+        <span class="progress-step-num"></span>
+        <span>من</span>
+        <span class="progress-step-total">14</span>
+      </span>
+      <span class="progress-pct-num"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-bar-fill"></div></div>
+    <div class="progress-phase">
+      <span class="progress-phase-label">الآن:</span>
+      <span class="progress-phase-text"></span>
+    </div>
+  </div>
+
+</main>
+
+<!-- bottom-right diamond ornament -->
+<div class="diamond" aria-hidden="true">
+  <svg viewBox="0 0 18 18">
+    <path d="M9 1 L17 9 L9 17 L1 9 Z" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <path d="M9 5 L13 9 L9 13 L5 9 Z" fill="currentColor" opacity=".55"/>
+  </svg>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1323 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>النظام الذكي لامانة عمان الكبرى — معاينة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --c-bg:#f7f8fb; --c-bg-soft:#eef1f7; --c-surface:#fff; --c-surface-2:#fbfcfe;
+  --c-border:#e6e9f0; --c-border-2:#eef0f5;
+  --c-text:#0f172a; --c-text-2:#334155; --c-muted:#64748b; --c-subtle:#94a3b8;
+  --c-brand:#2563eb; --c-brand-hover:#1d4ed8; --c-brand-soft:#eff6ff;
+  --c-success:#059669; --c-success-soft:#ecfdf5; --c-success-bd:#a7f3d0;
+  --c-warn:#b45309; --c-warn-soft:#fffbeb; --c-warn-bd:#fde68a;
+  --c-error:#b91c1c; --c-error-soft:#fef2f2; --c-error-bd:#fecaca;
+  --sh-1:0 1px 2px rgba(16,24,40,.04);
+  --sh-2:0 1px 3px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.05);
+  --sh-3:0 1px 3px rgba(16,24,40,.05),0 12px 28px rgba(16,24,40,.08);
+  --r-sm:6px; --r:8px; --r-lg:12px; --r-xl:16px;
+  --ff-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --ff-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ff-ar:"Noto Kufi Arabic","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family:var(--ff-ar);
+  font-size:13.5px;line-height:1.5;color:var(--c-text);
+  background:radial-gradient(900px 500px at 20% -10%,#e8ecf6 0%,transparent 60%),radial-gradient(700px 420px at 100% 0%,#eff6ff 0%,transparent 55%),var(--c-bg);
+  -webkit-font-smoothing:antialiased;min-height:100vh;
+}
+button{font-family:inherit;cursor:pointer}
+.mono{font-family:var(--ff-mono)}
+
+/* ───────── view switcher (demo only) ───────── */
+.view-switch{
+  position:sticky;top:0;z-index:60;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 14px;background:#0f172a;color:#fff;
+  font-size:12px;letter-spacing:.02em;
+}
+.view-switch span.tag{
+  padding:2px 8px;border-radius:999px;background:#1e293b;color:#cbd5e1;
+  font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+}
+.view-switch .vs-buttons{display:flex;gap:4px;background:#1e293b;border-radius:999px;padding:3px}
+.view-switch button{
+  background:transparent;border:0;color:#cbd5e1;padding:5px 14px;border-radius:999px;
+  font-size:12px;font-weight:600;
+}
+.view-switch button.active{background:#fff;color:#0f172a}
+.view-switch .vs-hint{margin-inline-start:auto;font-size:11px;color:#94a3b8}
+
+/* ───────── topbar (shared) ───────── */
+.topbar{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;
+  padding:14px 28px;background:var(--c-surface);
+  border-bottom:1px solid var(--c-border);
+}
+.topbar-brand{display:flex;align-items:center;gap:12px}
+.logo-mark{
+  width:52px;height:52px;border-radius:8px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:radial-gradient(circle at 30% 25%,#fde68a 0%,#f59e0b 38%,#b45309 100%);
+  color:#7c2d12;font-weight:800;
+  box-shadow:inset 0 0 0 2px rgba(120,53,15,.4),0 1px 3px rgba(120,53,15,.18);
+  position:relative;
+}
+.logo-mark::after{
+  content:"";position:absolute;inset:6px;border-radius:50%;
+  border:1.5px solid rgba(120,53,15,.55);
+}
+.logo-mark span{position:relative;font-size:11px;line-height:1;text-align:center;font-family:var(--ff-ar)}
+.topbar-titles{display:flex;flex-direction:column;gap:1px}
+.topbar-title{font-size:15px;font-weight:700;color:var(--c-text);letter-spacing:-0.01em}
+.topbar-sub{font-size:11.5px;color:var(--c-muted)}
+.topbar-nav{
+  display:flex;gap:4px;padding:4px;background:var(--c-bg-soft);border-radius:999px;
+  justify-self:center;border:1px solid var(--c-border);
+}
+.nav-link{
+  text-decoration:none;color:var(--c-text-2);font-size:13px;font-weight:500;
+  padding:7px 16px;border-radius:999px;
+}
+.nav-link.active{background:var(--c-surface);color:var(--c-text);box-shadow:var(--sh-1)}
+.topbar-meta{display:flex;align-items:center;gap:10px}
+.user-pill{
+  display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;
+  background:var(--c-bg-soft);border-radius:999px;border:1px solid var(--c-border);
+}
+.user-avatar{
+  width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(180deg,#60a5fa,#2563eb);color:#fff;font-weight:700;
+  font-size:12px;display:grid;place-items:center;text-transform:uppercase;
+}
+.user-name{font-size:12.5px;color:var(--c-text-2);font-weight:500}
+.ghost-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px;background:transparent;border:1px solid var(--c-border);
+  border-radius:var(--r);color:var(--c-text-2);font-size:12.5px;font-weight:500;
+}
+.ghost-btn svg{width:14px;height:14px}
+
+/* ───────── dashboard ───────── */
+.dash-main{
+  max-width:1280px;margin:0 auto;padding:28px;
+  display:flex;flex-direction:column;gap:24px;width:100%;
+}
+.dash-heading{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+.dash-h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-0.02em}
+.dash-sub{margin:4px 0 0;font-size:13.5px;color:var(--c-muted)}
+.primary-btn{
+  display:inline-flex;align-items:center;gap:8px;padding:10px 16px;
+  background:var(--c-brand);color:#fff;border:1px solid var(--c-brand);
+  border-radius:var(--r);font-size:13px;font-weight:600;
+  box-shadow:0 1px 2px rgba(37,99,235,.25);
+}
+.primary-btn svg{width:14px;height:14px}
+
+/* stats */
+.stats-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+@media(max-width:1100px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{
+  background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);
+  padding:16px 18px;box-shadow:var(--sh-1);
+  display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;
+}
+.stat-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c-brand)}
+.stat-pending::before{background:#b45309}
+.stat-needs::before{background:#c2410c}
+.stat-ok::before{background:var(--c-success)}
+.stat-no::before{background:var(--c-error)}
+.stat-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.stat-label{font-size:12px;color:var(--c-muted);font-weight:500}
+.stat-pill{
+  font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;
+  text-transform:uppercase;letter-spacing:.04em;border:1px solid transparent;
+}
+.stat-pill--neutral{background:var(--c-brand-soft);color:var(--c-brand);border-color:rgba(37,99,235,.2)}
+.stat-pill--warn{background:var(--c-warn-soft);color:var(--c-warn);border-color:var(--c-warn-bd)}
+.stat-pill--ok{background:var(--c-success-soft);color:var(--c-success);border-color:var(--c-success-bd)}
+.stat-pill--err{background:var(--c-error-soft);color:var(--c-error);border-color:var(--c-error-bd)}
+.stat-value{font-size:28px;font-weight:700;font-feature-settings:"tnum" 1}
+.stat-hint{font-size:11.5px;color:var(--c-subtle);min-height:14px}
+
+/* list */
+.list-section{
+  background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);
+  box-shadow:var(--sh-1);overflow:hidden;
+}
+.list-head{
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:16px 20px;border-bottom:1px solid var(--c-border-2);flex-wrap:wrap;
+}
+.list-head h2{margin:0;font-size:16px;font-weight:600}
+.list-head-sub{font-size:12px;color:var(--c-muted)}
+.list-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.list-search{
+  display:flex;align-items:center;gap:8px;background:var(--c-bg-soft);
+  border:1px solid var(--c-border);border-radius:var(--r);padding:6px 12px;min-width:240px;
+}
+.list-search svg{width:14px;height:14px;color:var(--c-muted)}
+.list-search input{border:0;background:transparent;outline:0;font-family:var(--ff-ar);font-size:13px;width:100%;color:var(--c-text)}
+.list-filter-group{display:flex;gap:2px;background:var(--c-bg-soft);border:1px solid var(--c-border);border-radius:var(--r);padding:3px}
+.list-filter-btn{
+  font-family:var(--ff-ar);font-size:12.5px;font-weight:500;color:var(--c-muted);
+  background:transparent;border:0;padding:6px 12px;border-radius:5px;
+}
+.list-filter-btn.active{background:var(--c-surface);color:var(--c-text);box-shadow:var(--sh-1)}
+.list-type-filter{
+  font-family:var(--ff-ar);font-size:12.5px;color:var(--c-text-2);
+  background:var(--c-bg-soft);border:1px solid var(--c-border);
+  border-radius:var(--r);padding:7px 12px;outline:0;
+}
+.app-table{width:100%;border-collapse:collapse;font-size:13px}
+.app-table thead th{
+  text-align:right;font-weight:600;font-size:11.5px;color:var(--c-muted);
+  text-transform:uppercase;letter-spacing:.06em;padding:12px 16px;
+  background:var(--c-bg-soft);border-bottom:1px solid var(--c-border-2);white-space:nowrap;
+}
+.app-table tbody td{padding:14px 16px;border-bottom:1px solid var(--c-border-2);vertical-align:middle}
+.app-table tbody tr:hover{background:#fafbff}
+.app-cell-app{display:flex;flex-direction:column;gap:2px;max-width:260px}
+.app-cell-app-name{font-weight:600;color:var(--c-text)}
+.app-cell-app-id{font-family:var(--ff-mono);font-size:10.5px;color:var(--c-subtle)}
+.app-badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:500;
+  padding:4px 9px;border-radius:999px;line-height:1;border:1px solid transparent;
+}
+.app-badge .dot{width:6px;height:6px;border-radius:50%}
+.b-new{background:#dbeafe;color:#3730a3;border-color:#c7d2fe}
+.b-new .dot{background:#3b82f6}
+.b-ext{background:#ffedd5;color:#9a3412;border-color:#fed7aa}
+.b-ext .dot{background:#ea580c}
+.b-ren{background:#ccfbf1;color:#115e59;border-color:#99f6e4}
+.b-ren .dot{background:#14b8a6}
+.b-other{background:#e2e8f0;color:#475569;border-color:#cbd5e1}
+.b-other .dot{background:#64748b}
+.s-pending{background:var(--c-warn-soft);color:var(--c-warn);border-color:var(--c-warn-bd)}
+.s-pending .dot{background:#b45309}
+.s-needs{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+.s-needs .dot{background:#c2410c}
+.s-ok{background:var(--c-success-soft);color:var(--c-success);border-color:var(--c-success-bd)}
+.s-ok .dot{background:var(--c-success)}
+.s-no{background:var(--c-error-soft);color:var(--c-error);border-color:var(--c-error-bd)}
+.s-no .dot{background:var(--c-error)}
+.s-analyzing{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+.s-analyzing .dot{background:#1d4ed8;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+.row-open{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 11px;
+  background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r);
+  color:var(--c-text-2);font-size:12px;text-decoration:none;
+}
+.row-open svg{width:12px;height:12px}
+
+/* ───────── analyzer page ───────── */
+.work-main{max-width:1340px;margin:0 auto;padding:24px 28px 60px;display:flex;flex-direction:column;gap:14px;width:100%}
+.work-crumbs{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--c-muted);margin-bottom:2px}
+.work-crumbs a{color:var(--c-brand);text-decoration:none}
+.work-crumbs svg{width:11px;height:11px;transform:scaleX(-1)}
+
+.reviewer-banner{
+  background:linear-gradient(180deg,#fff 0%,#f8faff 100%);
+  border:1px solid var(--c-border);border-radius:var(--r-xl);
+  padding:20px 24px 22px;box-shadow:var(--sh-2);position:relative;
+}
+.reviewer-banner::before{
+  content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;
+  background:linear-gradient(180deg,#2563eb,#3b82f6 40%,#60a5fa 100%);
+  border-start-start-radius:var(--r-xl);border-end-start-radius:var(--r-xl);
+}
+.rb-head{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
+  flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--c-border-2);
+}
+.rb-head-left{display:flex;flex-direction:column;gap:6px;min-width:0}
+.rb-head-pills{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rb-status{
+  display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+  padding:5px 12px;border-radius:999px;border:1px solid transparent;
+}
+.rb-status .rb-status-dot{width:7px;height:7px;border-radius:50%}
+.rb-status--needs{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+.rb-status--needs .rb-status-dot{background:#c2410c}
+.rb-title-row{display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:10px;min-width:0}
+.rb-title{margin:0;font-size:19px;font-weight:700;letter-spacing:-0.01em}
+.rb-eyebrow{
+  display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:999px;
+  background:transparent;color:var(--c-text);border:1px solid var(--c-border);
+}
+.rb-section-label{
+  font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--c-muted);
+  margin:14px 0 6px;display:flex;align-items:center;gap:8px;
+  direction:rtl;justify-content:flex-start;text-align:right;
+}
+.rb-section-label:first-of-type{margin-top:2px}
+
+/* identity tiles */
+.rb-identity{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;margin-bottom:4px}
+@media(max-width:1500px){.rb-identity{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:1200px){.rb-identity{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:900px){.rb-identity{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.rb-identity{grid-template-columns:repeat(2,1fr)}}
+.rb-id-item{
+  display:flex;flex-direction:column;gap:4px;min-width:0;padding:8px 10px;
+  background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r);
+  box-shadow:var(--sh-1);
+}
+.rb-id-label{
+  font-size:10px;font-weight:600;color:#2563eb;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;text-align:right;
+}
+.rb-id-value{
+  font-size:13px;font-weight:700;color:var(--c-text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:block;width:100%;text-align:right;
+}
+.rb-id-value.mono{font-family:var(--ff-mono)}
+
+/* main analysis: chart left, kpis right */
+.rb-main-analysis{
+  display:grid;grid-template-columns:minmax(0,3fr) minmax(0,5fr);
+  gap:18px;margin-top:14px;align-items:start;
+}
+@media(max-width:900px){.rb-main-analysis{grid-template-columns:1fr}}
+.drawing-panel{
+  background:#fff;border:1px solid var(--c-border);border-radius:var(--r-lg);
+  padding:6px;min-height:360px;position:relative;overflow:hidden;
+}
+.drawing-svg{width:100%;height:auto;display:block;border-radius:8px;background:#fafbff}
+
+/* kpis */
+.rb-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:4px}
+@media(max-width:1280px){.rb-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.rb-kpis{grid-template-columns:1fr}}
+.rb-kpi{
+  background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r);
+  padding:12px 14px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--sh-1);position:relative;overflow:hidden;
+}
+.rb-kpi-label{font-size:11px;font-weight:500;color:var(--c-muted);letter-spacing:.02em}
+.rb-kpi-value{font-size:22px;font-weight:700;letter-spacing:-0.015em;font-feature-settings:"tnum" 1;line-height:1.15}
+.rb-kpi-hint{font-size:10.5px;color:var(--c-subtle)}
+.rb-kpi--required{border-color:rgba(124,58,237,.2)}
+.rb-kpi--required .rb-kpi-value{font-size:13px;font-weight:600;line-height:1.4}
+
+/* compare kpi */
+.rb-kpi--compare{grid-column:span 2}
+.rb-kpi-compare-row{display:flex;align-items:center;gap:14px;padding:4px 0 2px}
+.rb-kpi-compare-side{flex:1 1 0;min-width:0;text-align:center;display:flex;flex-direction:column;gap:2px}
+.rb-kpi-compare-value{font-size:20px;font-weight:700;line-height:1.15;font-feature-settings:"tnum" 1}
+.rb-kpi-compare-source{font-size:10.5px;color:var(--c-subtle)}
+.rb-kpi-compare-divider{width:1px;align-self:stretch;background:var(--c-border);margin:4px 0}
+.rb-kpi-compare-status{
+  font-size:11.5px;font-weight:500;padding:6px 12px;border-radius:999px;text-align:center;
+  margin-top:8px;background:var(--c-bg-soft);color:var(--c-muted);border:1px solid var(--c-border);
+}
+.rb-kpi--compare[data-state=ok]{border-color:#a7f3d0}
+.rb-kpi--compare[data-state=ok] .rb-kpi-compare-side:first-child .rb-kpi-compare-value{color:#047857}
+.rb-kpi--compare[data-state=ok] .rb-kpi-compare-status{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+.rb-kpi--compare[data-state=warning]{border-color:#fdba74}
+.rb-kpi--compare[data-state=warning] .rb-kpi-compare-side:first-child .rb-kpi-compare-value{color:#b45309}
+.rb-kpi--compare[data-state=warning] .rb-kpi-compare-status{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+.rb-kpi--compare[data-state=violation]{border-color:#fca5a5}
+.rb-kpi--compare[data-state=violation] .rb-kpi-compare-side:first-child .rb-kpi-compare-value{color:#b91c1c}
+.rb-kpi--compare[data-state=violation] .rb-kpi-compare-status{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+
+/* compliance fine kpi */
+.rb-kpi--compliance.rb-kpi--violated{background:var(--c-error-soft);border-color:var(--c-error-bd)}
+.rb-kpi--compliance.rb-kpi--violated .rb-kpi-value{color:var(--c-error)}
+.rb-kpi--compliance.rb-kpi--violated .rb-kpi-hint{color:var(--c-error);font-weight:600}
+
+/* ───────── review panel / issues ───────── */
+.review-panel{margin-top:18px;padding-top:18px;border-top:1px solid var(--c-border-2)}
+.rp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.rp-title{font-size:15px;font-weight:700;color:var(--c-text)}
+
+.rp-timeline{
+  background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);
+  padding:14px 16px;margin-bottom:14px;
+}
+.rp-timeline-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.rp-timeline-title{font-size:13px;font-weight:600}
+.rp-timeline-count{font-size:11px;color:var(--c-muted)}
+.rp-timeline-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.tl-row{
+  display:grid;grid-template-columns:24px 1fr auto;align-items:start;gap:10px;
+  padding:8px 10px;border:1px solid var(--c-border-2);border-radius:var(--r);background:var(--c-surface-2);
+}
+.tl-dot{
+  width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+  background:#dbeafe;color:#1d4ed8;font-size:11px;
+}
+.tl-dot.ok{background:#dcfce7;color:#047857}
+.tl-dot.warn{background:#fef3c7;color:#b45309}
+.tl-body{min-width:0}
+.tl-title{font-size:12.5px;font-weight:600;color:var(--c-text)}
+.tl-sub{font-size:11.5px;color:var(--c-muted);margin-top:2px}
+.tl-when{font-size:11px;color:var(--c-subtle);font-family:var(--ff-mono);white-space:nowrap}
+
+/* issues panel */
+.ip{background:#fff;border:1px solid var(--c-border);border-radius:var(--r-lg);overflow:hidden}
+.ip-header{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:14px 18px;background:#fff7ed;border-bottom:1px solid #fed7aa;
+}
+.ip-status{display:flex;align-items:center;gap:10px}
+.ip-status-icon{width:28px;height:28px;color:#c2410c;flex-shrink:0}
+.ip-status-title{font-size:14px;font-weight:700;color:#9a3412}
+.ip-status-sub{font-size:12px;color:#9a3412;margin-top:2px}
+.ip-btn{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 14px;
+  border:1px solid transparent;border-radius:var(--r);font-size:12.5px;font-weight:600;
+  font-family:var(--ff-ar);
+}
+.ip-btn svg{width:13px;height:13px}
+.ip-btn--primary{background:var(--c-brand);color:#fff;border-color:var(--c-brand)}
+.ip-btn--approve{background:var(--c-success);color:#fff;border-color:var(--c-success)}
+.ip-btn--revision{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+.ip-btn--reject{background:#fff;color:var(--c-error);border-color:var(--c-error-bd)}
+
+.ip-cards{list-style:none;margin:0;padding:14px 18px;display:flex;flex-direction:column;gap:10px}
+.ip-card{
+  background:var(--c-surface-2);border:1px solid var(--c-border);
+  border-right:3px solid #ef4444;border-radius:var(--r);padding:12px 14px;
+}
+.ip-card.minor{border-right-color:#f59e0b}
+.ip-card-head{display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:6px}
+.ip-card-doc{
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--c-muted);padding:3px 8px;border:1px solid var(--c-border);border-radius:999px;background:var(--c-surface);
+}
+.ip-card-status{
+  font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  padding:3px 8px;border-radius:999px;background:rgba(239,68,68,.12);color:#b91c1c;
+}
+.ip-card.minor .ip-card-status{background:rgba(245,158,11,.18);color:#92400e}
+.ip-card-title{font-size:13.5px;font-weight:600;color:var(--c-text);margin:0 0 4px}
+.ip-card-detail{font-size:12.5px;color:var(--c-text-2);line-height:1.6}
+.ip-card-detail b{color:var(--c-text)}
+.ip-card-detail .v{font-family:var(--ff-mono);background:#fff;padding:1px 6px;border-radius:4px;border:1px solid var(--c-border)}
+
+.ip-actions{
+  display:flex;justify-content:flex-start;gap:8px;
+  padding:14px 18px;border-top:1px solid var(--c-border-2);background:var(--c-surface-2);flex-wrap:wrap;
+}
+
+/* ───────── dash-row + pdf cards ───────── */
+.dash-row{margin-top:6px}
+.dash-row-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dash-row-dot{width:8px;height:8px;border-radius:50%;background:var(--c-brand)}
+.dash-row-dot--docs{background:#ea580c}
+.dash-row-dot--reports{background:#7c3aed}
+.dash-row-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--c-muted)}
+.dash-row-hint{font-size:11.5px;color:var(--c-subtle)}
+
+.pdf-section{
+  background:#fff;border:1px solid var(--c-border);border-radius:var(--r-lg);
+  border-inline-start:3px solid #ea580c;margin-bottom:10px;overflow:hidden;
+}
+.pdf-section.floor-section{border-inline-start-color:#0d9488}
+.pdf-section.site-plan-section{border-inline-start-color:#7c3aed}
+.pdf-head{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;
+  border-bottom:1px solid var(--c-border-2);background:var(--c-surface-2);
+}
+.pdf-chevron{width:11px;height:11px;color:var(--c-muted);transform:rotate(90deg)}
+.pdf-head-left{flex:1}
+.pdf-label{font-size:13px;font-weight:600;color:var(--c-text)}
+.pdf-sub{font-size:11.5px;color:var(--c-muted);margin-inline-start:8px}
+.pdf-status{
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 10px;border-radius:999px;background:#dcfce7;color:#047857;border:1px solid #a7f3d0;
+}
+.pdf-status--warn{background:#fef3c7;color:#92400e;border-color:#fde68a}
+.pdf-body{padding:16px}
+.pdf-summary-text{font-size:13px;color:var(--c-text-2);line-height:1.7;margin:0 0 14px}
+.pdf-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media(max-width:900px){.pdf-fields{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.pdf-fields{grid-template-columns:1fr}}
+.pdf-field{
+  border:1px solid var(--c-border);border-radius:var(--r);padding:8px 10px;background:var(--c-surface-2);
+  display:flex;flex-direction:column;gap:3px;
+}
+.pdf-field-label{font-size:10px;font-weight:600;color:#2563eb;letter-spacing:.04em}
+.pdf-field-value{font-size:13px;font-weight:700;color:var(--c-text);font-family:var(--ff-mono)}
+.pdf-field-value.text{font-family:var(--ff-ar)}
+
+/* floor section specifics */
+.floor-header-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.floor-header-card{
+  background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:10px;
+  padding:10px 12px;display:flex;flex-direction:column;gap:2px;
+}
+.ft-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--c-muted)}
+.ft-value{font-size:17px;font-weight:700;font-family:var(--ff-mono)}
+.ft-unit{font-size:11px;color:var(--c-muted);margin-inline-start:4px;font-weight:500}
+
+.floor-recon{
+  display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;
+  border:1px solid var(--c-border);background:var(--c-surface-2);font-size:12px;margin-bottom:10px;
+}
+.fr-state-dot{width:8px;height:8px;border-radius:50%;background:var(--c-muted)}
+.fr-state-text{flex:1;color:var(--c-text);font-weight:500}
+.floor-recon.is-mismatch{border-color:#b45309;background:#fef3c7}
+.floor-recon.is-mismatch .fr-state-dot{background:#b45309}
+
+.floor-comparison{
+  background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:10px;
+  padding:10px 12px;margin-bottom:10px;
+}
+.floor-comparison.is-over{border-color:#0d9488;background:#f0fdfa}
+.fc-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;gap:10px}
+.fc-row+.fc-row{margin-top:4px}
+.fc-label{color:var(--c-muted)}
+.fc-value{font-family:var(--ff-mono);font-weight:600}
+.fc-ratio{font-size:15px;font-weight:700}
+
+.floor-floor{
+  border:1px solid var(--c-border);border-radius:10px;margin-bottom:8px;overflow:hidden;
+}
+.floor-floor.is-mismatch{border-color:#b45309}
+.floor-floor-head{
+  list-style:none;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--c-surface-2);font-size:12.5px;
+}
+.floor-floor-name{flex:1;font-weight:600;font-size:13px}
+.floor-floor-totals{font-family:var(--ff-mono);font-size:12px;color:var(--c-muted)}
+.floor-pdf-subtotal{margin-inline-start:6px;color:#b45309;font-weight:600}
+.floor-floor-flag{
+  font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  padding:2px 6px;border-radius:4px;background:#fef3c7;color:#92400e;
+}
+.floor-floor-page{
+  font-size:10.5px;color:var(--c-muted);font-family:var(--ff-mono);
+  padding:1px 5px;border-radius:3px;background:#fff;border:1px solid var(--c-border);
+}
+.floor-room-table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+.floor-room-table th{
+  text-align:right;padding:8px 12px;font-weight:600;color:var(--c-muted);
+  font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  background:var(--c-bg-soft);border-bottom:1px solid var(--c-border-2);
+}
+.floor-room-table td{
+  padding:7px 12px;border-bottom:1px solid var(--c-border-2);font-family:var(--ff-mono);
+}
+.floor-room-table td.txt{font-family:var(--ff-ar)}
+.floor-room-table tr:last-child td{border-bottom:0}
+.floor-room-table tfoot td{
+  background:var(--c-surface-2);font-weight:700;border-top:1px solid var(--c-border-2);
+}
+
+/* summary & raw */
+.summary-details{
+  background:#fff;border:1px solid var(--c-border);border-radius:var(--r-lg);
+  border-inline-start:3px solid var(--c-brand);padding:14px 16px;
+}
+.summary-details summary{
+  list-style:none;cursor:pointer;font-weight:600;font-size:13px;color:var(--c-text);
+  display:flex;align-items:center;gap:8px;
+}
+.summary-box{margin-top:10px;font-size:13px;line-height:1.7;color:var(--c-text-2)}
+.summary-box p{margin:0 0 8px}
+.summary-box ul{margin:6px 0 8px;padding-inline-start:20px}
+.summary-box li{margin-bottom:4px}
+
+/* hide elements */
+.hide{display:none !important}
+</style>
+</head>
+<body>
+
+<!-- demo only — view switcher (does NOT exist in the real app) -->
+<div class="view-switch">
+  <span class="tag">DEMO</span>
+  <div class="vs-buttons">
+    <button id="vs-dash" class="active" onclick="showView('dash')">لوحة التحكم</button>
+    <button id="vs-app" onclick="showView('app')">نتائج التحليل</button>
+  </div>
+  <span class="vs-hint">معاينة بواجهة بيانات تجريبية · غير متصلة بأي خادم</span>
+</div>
+
+<!-- ===================================================================
+     VIEW 1 — DASHBOARD
+     =================================================================== -->
+<div id="view-dash">
+
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="logo-mark"><span>أمانة<br/>عمان</span></div>
+    <div class="topbar-titles">
+      <div class="topbar-title">النظام الذكي لامانة عمان الكبرى</div>
+      <div class="topbar-sub">واجهة مراجعة الرخص بالذكاء الاصطناعي</div>
+    </div>
+  </div>
+  <nav class="topbar-nav">
+    <a class="nav-link active" href="#">لوحة التحكم</a>
+    <a class="nav-link" href="#">طلب جديد</a>
+  </nav>
+  <div class="topbar-meta">
+    <div class="user-pill">
+      <span class="user-avatar">س</span>
+      <span class="user-name">سامر العبيدي · مراجع</span>
+    </div>
+    <button class="ghost-btn">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
+      <span>تسجيل الخروج</span>
+    </button>
+  </div>
+</header>
+
+<main class="dash-main">
+
+  <section class="dash-heading">
+    <div>
+      <h1 class="dash-h1">الطلبات</h1>
+      <p class="dash-sub">طلبات الترخيص وحالة المراجعة لكلٍّ منها بلمحة واحدة.</p>
+    </div>
+    <a href="#" class="primary-btn">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12M4 10h12"/></svg>
+      <span>طلب جديد</span>
+    </a>
+  </section>
+
+  <section class="stats-grid">
+    <div class="stat-card stat-total">
+      <div class="stat-top"><span class="stat-label">إجمالي الطلبات</span><span class="stat-pill stat-pill--neutral">الكل</span></div>
+      <div class="stat-value">١٤٢</div>
+      <div class="stat-hint">+١٢ خلال الأسبوع الماضي</div>
+    </div>
+    <div class="stat-card stat-pending">
+      <div class="stat-top"><span class="stat-label">قيد المراجعة</span><span class="stat-pill stat-pill--warn">مفتوحة</span></div>
+      <div class="stat-value">٢٣</div>
+      <div class="stat-hint">٤ تجاوزت ٧٢ ساعة</div>
+    </div>
+    <div class="stat-card stat-needs">
+      <div class="stat-top"><span class="stat-label">بحاجة تعديل</span><span class="stat-pill stat-pill--warn">مفتوحة</span></div>
+      <div class="stat-value">١١</div>
+      <div class="stat-hint">٧ بانتظار رد المقدّم</div>
+    </div>
+    <div class="stat-card stat-ok">
+      <div class="stat-top"><span class="stat-label">موافق عليها</span><span class="stat-pill stat-pill--ok">منتهية</span></div>
+      <div class="stat-value">٩٤</div>
+      <div class="stat-hint">+٨ هذا الشهر</div>
+    </div>
+    <div class="stat-card stat-no">
+      <div class="stat-top"><span class="stat-label">مرفوضة</span><span class="stat-pill stat-pill--err">منتهية</span></div>
+      <div class="stat-value">١٤</div>
+      <div class="stat-hint">٣ مخالفات ارتدادات جسيمة</div>
+    </div>
+  </section>
+
+  <section class="list-section">
+    <div class="list-head">
+      <div>
+        <h2>جميع الطلبات</h2>
+        <span class="list-head-sub">عرض ١-١٠ من ١٤٢</span>
+      </div>
+      <div class="list-controls">
+        <label class="list-search">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="5.5"/><path d="M13.5 13.5L17 17"/></svg>
+          <input type="search" placeholder="بحث بالمالك أو الحوض أو القطعة أو اسم الملف…" />
+        </label>
+        <div class="list-filter-group">
+          <button class="list-filter-btn active">الكل</button>
+          <button class="list-filter-btn">قيد المراجعة</button>
+          <button class="list-filter-btn">بحاجة تعديل</button>
+          <button class="list-filter-btn">موافق عليها</button>
+          <button class="list-filter-btn">مرفوضة</button>
+        </div>
+        <select class="list-type-filter">
+          <option>كل الأنواع</option>
+          <option>الاستشارة (موافقة مبدئية)</option>
+          <option>ترخيص مقترح على ارض خالية</option>
+          <option>ترخيص مقترح فوق قائم</option>
+          <option>اذن اشغال</option>
+          <option>ترخيص زيادات</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="app-table">
+        <thead>
+          <tr>
+            <th>الطلب</th>
+            <th>النوع</th>
+            <th>المالك</th>
+            <th>الحالة</th>
+            <th>تاريخ الإنشاء</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="app-cell-app">
+                <span class="app-cell-app-name">قطعة ٢٠١٤ · بدران</span>
+                <span class="app-cell-app-id">APP-2026-04-118</span>
+              </div>
+            </td>
+            <td><span class="app-badge b-new"><span class="dot"></span>ترخيص مقترح على ارض خالية</span></td>
+            <td>فادي يوسف العبادي</td>
+            <td><span class="app-badge s-needs"><span class="dot"></span>بحاجة تعديل</span></td>
+            <td class="mono">٢٠٢٦-٠٤-٢٧</td>
+            <td><a href="#" class="row-open" onclick="showView('app');return false;">فتح
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10H6M10 6l-4 4 4 4"/></svg>
+            </a></td>
+          </tr>
+          <tr>
+            <td><div class="app-cell-app"><span class="app-cell-app-name">قطعة ٧٧٢ · صويلح</span><span class="app-cell-app-id">APP-2026-04-117</span></div></td>
+            <td><span class="app-badge b-ext"><span class="dot"></span>ترخيص زيادات</span></td>
+            <td>منى صالح الزعبي</td>
+            <td><span class="app-badge s-pending"><span class="dot"></span>قيد المراجعة</span></td>
+            <td class="mono">٢٠٢٦-٠٤-٢٦</td>
+            <td><a href="#" class="row-open">فتح<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10H6M10 6l-4 4 4 4"/></svg></a></td>
+          </tr>
+          <tr>
+            <td><div class="app-cell-app"><span class="app-cell-app-name">قطعة ١٤٤٨ · ام السماق</span><span class="app-cell-app-id">APP-2026-04-115</span></div></td>
+            <td><span class="app-badge b-new"><span class="dot"></span>الاستشارة (موافقة مبدئية)</span></td>
+            <td>أحمد خالد الشوبكي</td>
+            <td><span class="app-badge s-ok"><span class="dot"></span>موافق عليها</span></td>
+            <td class="mono">٢٠٢٦-٠٤-٢٤</td>
+            <td><a href="#" class="row-open">فتح<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10H6M10 6l-4 4 4 4"/></svg></a></td>
+          </tr>
+          <tr>
+            <td><div class="app-cell-app"><span class="app-cell-app-name">قطعة ٢٠٣ · تلاع العلي</span><span class="app-cell-app-id">APP-2026-04-114</span></div></td>
+            <td><span class="app-badge b-ren"><span class="dot"></span>اذن اشغال</span></td>
+            <td>ليلى محمد ابوحمدة</td>
+            <td><span class="app-badge s-analyzing"><span class="dot"></span>قيد التحليل</span></td>
+            <td class="mono">٢٠٢٦-٠٤-٢٤</td>
+            <td><a href="#" class="row-open">فتح<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10H6M10 6l-4 4 4 4"/></svg></a></td>
+          </tr>
+          <tr>
+            <td><div class="app-cell-app"><span class="app-cell-app-name">قطعة ١٠٩٢ · خلدا</span><span class="app-cell-app-id">APP-2026-04-110</span></div></td>
+            <td><span class="app-badge b-new"><span class="dot"></span>ترخيص مقترح فوق قائم</span></td>
+            <td>عمر إبراهيم الكردي</td>
+            <td><span class="app-badge s-no"><span class="dot"></span>مرفوضة</span></td>
+            <td class="mono">٢٠٢٦-٠٤-٢٢</td>
+            <td><a href="#" class="row-open">فتح<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10H6M10 6l-4 4 4 4"/></svg></a></td>
+          </tr>
+          <tr>
+            <td><div class="app-cell-app"><span class="app-cell-app-name">قطعة ٥٤٧ · دابوق</span><span class="app-cell-app-id">APP-2026-04-108</span></div></td>
+            <td><span class="app-badge b-new"><span class="dot"></span>ترخيص مقترح على ارض خالية</span></td>
+            <td>هدى نعيم البطاينة</td>
+            <td><span class="app-badge s-ok"><span class="dot"></span>موافق عليها</span></td>
+            <td class="mono">٢٠٢٦-٠٤-٢١</td>
+            <td><a href="#" class="row-open">فتح<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10H6M10 6l-4 4 4 4"/></svg></a></td>
+          </tr>
+          <tr>
+            <td><div class="app-cell-app"><span class="app-cell-app-name">قطعة ٣٣٢١ · مرج الحمام</span><span class="app-cell-app-id">APP-2026-04-105</span></div></td>
+            <td><span class="app-badge b-other"><span class="dot"></span>تجديد اذن اشغال</span></td>
+            <td>ربى يوسف الحوراني</td>
+            <td><span class="app-badge s-pending"><span class="dot"></span>قيد المراجعة</span></td>
+            <td class="mono">٢٠٢٦-٠٤-١٩</td>
+            <td><a href="#" class="row-open">فتح<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10H6M10 6l-4 4 4 4"/></svg></a></td>
+          </tr>
+          <tr>
+            <td><div class="app-cell-app"><span class="app-cell-app-name">قطعة ٤٤ · الشميساني</span><span class="app-cell-app-id">APP-2026-04-101</span></div></td>
+            <td><span class="app-badge b-new"><span class="dot"></span>استشارة فنية</span></td>
+            <td>طارق سامي العتوم</td>
+            <td><span class="app-badge s-needs"><span class="dot"></span>بحاجة تعديل</span></td>
+            <td class="mono">٢٠٢٦-٠٤-١٧</td>
+            <td><a href="#" class="row-open">فتح<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10H6M10 6l-4 4 4 4"/></svg></a></td>
+          </tr>
+          <tr>
+            <td><div class="app-cell-app"><span class="app-cell-app-name">قطعة ١٧٣٦ · ابو نصير</span><span class="app-cell-app-id">APP-2026-04-098</span></div></td>
+            <td><span class="app-badge b-ext"><span class="dot"></span>ترخيص زيادات + أذن اشغال</span></td>
+            <td>سعاد فهد القاسم</td>
+            <td><span class="app-badge s-ok"><span class="dot"></span>موافق عليها</span></td>
+            <td class="mono">٢٠٢٦-٠٤-١٥</td>
+            <td><a href="#" class="row-open">فتح<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10H6M10 6l-4 4 4 4"/></svg></a></td>
+          </tr>
+          <tr>
+            <td><div class="app-cell-app"><span class="app-cell-app-name">قطعة ٨٨٩ · الجبيهة</span><span class="app-cell-app-id">APP-2026-04-095</span></div></td>
+            <td><span class="app-badge b-ren"><span class="dot"></span>ترخيص مخطط تعديلي</span></td>
+            <td>محمد فيصل الدبس</td>
+            <td><span class="app-badge s-pending"><span class="dot"></span>قيد المراجعة</span></td>
+            <td class="mono">٢٠٢٦-٠٤-١٤</td>
+            <td><a href="#" class="row-open">فتح<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10H6M10 6l-4 4 4 4"/></svg></a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+</div><!-- /view-dash -->
+
+<!-- ===================================================================
+     VIEW 2 — ANALYZER RESULTS
+     =================================================================== -->
+<div id="view-app" class="hide">
+
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="logo-mark"><span>أمانة<br/>عمان</span></div>
+    <div class="topbar-titles">
+      <div class="topbar-title">النظام الذكي لامانة عمان الكبرى</div>
+      <div class="topbar-sub">واجهة مراجعة الرخص بالذكاء الاصطناعي</div>
+    </div>
+  </div>
+  <nav class="topbar-nav">
+    <a class="nav-link" href="#" onclick="showView('dash');return false;">لوحة التحكم</a>
+    <a class="nav-link active" href="#">طلب جديد</a>
+  </nav>
+  <div class="topbar-meta">
+    <div class="user-pill">
+      <span class="user-avatar">س</span>
+      <span class="user-name">سامر العبيدي · مراجع</span>
+    </div>
+    <button class="ghost-btn">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
+      <span>تسجيل الخروج</span>
+    </button>
+  </div>
+</header>
+
+<main class="work-main">
+
+  <div class="work-crumbs">
+    <a href="#" onclick="showView('dash');return false;">لوحة التحكم</a>
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg>
+    <span>قطعة ٢٠١٤ · بدران</span>
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg>
+    <span class="mono">APP-2026-04-118</span>
+  </div>
+
+  <!-- ============== Reviewer banner ============== -->
+  <section class="reviewer-banner">
+
+    <div class="rb-head">
+      <div class="rb-head-left">
+        <div class="rb-head-pills">
+          <span class="rb-status rb-status--needs">
+            <span class="rb-status-dot"></span>
+            <span>بحاجة تعديل</span>
+          </span>
+        </div>
+        <div class="rb-title-row">
+          <h2 class="rb-title">قطعة ٢٠١٤ · بدران</h2>
+          <span class="rb-eyebrow">ترخيص مقترح على ارض خالية</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- application details (identity grid) -->
+    <div class="rb-section-label"><span>تفاصيل الطلب</span></div>
+    <div class="rb-identity">
+      <div class="rb-id-item"><span class="rb-id-label">رقم القطعة</span><span class="rb-id-value mono">٢٠١٤</span></div>
+      <div class="rb-id-item"><span class="rb-id-label">رقم الحوض</span><span class="rb-id-value mono">١١٨</span></div>
+      <div class="rb-id-item"><span class="rb-id-label">اسم الحوض</span><span class="rb-id-value">بدران الجنوبية</span></div>
+      <div class="rb-id-item"><span class="rb-id-label">القرية</span><span class="rb-id-value">١١٨ بدران</span></div>
+      <div class="rb-id-item"><span class="rb-id-label">المالك</span><span class="rb-id-value">فادي يوسف العبادي</span></div>
+      <div class="rb-id-item"><span class="rb-id-label">منطقة التنظيم</span><span class="rb-id-value">سكن (ج)</span></div>
+      <div class="rb-id-item"><span class="rb-id-label">رقم التسجيل</span><span class="rb-id-value mono">٤٤٩١ / ٢٠٢١</span></div>
+      <div class="rb-id-item"><span class="rb-id-label">تاريخ الوثيقة</span><span class="rb-id-value mono">٢٠٢١-٠٧-١٤</span></div>
+      <div class="rb-id-item"><span class="rb-id-label">رقم البناء</span><span class="rb-id-value mono">—</span></div>
+      <div class="rb-id-item"><span class="rb-id-label">اسم الشارع</span><span class="rb-id-value">شارع وادي صقرة</span></div>
+    </div>
+
+    <!-- ============== Main analysis ============== -->
+    <div class="rb-main-analysis">
+
+      <!-- chart (inline SVG, fake setback drawing) -->
+      <div class="drawing-panel">
+        <svg class="drawing-svg" viewBox="0 0 420 380" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="#fafbff"/>
+          <rect width="100%" height="100%" fill="url(#grid)"/>
+
+          <!-- street labels -->
+          <text x="210" y="22" font-size="10" font-family="Noto Kufi Arabic" fill="#64748b" text-anchor="middle">شارع وادي صقرة</text>
+          <line x1="40" y1="36" x2="380" y2="36" stroke="#94a3b8" stroke-width="0.7" stroke-dasharray="3 3"/>
+
+          <!-- LOT polygon -->
+          <polygon points="60,60 360,60 360,330 60,330" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+
+          <!-- BUILDING polygon (offset inwards) -->
+          <polygon points="120,110 320,110 320,278 120,278" fill="rgba(37,99,235,0.10)" stroke="#2563eb" stroke-width="2"/>
+
+          <!-- setback dimension lines -->
+          <!-- front (top) -->
+          <line x1="220" y1="60" x2="220" y2="110" stroke="#16a34a" stroke-width="1" stroke-dasharray="2 2"/>
+          <text x="232" y="88" font-size="11" font-family="JetBrains Mono" fill="#047857" font-weight="700">٤.١٢ م</text>
+          <text x="232" y="100" font-size="9" font-family="Noto Kufi Arabic" fill="#64748b">أمامي</text>
+
+          <!-- left side -->
+          <line x1="60" y1="195" x2="120" y2="195" stroke="#16a34a" stroke-width="1" stroke-dasharray="2 2"/>
+          <text x="68" y="187" font-size="11" font-family="JetBrains Mono" fill="#047857" font-weight="700">٣.٢٥ م</text>
+          <text x="74" y="210" font-size="9" font-family="Noto Kufi Arabic" fill="#64748b">جانبي شرقي</text>
+
+          <!-- right side -->
+          <line x1="320" y1="195" x2="360" y2="195" stroke="#16a34a" stroke-width="1" stroke-dasharray="2 2"/>
+          <text x="324" y="187" font-size="11" font-family="JetBrains Mono" fill="#047857" font-weight="700">٣.٠٨ م</text>
+          <text x="320" y="210" font-size="9" font-family="Noto Kufi Arabic" fill="#64748b">جانبي غربي</text>
+
+          <!-- rear (bottom) — VIOLATION -->
+          <line x1="220" y1="278" x2="220" y2="330" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="2 2"/>
+          <text x="232" y="310" font-size="11" font-family="JetBrains Mono" fill="#b91c1c" font-weight="700">١.٨٥ م ⚠</text>
+          <text x="232" y="322" font-size="9" font-family="Noto Kufi Arabic" fill="#b91c1c">خلفي · المطلوب ٤ م</text>
+
+          <!-- compass -->
+          <g transform="translate(50,355)">
+            <circle r="11" fill="#fff" stroke="#cbd5e1" stroke-width="1"/>
+            <path d="M0,-7 L3,2 L0,0 L-3,2 Z" fill="#1e3a8a"/>
+            <text y="-12" font-size="8" font-family="Inter" fill="#1e3a8a" text-anchor="middle" font-weight="700">N</text>
+          </g>
+
+          <!-- legend -->
+          <g transform="translate(280,355)" font-family="Noto Kufi Arabic" font-size="9">
+            <rect x="0" y="-7" width="10" height="6" fill="rgba(37,99,235,0.10)" stroke="#2563eb"/>
+            <text x="14" y="-1" fill="#334155">المبنى</text>
+            <rect x="48" y="-7" width="10" height="6" fill="#fff" stroke="#1e3a8a"/>
+            <text x="62" y="-1" fill="#334155">قطعة الأرض</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="rb-analysis-right">
+        <div class="rb-section-label"><span>المؤشرات الرئيسية</span></div>
+
+        <div class="rb-kpis">
+          <!-- building area (compare) -->
+          <div class="rb-kpi rb-kpi--compare" data-state="ok">
+            <div class="rb-kpi-label">مساحة البناء</div>
+            <div class="rb-kpi-compare-row">
+              <div class="rb-kpi-compare-side">
+                <div class="rb-kpi-compare-value mono">١٬١٧٠٫٤٠</div>
+                <div class="rb-kpi-compare-source">الفعلي (CAD)</div>
+              </div>
+              <div class="rb-kpi-compare-divider"></div>
+              <div class="rb-kpi-compare-side">
+                <div class="rb-kpi-compare-value mono">١٬٤٦٣٫١٥</div>
+                <div class="rb-kpi-compare-source">المسموح (سند × التغطية)</div>
+              </div>
+            </div>
+            <div class="rb-kpi-compare-status">ضمن الحد المسموح بفارق ٢٩٢٫٧٥ م²</div>
+          </div>
+
+          <!-- lot area (compare) -->
+          <div class="rb-kpi rb-kpi--compare" data-state="ok">
+            <div class="rb-kpi-label">مساحة القطعة</div>
+            <div class="rb-kpi-compare-row">
+              <div class="rb-kpi-compare-side">
+                <div class="rb-kpi-compare-value mono">٤٬٨٧٧٫١٧</div>
+                <div class="rb-kpi-compare-source">من المخطط CAD</div>
+              </div>
+              <div class="rb-kpi-compare-divider"></div>
+              <div class="rb-kpi-compare-side">
+                <div class="rb-kpi-compare-value mono">٤٬٨٧٧٫١٧</div>
+                <div class="rb-kpi-compare-source">من سند التسجيل (٤ دونم ٨٧٧٫١٧٠)</div>
+              </div>
+            </div>
+            <div class="rb-kpi-compare-status">القيمتان متطابقتان</div>
+          </div>
+
+          <!-- coverage -->
+          <div class="rb-kpi rb-kpi--compare" data-state="ok">
+            <div class="rb-kpi-label">نسبة التغطية</div>
+            <div class="rb-kpi-compare-row">
+              <div class="rb-kpi-compare-side">
+                <div class="rb-kpi-compare-value mono">٢٤٫٠٪</div>
+                <div class="rb-kpi-compare-source">الفعلي (CAD)</div>
+              </div>
+              <div class="rb-kpi-compare-divider"></div>
+              <div class="rb-kpi-compare-side">
+                <div class="rb-kpi-compare-value mono">٣٠٫٠٪</div>
+                <div class="rb-kpi-compare-source">المسموح (مخطط الموقع)</div>
+              </div>
+            </div>
+            <div class="rb-kpi-compare-status">ضمن الحد المسموح بهامش ٦ نقاط مئوية</div>
+          </div>
+
+          <!-- floors -->
+          <div class="rb-kpi rb-kpi--compare" data-state="ok">
+            <div class="rb-kpi-label">عدد الطوابق</div>
+            <div class="rb-kpi-compare-row">
+              <div class="rb-kpi-compare-side">
+                <div class="rb-kpi-compare-value mono">٤</div>
+                <div class="rb-kpi-compare-source">الفعلي (خطة الطابقية)</div>
+              </div>
+              <div class="rb-kpi-compare-divider"></div>
+              <div class="rb-kpi-compare-side">
+                <div class="rb-kpi-compare-value mono">٤</div>
+                <div class="rb-kpi-compare-source">المسموح (مخطط الموقع)</div>
+              </div>
+            </div>
+            <div class="rb-kpi-compare-status">العدد مطابق للحد المسموح</div>
+          </div>
+
+          <!-- floor coverage -->
+          <div class="rb-kpi rb-kpi--compare" data-state="ok">
+            <div class="rb-kpi-label">نسبة البناء الكلية</div>
+            <div class="rb-kpi-compare-row">
+              <div class="rb-kpi-compare-side">
+                <div class="rb-kpi-compare-value mono">٩٦٫٠٪</div>
+                <div class="rb-kpi-compare-source">مجموع الطوابق ÷ القطعة</div>
+              </div>
+              <div class="rb-kpi-compare-divider"></div>
+              <div class="rb-kpi-compare-side">
+                <div class="rb-kpi-compare-value mono">١٢٠٫٠٪</div>
+                <div class="rb-kpi-compare-source">المسموح (مخطط الموقع)</div>
+              </div>
+            </div>
+            <div class="rb-kpi-compare-status">ضمن الحد بهامش ٢٤ نقطة مئوية</div>
+          </div>
+
+          <!-- required setbacks -->
+          <div class="rb-kpi rb-kpi--required">
+            <div class="rb-kpi-label">الارتدادات المطلوبة</div>
+            <div class="rb-kpi-value">أمامي: ٤ · جانبي: ٣ · خلفي: ٤</div>
+            <div class="rb-kpi-hint">من مخطط الموقع التنظيمي</div>
+          </div>
+
+          <!-- compliance fine -->
+          <div class="rb-kpi rb-kpi--compliance rb-kpi--violated">
+            <div class="rb-kpi-label">مخالفة الالتزام</div>
+            <div class="rb-kpi-value">٢٫١٥ م</div>
+            <div class="rb-kpi-hint">الارتداد الخلفي أقل من المطلوب بـ٢٫١٥ م</div>
+          </div>
+
+          <!-- printed total -->
+          <div class="rb-kpi">
+            <div class="rb-kpi-label">إجمالي الطوابق (مطبوع)</div>
+            <div class="rb-kpi-value mono">٤٬٦٨٤٫٠٠ م²</div>
+            <div class="rb-kpi-hint">من خطة مساحة الطابقية</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== Review panel ============== -->
+    <section class="review-panel">
+      <div class="rp-head">
+        <span class="rp-title">مراجعة الطلب</span>
+      </div>
+
+      <!-- timeline -->
+      <div class="rp-timeline">
+        <div class="rp-timeline-head">
+          <span class="rp-timeline-title">سجل الاتصالات والقرارات</span>
+          <span class="rp-timeline-count">٢ من الأحداث</span>
+        </div>
+        <ol class="rp-timeline-list">
+          <li class="tl-row">
+            <div class="tl-dot">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l3 3 5-6"/></svg>
+            </div>
+            <div class="tl-body">
+              <div class="tl-title">رفع الطلب — أربع وثائق مكتملة</div>
+              <div class="tl-sub">المقدّم: م. أحمد العبادي · المستشار الهندسي · رفع المخطط (DWG) و٣ ملفات PDF</div>
+            </div>
+            <span class="tl-when">٢٠٢٦-٠٤-٢٧ ٠٩:١٤</span>
+          </li>
+          <li class="tl-row">
+            <div class="tl-dot warn">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v6M7 11v.01"/></svg>
+            </div>
+            <div class="tl-body">
+              <div class="tl-title">انتهاء التحليل التلقائي — رصد ملاحظتين</div>
+              <div class="tl-sub">النظام الذكي رصد مخالفة في الارتداد الخلفي وفروقًا في خطة مساحة الطابقية</div>
+            </div>
+            <span class="tl-when">٢٠٢٦-٠٤-٢٧ ٠٩:١٧</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- issues panel -->
+      <div class="ip">
+        <header class="ip-header">
+          <div class="ip-status">
+            <svg class="ip-status-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4M10 13.5h.01"/></svg>
+            <div>
+              <div class="ip-status-title">تم رصد ملاحظتين تتطلبان قرارًا</div>
+              <div class="ip-status-sub">راجع البطاقات أدناه قبل الموافقة أو إعادة الطلب للتعديل</div>
+            </div>
+          </div>
+          <button class="ip-btn ip-btn--primary">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l3-3 6-6 3 3-6 6-3 3z"/></svg>
+            <span>تعديل الملفات وإعادة الرفع</span>
+          </button>
+        </header>
+
+        <ol class="ip-cards">
+
+          <li class="ip-card">
+            <div class="ip-card-head">
+              <span class="ip-card-doc">المخطط CAD</span>
+              <span class="ip-card-status">مخالفة جسيمة</span>
+            </div>
+            <h4 class="ip-card-title">الارتداد الخلفي أقل من المطلوب في مخطط الموقع التنظيمي</h4>
+            <div class="ip-card-detail">
+              قاس النظام الارتداد الفعلي بين حدّ المبنى الخلفي وحدّ القطعة الخلفي عند
+              <span class="v">١٫٨٥ م</span>،
+              في حين أن مخطط الموقع التنظيمي يشترط ارتدادًا خلفيًا لا يقل عن
+              <span class="v">٤٫٠٠ م</span>.
+              يقع المبنى داخل القطعة لكنه يخرق الحدّ التنظيمي بمقدار
+              <b>٢٫١٥ م</b>.
+              <br/>
+              <b>الإجراء المقترح:</b> تعديل موقع المبنى أو تقليل عمقه لتحقيق الحدّ المطلوب وإعادة رفع المخطط.
+            </div>
+          </li>
+
+          <li class="ip-card minor">
+            <div class="ip-card-head">
+              <span class="ip-card-doc">خطة مساحة الطابقية</span>
+              <span class="ip-card-status">تحقق</span>
+            </div>
+            <h4 class="ip-card-title">فرق ٧٫٥٠ م² بين المجموع المطبوع للطابق الأرضي ومجموع الغرف</h4>
+            <div class="ip-card-detail">
+              مجموع الغرف للطابق الأرضي بحساب أبعاد × عدد التكرارات يساوي
+              <span class="v">٣١٢٫٥٠ م²</span>،
+              بينما الإجمالي المطبوع في عمود «المساحة» على الخطة هو
+              <span class="v">٣٢٠٫٠٠ م²</span> — أي فرق
+              <b>٧٫٥٠ م²</b>.
+              لا يؤثر هذا الفرق على نسبة البناء الكلية (ضمن الهامش) لكنه يستوجب توضيحًا أو تصحيحًا في الجدول.
+              <br/>
+              <b>الإجراء المقترح:</b> راجع جدول الطابق الأرضي وأكِّد المساحة المطبوعة، أو أعِد إصدار الجدول بقيم متطابقة.
+            </div>
+          </li>
+
+        </ol>
+
+        <footer class="ip-actions">
+          <button class="ip-btn ip-btn--approve">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.3 3L13 5"/></svg>
+            <span>موافقة</span>
+          </button>
+          <button class="ip-btn ip-btn--revision">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a5 5 0 0 1 9-3M12 5v3h-3"/><path d="M13 5a5 5 0 0 1-9 3M4 11V8h3"/></svg>
+            <span>إعادة للمقدّم للتعديل</span>
+          </button>
+          <button class="ip-btn ip-btn--reject">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+            <span>رفض</span>
+          </button>
+        </footer>
+      </div>
+    </section>
+
+  </section><!-- /reviewer-banner -->
+
+  <!-- ============== Document intelligence row ============== -->
+  <section class="dash-row">
+    <div class="dash-row-head">
+      <span class="dash-row-dot dash-row-dot--docs"></span>
+      <span class="dash-row-label">قراءة الوثائق بالذكاء الاصطناعي</span>
+      <span class="dash-row-hint">مستخرجة من ملفات PDF المرفقة</span>
+    </div>
+
+    <!-- Floor-area plan -->
+    <details class="pdf-section floor-section" open>
+      <summary class="pdf-head">
+        <svg class="pdf-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 3l3 3-3 3"/></svg>
+        <div class="pdf-head-left">
+          <span class="pdf-label">خطة مساحة الطابقية</span>
+          <span class="pdf-sub">٤ طوابق · إجمالي مطبوع ٤٬٦٨٤٫٠٠ م²</span>
+        </div>
+        <span class="pdf-status pdf-status--warn">تحقق</span>
+      </summary>
+
+      <div class="pdf-body">
+
+        <div class="floor-header-cards">
+          <div class="floor-header-card">
+            <span class="ft-label">إجمالي البناء (مطبوع)</span>
+            <span><span class="ft-value">٤٬٦٨٤٫٠٠</span><span class="ft-unit">م²</span></span>
+          </div>
+          <div class="floor-header-card">
+            <span class="ft-label">إجمالي البناء المرخّص</span>
+            <span><span class="ft-value">٤٬٦٨٤٫٠٠</span><span class="ft-unit">م²</span></span>
+          </div>
+        </div>
+
+        <div class="floor-recon is-mismatch">
+          <span class="fr-state-dot"></span>
+          <span class="fr-state-text">طابق واحد لا يتطابق مجموع غرفه مع المجموع المطبوع — راجع تفاصيل الطابق الأرضي أدناه.</span>
+        </div>
+
+        <div class="floor-comparison is-over">
+          <div class="fc-row"><span class="fc-label">مجموع مساحات الطوابق</span><span class="fc-value">٤٬٦٨٤٫٠٠ م²</span></div>
+          <div class="fc-row"><span class="fc-label">مساحة القطعة</span><span class="fc-value">٤٬٨٧٧٫١٧ م²</span></div>
+          <div class="fc-row"><span class="fc-label">نسبة البناء الكلية</span><span class="fc-ratio">٩٦٫٠٪</span></div>
+        </div>
+
+        <!-- floors -->
+        <details class="floor-floor is-mismatch" open>
+          <summary class="floor-floor-head">
+            <span class="floor-floor-name">الطابق الأرضي</span>
+            <span class="floor-floor-page">ص. ٢</span>
+            <span class="floor-floor-flag">فرق ٧٫٥٠ م²</span>
+            <span class="floor-floor-totals">مجموع الغرف ٣١٢٫٥٠<span class="floor-pdf-subtotal">/ مطبوع ٣٢٠٫٠٠</span> م²</span>
+          </summary>
+          <table class="floor-room-table">
+            <thead>
+              <tr><th>الغرفة</th><th>الطول</th><th>العرض</th><th>العدد</th><th>المساحة</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="txt">صالة معيشة</td><td>٧٫٢٠</td><td>٥٫٠٠</td><td>١</td><td>٣٦٫٠٠</td></tr>
+              <tr><td class="txt">غرفة طعام</td><td>٤٫٥٠</td><td>٤٫٠٠</td><td>١</td><td>١٨٫٠٠</td></tr>
+              <tr><td class="txt">مطبخ</td><td>٤٫٢٠</td><td>٣٫٨٠</td><td>١</td><td>١٥٫٩٦</td></tr>
+              <tr><td class="txt">غرفة نوم</td><td>٤٫٥٠</td><td>٣٫٨٠</td><td>٣</td><td>٥١٫٣٠</td></tr>
+              <tr><td class="txt">حمام</td><td>٢٫٢٠</td><td>١٫٨٠</td><td>٢</td><td>٧٫٩٢</td></tr>
+              <tr><td class="txt">ممرات وسلالم</td><td>—</td><td>—</td><td>—</td><td>٢٤٫٣٢</td></tr>
+              <tr><td class="txt">مرآب · مظلّل</td><td>٧٫٥٠</td><td>٦٫٠٠</td><td>١</td><td>٤٥٫٠٠</td></tr>
+              <tr><td class="txt">حديقة داخلية</td><td>٨٫٠٠</td><td>٤٫٠٠</td><td>١</td><td>٣٢٫٠٠</td></tr>
+              <tr><td class="txt">شرفة أمامية</td><td>١٢٫٠٠</td><td>٣٫٥٠</td><td>١</td><td>٤٢٫٠٠</td></tr>
+              <tr><td class="txt">بقية الخدمات</td><td>—</td><td>—</td><td>—</td><td>٤٠٫٠٠</td></tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td class="txt">المجموع المحسوب</td><td>—</td><td>—</td><td>—</td>
+                <td>٣١٢٫٥٠ م² <span class="floor-pdf-subtotal">/ مطبوع ٣٢٠٫٠٠ م²</span></td>
+              </tr>
+            </tfoot>
+          </table>
+        </details>
+
+        <details class="floor-floor">
+          <summary class="floor-floor-head">
+            <span class="floor-floor-name">الطابق الأول</span>
+            <span class="floor-floor-page">ص. ٣</span>
+            <span class="floor-floor-totals">مجموع الغرف ٣٠٤٫٠٠ / مطبوع ٣٠٤٫٠٠ م²</span>
+          </summary>
+        </details>
+        <details class="floor-floor">
+          <summary class="floor-floor-head">
+            <span class="floor-floor-name">الطابق الثاني</span>
+            <span class="floor-floor-page">ص. ٤</span>
+            <span class="floor-floor-totals">مجموع الغرف ٢٩٨٫٢٠ / مطبوع ٢٩٨٫٢٠ م²</span>
+          </summary>
+        </details>
+        <details class="floor-floor">
+          <summary class="floor-floor-head">
+            <span class="floor-floor-name">الطابق الثالث</span>
+            <span class="floor-floor-page">ص. ٥</span>
+            <span class="floor-floor-totals">مجموع الغرف ٢٤٥٫٨٠ / مطبوع ٢٤٥٫٨٠ م²</span>
+          </summary>
+        </details>
+
+      </div>
+    </details>
+
+    <!-- Deed (سند التسجيل) -->
+    <details class="pdf-section" open>
+      <summary class="pdf-head">
+        <svg class="pdf-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 3l3 3-3 3"/></svg>
+        <div class="pdf-head-left">
+          <span class="pdf-label">سند التسجيل</span>
+          <span class="pdf-sub">قطعة أرض خالية · ملكية فردية</span>
+        </div>
+        <span class="pdf-status">مكتمل</span>
+      </summary>
+      <div class="pdf-body">
+        <p class="pdf-summary-text">
+          سند تسجيل أرض رقم <b>٢٠١٤</b> ضمن حوض رقم <b>١١٨ بدران الجنوبية</b>، مساحتها الكلية
+          ٤ دونم و٨٧٧٫١٧٠ متر مربع (أي ٤٬٨٧٧٫١٧ م²)، باسم المالك السيد <b>فادي يوسف العبادي</b>،
+          ضمن منطقة التنظيم <b>سكن (ج)</b>. تاريخ التسجيل: ٢٠٢١-٠٧-١٤، رقم الوثيقة ٤٤٩١/٢٠٢١.
+          الأرض خالية ولا توجد عليها أي قيود أو رهون مسجلة.
+        </p>
+        <div class="pdf-fields">
+          <div class="pdf-field"><span class="pdf-field-label">رقم القطعة</span><span class="pdf-field-value">٢٠١٤</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">الحوض</span><span class="pdf-field-value text">١١٨ بدران الجنوبية</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">المالك</span><span class="pdf-field-value text">فادي يوسف العبادي</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">المساحة</span><span class="pdf-field-value">٤ دونم ٨٧٧٫١٧٠ م²</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">منطقة التنظيم</span><span class="pdf-field-value text">سكن (ج)</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">رقم التسجيل</span><span class="pdf-field-value">٤٤٩١ / ٢٠٢١</span></div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Site plan (مخطط موقع تنظيمي) -->
+    <details class="pdf-section site-plan-section" open>
+      <summary class="pdf-head">
+        <svg class="pdf-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 3l3 3-3 3"/></svg>
+        <div class="pdf-head-left">
+          <span class="pdf-label">مخطط موقع تنظيمي</span>
+          <span class="pdf-sub">صادر عن أمانة عمان الكبرى — منطقة سكن (ج)</span>
+        </div>
+        <span class="pdf-status">مكتمل</span>
+      </summary>
+      <div class="pdf-body">
+        <p class="pdf-summary-text">
+          مخطط موقع تنظيمي صادر عن أمانة عمان الكبرى لقطعة الأرض رقم <b>٢٠١٤</b> ضمن حوض <b>بدران الجنوبية</b>.
+          المنطقة مصنفة <b>سكن (ج)</b> بنسبة تغطية قصوى <b>٣٠٪</b> ونسبة بناء كلية <b>١٢٠٪</b>،
+          بحدّ أقصى <b>٤ طوابق</b>. الارتدادات المطلوبة: أمامي <b>٤ م</b>، جانبي <b>٣ م</b>، خلفي <b>٤ م</b>.
+        </p>
+        <div class="pdf-fields">
+          <div class="pdf-field"><span class="pdf-field-label">منطقة التنظيم</span><span class="pdf-field-value text">سكن (ج)</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">نسبة التغطية القصوى</span><span class="pdf-field-value">٣٠ ٪</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">نسبة البناء الكلية</span><span class="pdf-field-value">١٢٠ ٪</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">الحد الأقصى للطوابق</span><span class="pdf-field-value">٤</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">ارتداد أمامي</span><span class="pdf-field-value">٤٫٠٠ م</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">ارتداد جانبي</span><span class="pdf-field-value">٣٫٠٠ م</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">ارتداد خلفي</span><span class="pdf-field-value">٤٫٠٠ م</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">جهة الإصدار</span><span class="pdf-field-value text">أمانة عمان الكبرى</span></div>
+          <div class="pdf-field"><span class="pdf-field-label">تاريخ الإصدار</span><span class="pdf-field-value">٢٠٢٦-٠٢-٠٣</span></div>
+        </div>
+      </div>
+    </details>
+
+  </section>
+
+  <!-- ============== AI summary ============== -->
+  <details class="summary-details" open style="margin-top:14px">
+    <summary>
+      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(90deg);width:12px;height:12px"><path d="M4.5 3l3 3-3 3"/></svg>
+      ملخص النظام الذكي
+    </summary>
+    <div class="summary-box">
+      <p>
+        قطعة الأرض رقم <b>٢٠١٤</b> في حوض <b>بدران الجنوبية</b> بمساحة <b>٤٬٨٧٧٫١٧ م²</b> متطابقة بين سند التسجيل والمخطط CAD.
+        المبنى المقترح بمساحة <b>١٬١٧٠٫٤٠ م²</b> ونسبة تغطية <b>٢٤٪</b> يقع ضمن حدود قطعة الأرض، وعدد الطوابق
+        <b>(٤)</b> ونسبة البناء الكلية <b>(٩٦٪)</b> ضمن المسموح بمخطط الموقع التنظيمي.
+      </p>
+      <p>تم رصد ملاحظتين تستوجبان إعادة الطلب للتعديل:</p>
+      <ul>
+        <li><b>الارتداد الخلفي ١٫٨٥ م</b> أقل من المطلوب (٤ م) بفارق ٢٫١٥ م — مخالفة جسيمة.</li>
+        <li>فرق <b>٧٫٥٠ م²</b> بين مجموع غرف الطابق الأرضي والمجموع المطبوع — يتطلب توضيحًا فقط ولا يؤثر على نسبة البناء.</li>
+      </ul>
+      <p>التوصية: إعادة الطلب إلى المقدّم لتعديل موقع المبنى أمام الحدّ الخلفي وتصحيح جدول الطابق الأرضي قبل الموافقة.</p>
+    </div>
+  </details>
+
+</main>
+
+</div><!-- /view-app -->
+
+<script>
+function showView(name){
+  var dash = document.getElementById('view-dash');
+  var app  = document.getElementById('view-app');
+  var bDash = document.getElementById('vs-dash');
+  var bApp  = document.getElementById('vs-app');
+  if (name === 'dash') {
+    dash.classList.remove('hide');
+    app.classList.add('hide');
+    bDash.classList.add('active');
+    bApp.classList.remove('active');
+  } else {
+    dash.classList.add('hide');
+    app.classList.remove('hide');
+    bDash.classList.remove('active');
+    bApp.classList.add('active');
+  }
+  window.scrollTo({top:0});
+}
+</script>
+
+</body>
+</html>

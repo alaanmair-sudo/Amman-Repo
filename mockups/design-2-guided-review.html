@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Design 2 — Guided Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" />
+<style>
+  :root {
+    --bg: #f7f4ee;
+    --bg-card: #ffffff;
+    --bg-section: #fbf9f4;
+    --ink: #1d2433;
+    --ink-2: #475063;
+    --muted: #8c93a4;
+    --line: #e6e1d6;
+    --line-2: #d6d0c2;
+    --primary: #2d5cf2;
+    --primary-soft: #eaf0ff;
+    --pass: #15803d;
+    --pass-soft: #e7f6ec;
+    --warn: #b45309;
+    --warn-soft: #fbf3e3;
+    --fail: #b91c1c;
+    --fail-soft: #fceaea;
+    --gold: #b08742;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: 'Inter', 'Noto Kufi Arabic', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .design-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(247,244,238,.92); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 24px; display: flex; gap: 6px; align-items: center;
+  }
+  .design-bar-label {
+    font-family: 'Fraunces', serif; font-style: italic; font-size: 13px;
+    color: var(--gold); margin-inline-start: auto;
+  }
+  .design-bar button {
+    background: transparent; border: 1px solid var(--line-2); color: var(--ink-2);
+    padding: 6px 14px; border-radius: 999px; font-size: 12.5px; cursor: pointer;
+    font-family: inherit; transition: all .15s;
+  }
+  .design-bar button:hover { background: var(--bg-card); }
+  .design-bar button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); font-weight: 600; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ========== LOGIN ========== */
+  #login.active {
+    display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 60px);
+  }
+  .login-hero {
+    background:
+      radial-gradient(ellipse 800px 600px at 30% 20%, rgba(45,92,242,.08), transparent),
+      linear-gradient(135deg, #efe9dc 0%, #f7f4ee 100%);
+    padding: 60px; display: flex; flex-direction: column; justify-content: space-between;
+    border-inline-end: 1px solid var(--line);
+  }
+  .login-eyebrow { font-family: 'Fraunces', serif; font-style: italic; color: var(--gold); font-size: 14px; }
+  .login-h1 {
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 38px; line-height: 1.2;
+    margin: 16px 0 18px; color: var(--ink); max-width: 460px;
+  }
+  .login-h1 .arabic { display: block; font-family: 'Noto Kufi Arabic', sans-serif; font-size: 26px; margin-top: 10px; }
+  .login-lead { color: var(--ink-2); max-width: 440px; }
+  .login-features { display: grid; gap: 16px; max-width: 460px; margin-top: 36px; }
+  .login-feature { display: flex; gap: 14px; align-items: flex-start; }
+  .login-feature-icon {
+    flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px;
+    background: var(--primary-soft); display: grid; place-items: center;
+    color: var(--primary); font-size: 18px; font-weight: 700;
+  }
+  .login-feature h4 { margin: 2px 0; font-size: 14px; }
+  .login-feature p { margin: 0; color: var(--ink-2); font-size: 13px; }
+
+  .login-stats { display: flex; gap: 32px; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+  .login-stat strong { display: block; font-family: 'Fraunces', serif; font-size: 26px; color: var(--ink); }
+  .login-stat span { color: var(--muted); font-size: 12px; }
+
+  .login-form-wrap { display: flex; align-items: center; justify-content: center; padding: 60px; }
+  .login-form { width: 100%; max-width: 380px; }
+  .login-form h2 { font-family: 'Fraunces', serif; font-size: 28px; margin: 0 0 4px; }
+  .login-form p { color: var(--ink-2); margin: 0 0 28px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12.5px; font-weight: 500; margin-bottom: 6px; color: var(--ink-2); }
+  .field input {
+    width: 100%; background: var(--bg-card); border: 1px solid var(--line-2);
+    border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--ink); font-family: inherit;
+  }
+  .field input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .login-btn {
+    width: 100%; margin-top: 10px; background: var(--ink); color: var(--bg);
+    border: 0; padding: 13px; border-radius: 12px; font-weight: 600;
+    cursor: pointer; font-size: 14px; font-family: inherit; display: flex; gap: 8px; justify-content: center; align-items: center;
+  }
+  .login-btn:hover { background: var(--primary); }
+  .login-meta { margin-top: 20px; font-size: 12px; color: var(--muted); text-align: center; }
+
+  /* ========== DASHBOARD ========== */
+  .dash-wrap { max-width: 1180px; margin: 0 auto; padding: 36px 32px; }
+  .dash-hero {
+    background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: 18px; padding: 28px 32px; display: grid; grid-template-columns: 2fr 1fr; gap: 32px; align-items: center;
+  }
+  .dash-hero-eyebrow { font-family: 'Fraunces', serif; font-style: italic; color: var(--gold); font-size: 13px; }
+  .dash-hero h1 { font-family: 'Fraunces', serif; font-size: 30px; margin: 6px 0 8px; }
+  .dash-hero p { color: var(--ink-2); margin: 0; max-width: 460px; }
+  .dash-hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .stat-tile {
+    background: var(--bg-section); border-radius: 12px; padding: 16px; border: 1px solid var(--line);
+  }
+  .stat-tile-label { color: var(--muted); font-size: 12px; }
+  .stat-tile-value { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; margin-top: 4px; }
+  .stat-tile.accent { background: var(--primary-soft); border-color: rgba(45,92,242,.25); }
+  .stat-tile.accent .stat-tile-value { color: var(--primary); }
+
+  .dash-tabs {
+    display: flex; gap: 6px; margin: 32px 0 18px;
+  }
+  .dash-tab {
+    background: transparent; border: 1px solid transparent; padding: 8px 16px; border-radius: 999px;
+    font-size: 13px; color: var(--ink-2); cursor: pointer; font-family: inherit;
+  }
+  .dash-tab.active { background: var(--ink); color: var(--bg); }
+  .dash-tab .num { font-family: 'Inter'; opacity: .7; margin-inline-start: 4px; }
+
+  .app-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .app-card {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px 22px; transition: all .15s; cursor: pointer;
+  }
+  .app-card:hover { border-color: var(--ink); transform: translateY(-1px); }
+  .app-card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .app-avatar {
+    width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), #d4a85f);
+    display: grid; place-items: center; color: white; font-weight: 600;
+  }
+  .app-card-id { font-size: 11px; color: var(--muted); font-family: 'Fraunces', serif; font-style: italic; }
+  .app-card-name { font-weight: 600; }
+  .app-card-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-bottom: 14px; }
+  .app-card-meta span strong { color: var(--ink); margin-inline-start: 4px; }
+  .app-card-verdict { padding: 10px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.5; }
+  .app-card-verdict.pass { background: var(--pass-soft); color: var(--pass); }
+  .app-card-verdict.warn { background: var(--warn-soft); color: var(--warn); }
+  .app-card-verdict.fail { background: var(--fail-soft); color: var(--fail); }
+  .app-card-verdict strong { display: block; margin-bottom: 2px; }
+
+  /* ========== INTAKE ========== */
+  .intake-wrap { max-width: 880px; margin: 0 auto; padding: 36px 32px; }
+  .intake-eyebrow { font-family: 'Fraunces', serif; font-style: italic; color: var(--gold); font-size: 14px; }
+  .intake-h1 { font-family: 'Fraunces', serif; font-size: 36px; margin: 8px 0 12px; }
+  .intake-lead { color: var(--ink-2); margin: 0 0 36px; max-width: 600px; line-height: 1.7; }
+
+  .step {
+    display: grid; grid-template-columns: 80px 1fr; gap: 20px; padding: 24px 0;
+    border-top: 1px solid var(--line); align-items: flex-start;
+  }
+  .step:first-of-type { border-top: 0; padding-top: 0; }
+  .step-num {
+    width: 60px; height: 60px; border-radius: 50%; background: var(--bg-card);
+    border: 2px solid var(--line); display: grid; place-items: center;
+    font-family: 'Fraunces', serif; font-size: 20px; color: var(--muted);
+  }
+  .step.done .step-num { background: var(--pass); border-color: var(--pass); color: white; }
+  .step.active .step-num { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .step h3 { margin: 6px 0 4px; font-family: 'Fraunces', serif; font-size: 22px; }
+  .step p { color: var(--ink-2); margin: 0 0 14px; }
+  .step-body { background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+
+  .doc-row {
+    display: grid; grid-template-columns: 40px 1fr auto; gap: 14px; padding: 14px 0;
+    border-bottom: 1px dashed var(--line); align-items: center;
+  }
+  .doc-row:last-child { border-bottom: 0; }
+  .doc-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--bg-section); display: grid; place-items: center; font-size: 18px; }
+  .doc-row.ok .doc-icon { background: var(--pass-soft); color: var(--pass); }
+  .doc-row strong { display: block; }
+  .doc-row span { font-size: 12.5px; color: var(--muted); }
+  .doc-row .status { font-size: 12px; padding: 4px 10px; border-radius: 999px; }
+  .doc-row.ok .status { background: var(--pass-soft); color: var(--pass); }
+
+  .findings-summary {
+    margin-top: 24px; padding: 22px; background: var(--warn-soft); border: 1px solid rgba(180,83,9,.2);
+    border-radius: 14px;
+  }
+  .findings-summary h4 { margin: 0 0 10px; color: var(--warn); font-size: 16px; }
+  .findings-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .findings-list li { padding: 10px 12px; background: rgba(255,255,255,.6); border-radius: 8px; font-size: 13px; }
+  .findings-list li strong { color: var(--warn); }
+
+  .intake-actions { display: flex; gap: 12px; margin-top: 28px; }
+  .btn-primary {
+    background: var(--ink); color: var(--bg); border: 0; padding: 13px 22px;
+    border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit;
+  }
+  .btn-secondary {
+    background: var(--bg-card); border: 1px solid var(--line-2); padding: 12px 22px;
+    border-radius: 12px; font-size: 14px; cursor: pointer; color: var(--ink); font-family: inherit;
+  }
+
+  /* ========== REVIEW (the narrative scroll) ========== */
+  .review-wrap { max-width: 1080px; margin: 0 auto; padding: 36px 32px 80px; }
+  .review-header {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 18px;
+    padding: 28px 32px; margin-bottom: 24px;
+  }
+  .review-header-top { display: flex; align-items: center; gap: 18px; margin-bottom: 16px; }
+  .review-header-avatar {
+    width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), #d4a85f);
+    display: grid; place-items: center; color: white; font-weight: 600; font-size: 22px;
+  }
+  .review-header-eyebrow { color: var(--muted); font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; }
+  .review-header h1 { font-family: 'Fraunces', serif; font-size: 28px; margin: 2px 0 0; }
+  .review-header-meta { display: flex; flex-wrap: wrap; gap: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .review-header-meta div { font-size: 13px; }
+  .review-header-meta div span { color: var(--muted); display: block; font-size: 12px; }
+  .review-header-meta div strong { display: block; margin-top: 2px; }
+
+  .verdict-banner {
+    display: flex; gap: 16px; padding: 14px 18px; border-radius: 12px;
+    background: var(--warn-soft); border: 1px solid rgba(180,83,9,.2);
+    align-items: center; margin-top: 20px;
+  }
+  .verdict-banner-icon {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--warn); color: white;
+    display: grid; place-items: center; font-size: 18px;
+  }
+  .verdict-banner strong { color: var(--warn); }
+
+  .stage-card {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 18px;
+    margin-bottom: 22px; overflow: hidden;
+  }
+  .stage-card-head {
+    padding: 22px 28px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 16px;
+  }
+  .stage-card-num {
+    font-family: 'Fraunces', serif; font-size: 32px; color: var(--gold); font-weight: 600;
+    line-height: 1; flex-shrink: 0; width: 50px;
+  }
+  .stage-card-titles { flex: 1; }
+  .stage-card-titles h2 { font-family: 'Fraunces', serif; font-size: 22px; margin: 0; }
+  .stage-card-titles p { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; }
+  .stage-pill {
+    padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+  .stage-pill.pass { background: var(--pass-soft); color: var(--pass); }
+  .stage-pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .stage-pill.fail { background: var(--fail-soft); color: var(--fail); }
+
+  .stage-card-body { padding: 24px 28px; }
+
+  .check-row {
+    display: grid; grid-template-columns: 36px 1fr auto; gap: 14px; padding: 14px 0;
+    border-top: 1px dashed var(--line); align-items: center;
+  }
+  .check-row:first-child { border-top: 0; padding-top: 4px; }
+  .check-icon {
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 14px; font-weight: 700;
+  }
+  .check-row.pass .check-icon { background: var(--pass-soft); color: var(--pass); }
+  .check-row.warn .check-icon { background: var(--warn-soft); color: var(--warn); }
+  .check-row.fail .check-icon { background: var(--fail-soft); color: var(--fail); }
+  .check-row strong { display: block; }
+  .check-row span { font-size: 12.5px; color: var(--ink-2); }
+  .check-row .delta {
+    font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; color: var(--muted);
+  }
+  .check-row.fail .delta { color: var(--fail); }
+  .check-row.pass .delta { color: var(--pass); }
+
+  .compare-card {
+    background: var(--bg-section); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin: 16px 0;
+  }
+  .compare-grid {
+    display: grid; grid-template-columns: 1fr 60px 1fr; gap: 16px; align-items: center;
+  }
+  .compare-side { padding: 12px 0; }
+  .compare-eyebrow { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+  .compare-value { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; }
+  .compare-value small { font-size: 13px; font-family: 'Inter'; font-weight: 400; color: var(--muted); }
+  .compare-arrow { display: grid; place-items: center; font-size: 18px; color: var(--muted); }
+  .compare-card.fail .compare-arrow { color: var(--fail); }
+
+  .geom-canvas {
+    background: var(--bg-section); border: 1px solid var(--line); border-radius: 12px;
+    padding: 24px; min-height: 320px; position: relative;
+  }
+  .geom-canvas svg { width: 100%; height: auto; max-height: 400px; }
+  .geom-legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: var(--ink-2); }
+  .geom-legend span { display: inline-flex; gap: 6px; align-items: center; }
+  .geom-legend i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+
+  .kpi-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 18px 0;
+  }
+  .kpi-strip .stat-tile { padding: 14px 16px; }
+  .kpi-strip .stat-tile-value { font-size: 22px; }
+
+  .floor-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .floor-table th { text-align: start; padding: 10px 12px; background: var(--bg-section); font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .floor-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .floor-table .ok { color: var(--pass); }
+
+  .ai-quote {
+    background: var(--bg-section); border-inline-start: 4px solid var(--gold);
+    padding: 22px 28px; border-radius: 0 12px 12px 0; margin-top: 8px;
+    font-family: 'Fraunces', serif; font-style: italic; font-size: 16px; line-height: 1.7;
+    color: var(--ink-2);
+  }
+  .ai-quote .arabic { font-family: 'Noto Kufi Arabic', sans-serif; font-style: normal; font-size: 14.5px; line-height: 1.85; display: block; margin-top: 12px; }
+
+  .decision-bar {
+    position: sticky; bottom: 24px;
+    background: var(--ink); color: var(--bg); border-radius: 16px;
+    padding: 18px 24px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 14px 40px rgba(29,36,51,.25);
+    margin-top: 24px;
+  }
+  .decision-bar-text { flex: 1; }
+  .decision-bar-text strong { display: block; }
+  .decision-bar-text span { font-size: 12px; opacity: .75; }
+  .decision-bar button {
+    border: 0; padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px;
+  }
+  .btn-approve { background: var(--pass); color: white; }
+  .btn-revision { background: rgba(255,255,255,.12); color: white; }
+  .btn-reject { background: var(--fail); color: white; }
+  .arabic { font-family: 'Noto Kufi Arabic', sans-serif; }
+</style>
+</head>
+<body>
+
+<nav class="design-bar">
+  <button data-screen="login">Login</button>
+  <button data-screen="dashboard" class="active">Dashboard</button>
+  <button data-screen="intake">Intake (Submitter)</button>
+  <button data-screen="review">Review (Reviewer)</button>
+  <span class="design-bar-label">Design 2 · Guided Review</span>
+</nav>
+
+<!-- ============================================================ LOGIN ============================================================ -->
+<section id="login" class="screen">
+  <div class="login-hero">
+    <div>
+      <div class="login-eyebrow">Greater Amman Municipality · Smart Review</div>
+      <h1 class="login-h1">Building permits, reviewed in minutes.<span class="arabic">منصة مراجعة طلبات الترخيص بالذكاء الاصطناعي</span></h1>
+      <p class="login-lead">Upload your CAD drawing alongside the registration deed, regulatory site plan, and floor-area plan. Our system reads them, cross-checks them, and tells you what the reviewer will see — before you submit.</p>
+
+      <div class="login-features">
+        <div class="login-feature">
+          <div class="login-feature-icon">①</div>
+          <div><h4>Structure validation</h4><p>Are all four documents present, complete, and machine-readable?</p></div>
+        </div>
+        <div class="login-feature">
+          <div class="login-feature-icon">②</div>
+          <div><h4>Discrepancy review</h4><p>Do the values you declared match what the drawing actually shows?</p></div>
+        </div>
+        <div class="login-feature">
+          <div class="login-feature-icon">③</div>
+          <div><h4>Violation review</h4><p>Are setbacks, coverage, and the buildable envelope respected?</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-stats">
+      <div class="login-stat"><strong>~ 2 min</strong><span>typical review time</span></div>
+      <div class="login-stat"><strong>61%</strong><span>auto-pass rate</span></div>
+      <div class="login-stat"><strong>4 docs</strong><span>per application</span></div>
+    </div>
+  </div>
+
+  <div class="login-form-wrap">
+    <div class="login-form">
+      <h2>Welcome back</h2>
+      <p class="arabic">سجّل دخولك للمتابعة في مراجعة طلبات الترخيص.</p>
+
+      <div class="field">
+        <label>Username</label>
+        <input type="text" value="reviewer.akram" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" value="••••••••••" />
+      </div>
+
+      <button class="login-btn">Sign in →</button>
+
+      <p class="login-meta">Demo accounts: <strong>reviewer.akram</strong>, <strong>submitter.tareq</strong>, <strong>admin.mohammad</strong> · pw <code>demo123</code></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ DASHBOARD ============================================================ -->
+<section id="dashboard" class="screen active">
+  <div class="dash-wrap">
+
+    <div class="dash-hero">
+      <div>
+        <div class="dash-hero-eyebrow">Good afternoon, Akram</div>
+        <h1>23 applications waiting on you.</h1>
+        <p>The system has already pre-screened each submission across the three review stages. Most are ready for a quick approval; eight need your judgment on flagged issues.</p>
+      </div>
+      <div class="dash-hero-stats">
+        <div class="stat-tile accent">
+          <div class="stat-tile-label">Pending review</div>
+          <div class="stat-tile-value">23</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-label">Reviewed today</div>
+          <div class="stat-tile-value">12</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-label">Avg time</div>
+          <div class="stat-tile-value">4.2<span style="font-size:14px;color:var(--muted)"> min</span></div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-label">Auto-passed</div>
+          <div class="stat-tile-value">61%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-tabs">
+      <button class="dash-tab active">All<span class="num">147</span></button>
+      <button class="dash-tab">Pending<span class="num">23</span></button>
+      <button class="dash-tab">Needs revision<span class="num">8</span></button>
+      <button class="dash-tab">Approved<span class="num">12</span></button>
+      <button class="dash-tab">Rejected<span class="num">4</span></button>
+    </div>
+
+    <div class="app-grid">
+
+      <div class="app-card">
+        <div class="app-card-head">
+          <div class="app-avatar">م</div>
+          <div>
+            <div class="app-card-id">APP-2026-04219</div>
+            <div class="app-card-name arabic">محمد أحمد الخطيب</div>
+          </div>
+        </div>
+        <div class="app-card-meta">
+          <span>Plot <strong>234</strong></span>
+          <span>Tilaa Al Ali</span>
+          <span>Vacant land</span>
+        </div>
+        <div class="app-card-verdict warn">
+          <strong>Front setback below required</strong>
+          0.3 m deficit · violation 8.4 m² · fine 1,680 JOD
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-head">
+          <div class="app-avatar" style="background:linear-gradient(135deg,#3b82f6,#1e40af)">أ</div>
+          <div>
+            <div class="app-card-id">APP-2026-04218</div>
+            <div class="app-card-name arabic">مؤسسة الأبراج للإنشاءات</div>
+          </div>
+        </div>
+        <div class="app-card-meta">
+          <span>Plot <strong>812</strong></span>
+          <span>Shafa Badran</span>
+          <span>Over existing</span>
+        </div>
+        <div class="app-card-verdict pass">
+          <strong>All checks passed</strong>
+          Setbacks, coverage, and floor totals all within limits.
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-head">
+          <div class="app-avatar" style="background:linear-gradient(135deg,#dc2626,#7f1d1d)">س</div>
+          <div>
+            <div class="app-card-id">APP-2026-04217</div>
+            <div class="app-card-name arabic">سلوى نواف الدلاعلة</div>
+          </div>
+        </div>
+        <div class="app-card-meta">
+          <span>Plot <strong>114</strong></span>
+          <span>Abu Nseir</span>
+          <span>Additions</span>
+        </div>
+        <div class="app-card-verdict fail">
+          <strong>Serious — building exits lot</strong>
+          Floor totals also disagree with the deed by 84 m² · fine 14,400 JOD
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-head">
+          <div class="app-avatar" style="background:linear-gradient(135deg,#0891b2,#155e75)">ع</div>
+          <div>
+            <div class="app-card-id">APP-2026-04216</div>
+            <div class="app-card-name arabic">عمر طارق نجداوي</div>
+          </div>
+        </div>
+        <div class="app-card-meta">
+          <span>Plot <strong>56</strong></span>
+          <span>Marka</span>
+          <span>Initial consultation</span>
+        </div>
+        <div class="app-card-verdict pass">
+          <strong>Clean preliminary</strong>
+          No site plan provided — compliance check skipped (intentional for consultations).
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-head">
+          <div class="app-avatar" style="background:linear-gradient(135deg,#a855f7,#6b21a8)">ذ</div>
+          <div>
+            <div class="app-card-id">APP-2026-04215</div>
+            <div class="app-card-name arabic">مكتب الهندسة الذهبية</div>
+          </div>
+        </div>
+        <div class="app-card-meta">
+          <span>Plot <strong>991</strong></span>
+          <span>Sweileh</span>
+          <span>Occupancy permit</span>
+        </div>
+        <div class="app-card-verdict warn">
+          <strong>Floor-plan discrepancy</strong>
+          Printed total disagrees with computed by 1.6 m² on basement row.
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-head">
+          <div class="app-avatar" style="background:linear-gradient(135deg,#16a34a,#14532d)">ف</div>
+          <div>
+            <div class="app-card-id">APP-2026-04214</div>
+            <div class="app-card-name arabic">شركة الفنار للمقاولات</div>
+          </div>
+        </div>
+        <div class="app-card-meta">
+          <span>Plot <strong>428</strong></span>
+          <span>Jubeiha</span>
+          <span>Vacant land</span>
+        </div>
+        <div class="app-card-verdict pass">
+          <strong>All checks passed</strong>
+          5.4 m setback on the smallest side · 28% coverage · within all limits.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ INTAKE ============================================================ -->
+<section id="intake" class="screen">
+  <div class="intake-wrap">
+    <div class="intake-eyebrow">New permit application · APP-2026-04219</div>
+    <h1 class="intake-h1">Submit your application in four steps.</h1>
+    <p class="intake-lead">We'll guide you through each one. Before submission, we'll show you any issues the reviewer is likely to flag — so you can fix them now and avoid delays.</p>
+
+    <div class="step done">
+      <div class="step-num">✓</div>
+      <div>
+        <h3>Classify your application</h3>
+        <p>Type · <strong class="arabic">ترخيص مقترح على ارض خالية</strong> · vacant land permit, residential D zoning</p>
+      </div>
+    </div>
+
+    <div class="step done">
+      <div class="step-num">✓</div>
+      <div>
+        <h3>Upload your four documents</h3>
+        <p>All required documents received and parsed.</p>
+        <div class="step-body">
+          <div class="doc-row ok">
+            <div class="doc-icon">📐</div>
+            <div><strong>CAD drawing</strong><span>drawing-rev3.dwg · 4.1 MB · 12 layers</span></div>
+            <span class="status">Layers OK</span>
+          </div>
+          <div class="doc-row ok">
+            <div class="doc-icon">📄</div>
+            <div><strong class="arabic">سند التسجيل</strong><span>plot 234 · basin 12 · 4 دونم 877.170 m²</span></div>
+            <span class="status">Extracted</span>
+          </div>
+          <div class="doc-row ok">
+            <div class="doc-icon">📄</div>
+            <div><strong class="arabic">مخطط موقع تنظيمي</strong><span>setbacks 5.0 / 3.0 / 4.0 m · residential D · not corner</span></div>
+            <span class="status">Extracted</span>
+          </div>
+          <div class="doc-row ok">
+            <div class="doc-icon">📄</div>
+            <div><strong class="arabic">خطة مساحة الطابقية</strong><span>4 floors · 1,256 m² total · all rows verified</span></div>
+            <span class="status">Verified</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step active">
+      <div class="step-num">3</div>
+      <div>
+        <h3>Review what the system found</h3>
+        <p>One issue worth knowing about before you submit.</p>
+
+        <div class="findings-summary">
+          <h4>1 issue likely to be flagged by the reviewer</h4>
+          <ul class="findings-list">
+            <li>
+              <strong>Front setback is 0.3 m below the required value.</strong>
+              Your CAD shows the building 4.7 m from the front (north) lot edge, but the regulatory site plan requires 5.0 m. This produces a <strong>violation polygon of 8.4 m²</strong> and an estimated fine of <strong>1,680 JOD</strong>.
+            </li>
+          </ul>
+        </div>
+
+        <p style="margin-top:18px;color:var(--ink-2)">You can either upload a corrected drawing now, or submit anyway with the issue acknowledged — the reviewer will see a "submitted with known issues" badge.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div>
+        <h3>Submit for review</h3>
+        <p>Send your application to the municipality reviewer queue.</p>
+      </div>
+    </div>
+
+    <div class="intake-actions">
+      <button class="btn-secondary">Edit files &amp; re-upload</button>
+      <button class="btn-primary">Submit anyway →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ REVIEW ============================================================ -->
+<section id="review" class="screen">
+  <div class="review-wrap">
+
+    <div class="review-header">
+      <div class="review-header-top">
+        <div class="review-header-avatar">م</div>
+        <div>
+          <div class="review-header-eyebrow">APP-2026-04219 · submitted 12 minutes ago</div>
+          <h1 class="arabic">محمد أحمد الخطيب · قطعة 234</h1>
+        </div>
+      </div>
+      <div class="review-header-meta">
+        <div><span>Type</span><strong class="arabic">ترخيص مقترح على ارض خالية</strong></div>
+        <div><span>Location</span><strong class="arabic">تلاع العلي · حوض الياسمين</strong></div>
+        <div><span>Lot</span><strong>4,877.17 m²</strong></div>
+        <div><span>Building</span><strong>320 m² (footprint)</strong></div>
+        <div><span>Floors</span><strong>4 · 1,256 m² total</strong></div>
+      </div>
+      <div class="verdict-banner">
+        <div class="verdict-banner-icon">!</div>
+        <div>
+          <strong>One issue requires your decision.</strong>
+          Stages 1 and 2 passed cleanly. Stage 3 (violation review) found a minor setback violation worth 1,680 JOD.
+        </div>
+      </div>
+    </div>
+
+    <!-- Stage 1 -->
+    <article class="stage-card">
+      <header class="stage-card-head">
+        <div class="stage-card-num">01</div>
+        <div class="stage-card-titles">
+          <h2>What was submitted</h2>
+          <p>We checked that all four documents arrived, parsed cleanly, and contained the fields a reviewer needs.</p>
+        </div>
+        <span class="stage-pill pass">All four documents OK</span>
+      </header>
+      <div class="stage-card-body">
+        <div class="check-row pass">
+          <div class="check-icon">✓</div>
+          <div><strong>CAD drawing parses</strong><span>12 layers detected · BUILDING, LOT, STREET present · all polylines closed</span></div>
+          <div class="delta">drawing-rev3.dwg</div>
+        </div>
+        <div class="check-row pass">
+          <div class="check-icon">✓</div>
+          <div><strong class="arabic">سند التسجيل readable</strong><span>plot 234 · basin 12 · village تلاع العلي · 4 دونم 877.170 m²</span></div>
+          <div class="delta">deed.pdf</div>
+        </div>
+        <div class="check-row pass">
+          <div class="check-icon">✓</div>
+          <div><strong class="arabic">مخطط موقع تنظيمي readable</strong><span>required setbacks: front 5.0 · side 3.0 · rear 4.0 m · use: residential D · not corner</span></div>
+          <div class="delta">site-plan.pdf</div>
+        </div>
+        <div class="check-row pass">
+          <div class="check-icon">✓</div>
+          <div><strong class="arabic">خطة مساحة الطابقية parsed</strong><span>4 floors · 1,256 m² grand total · per-row check passes within ±1 m²</span></div>
+          <div class="delta">floor-plan.pdf</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Stage 2 -->
+    <article class="stage-card">
+      <header class="stage-card-head">
+        <div class="stage-card-num">02</div>
+        <div class="stage-card-titles">
+          <h2>What the consultant declared vs. what the drawing shows</h2>
+          <p>Cross-checking PDF-declared values against AI-measured values from the CAD.</p>
+        </div>
+        <span class="stage-pill pass">All values agree</span>
+      </header>
+      <div class="stage-card-body">
+
+        <div class="compare-card">
+          <div class="compare-grid">
+            <div class="compare-side">
+              <div class="compare-eyebrow arabic">من سند التسجيل</div>
+              <div class="compare-value">4,877.170 <small>m²</small></div>
+              <div style="color:var(--muted);font-size:12px">declared lot area · 4 دونم 877.170</div>
+            </div>
+            <div class="compare-arrow">↔</div>
+            <div class="compare-side">
+              <div class="compare-eyebrow">From CAD</div>
+              <div class="compare-value">4,877.17 <small>m²</small></div>
+              <div style="color:var(--muted);font-size:12px">measured from LOT polygon</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="compare-card">
+          <div class="compare-grid">
+            <div class="compare-side">
+              <div class="compare-eyebrow arabic">من خطة مساحة الطابقية</div>
+              <div class="compare-value">1,256 <small>m²</small></div>
+              <div style="color:var(--muted);font-size:12px">printed grand total · 4 floors</div>
+            </div>
+            <div class="compare-arrow">↔</div>
+            <div class="compare-side">
+              <div class="compare-eyebrow">Computed (Python)</div>
+              <div class="compare-value">1,256.0 <small>m²</small></div>
+              <div style="color:var(--muted);font-size:12px">Σ(dim × qty × sign) row by row</div>
+            </div>
+          </div>
+        </div>
+
+        <table class="floor-table">
+          <thead>
+            <tr><th>#</th><th>Floor</th><th>Dims</th><th>Qty</th><th>Printed</th><th>Computed</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td class="arabic">تسوية أولى</td><td>18 × 22</td><td>1</td><td>396</td><td>396.0</td><td class="ok">✓</td></tr>
+            <tr><td>2</td><td class="arabic">أرضي</td><td>16 × 20</td><td>1</td><td>320</td><td>320.0</td><td class="ok">✓</td></tr>
+            <tr><td>3</td><td class="arabic">طابق أول</td><td>16 × 18</td><td>1</td><td>288</td><td>288.0</td><td class="ok">✓</td></tr>
+            <tr><td>4</td><td class="arabic">طابق ثاني</td><td>14 × 18</td><td>1</td><td>252</td><td>252.0</td><td class="ok">✓</td></tr>
+          </tbody>
+        </table>
+
+      </div>
+    </article>
+
+    <!-- Stage 3 -->
+    <article class="stage-card">
+      <header class="stage-card-head">
+        <div class="stage-card-num">03</div>
+        <div class="stage-card-titles">
+          <h2>Compliance with the site plan</h2>
+          <p>Required setbacks vs. measured setbacks. Buildable envelope vs. building footprint.</p>
+        </div>
+        <span class="stage-pill warn">Minor violation · 8.4 m²</span>
+      </header>
+      <div class="stage-card-body">
+
+        <div class="kpi-strip">
+          <div class="stat-tile"><div class="stat-tile-label">Violation</div><div class="stat-tile-value" style="color:var(--warn)">8.4 m²</div></div>
+          <div class="stat-tile"><div class="stat-tile-label">Fine</div><div class="stat-tile-value" style="color:var(--warn)">1,680<span style="font-size:14px;color:var(--muted)"> JOD</span></div></div>
+          <div class="stat-tile"><div class="stat-tile-label">Coverage</div><div class="stat-tile-value">6.6%</div></div>
+          <div class="stat-tile"><div class="stat-tile-label">Min setback</div><div class="stat-tile-value">3.1<span style="font-size:14px;color:var(--muted)"> m · east</span></div></div>
+        </div>
+
+        <div class="geom-canvas">
+          <svg viewBox="0 0 600 360" preserveAspectRatio="xMidYMid meet">
+            <polygon points="80,40 540,40 540,310 80,310" fill="rgba(176,135,66,.06)" stroke="#b08742" stroke-width="2" />
+            <polygon points="120,80 510,80 510,270 120,270" fill="none" stroke="#1d2433" stroke-width="1" stroke-dasharray="6 4" opacity="0.5" />
+            <polygon points="180,100 480,100 480,250 180,250" fill="rgba(45,92,242,.08)" stroke="#2d5cf2" stroke-width="2" />
+            <polygon points="180,80 480,80 480,100 180,100" fill="url(#hatch2)" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="3 2" />
+            <defs>
+              <pattern id="hatch2" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="6" stroke="#b91c1c" stroke-width="1.2" opacity="0.6" />
+              </pattern>
+            </defs>
+            <line x1="80" y1="32" x2="540" y2="32" stroke="#b08742" stroke-width="3" />
+            <text x="310" y="24" fill="#b08742" font-size="11" text-anchor="middle">STREET (front)</text>
+            <text x="330" y="190" fill="#1d2433" font-size="14" font-weight="600" text-anchor="middle">Building · 320 m²</text>
+            <text x="100" y="60" fill="#b08742" font-size="11">Lot · 4,877.17 m²</text>
+            <text x="200" y="92" fill="#b91c1c" font-size="10" font-weight="600">Violation 8.4 m²</text>
+            <text x="350" y="92" fill="#b91c1c" font-size="10">↑ 0.3 m too close to front edge</text>
+            <text x="350" y="74" fill="#475063" font-size="10" text-anchor="middle">required envelope (5.0 m)</text>
+          </svg>
+          <div class="geom-legend">
+            <span><i style="background:#b08742"></i> Lot boundary</span>
+            <span><i style="background:#2d5cf2"></i> Building footprint</span>
+            <span><i style="background:#1d2433;border:1px dashed #1d2433"></i> Required envelope</span>
+            <span><i style="background:#b91c1c"></i> Violation polygon</span>
+          </div>
+        </div>
+
+        <div class="check-row fail" style="margin-top:14px">
+          <div class="check-icon">!</div>
+          <div><strong>Front (north) setback</strong><span>required 5.0 m · measured 4.7 m · deficit 0.3 m</span></div>
+          <div class="delta">−0.3 m</div>
+        </div>
+        <div class="check-row pass">
+          <div class="check-icon">✓</div>
+          <div><strong>Side setbacks</strong><span>east 3.1 m · west 8.5 m · required 3.0 m</span></div>
+          <div class="delta">+0.1 m</div>
+        </div>
+        <div class="check-row pass">
+          <div class="check-icon">✓</div>
+          <div><strong>Rear setback</strong><span>4.0 m measured · 4.0 m required</span></div>
+          <div class="delta">±0.0</div>
+        </div>
+        <div class="check-row pass">
+          <div class="check-icon">✓</div>
+          <div><strong>Coverage</strong><span>6.6% · max 50% allowed</span></div>
+          <div class="delta">−43.4%</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Stage 4: AI's prose -->
+    <article class="stage-card">
+      <header class="stage-card-head">
+        <div class="stage-card-num">04</div>
+        <div class="stage-card-titles">
+          <h2>System notes</h2>
+          <p>One-paragraph summary the system would surface to the consultant.</p>
+        </div>
+      </header>
+      <div class="stage-card-body">
+        <div class="ai-quote">
+          The submission is internally consistent — lot area, floor totals, and number of floors all match across the deed, the floor-area plan, and the CAD. Coverage is comfortably below the 50% limit. The single non-compliance is a 0.3 m deficit on the front (north) setback: the building sits 4.7 m from the lot's street edge where the regulatory site plan requires 5.0 m, producing a violation polygon of 8.4 m² and an indicative fine of 1,680 JOD. The violation is minor and confined to the front strip; no part of the building exits the lot.
+          <span class="arabic">المبنى متطابق مع المستندات. التغطية ٦٫٦٪ ضمن الحد المسموح ٥٠٪. المخالفة الوحيدة: الارتداد الأمامي ٤٫٧م دون الحد المطلوب ٥٫٠م، مما ينتج عنه مخالفة ٨٫٤م² وغرامة ١٬٦٨٠ دينار. مخالفة طفيفة ومحصورة في الواجهة الأمامية.</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Decision bar -->
+    <div class="decision-bar">
+      <div class="decision-bar-text">
+        <strong>Your decision</strong>
+        <span>Approve as-is, return for revision, or reject the application.</span>
+      </div>
+      <button class="btn-revision">Return for revision</button>
+      <button class="btn-reject">Reject</button>
+      <button class="btn-approve">Approve →</button>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.design-bar button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.design-bar button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+      document.getElementById(b.dataset.screen).classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+
+</body>
+</html>

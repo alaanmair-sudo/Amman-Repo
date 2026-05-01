@@ -1,0 +1,14 @@
+[
+  {
+    "username": "your_username",
+    "password": "change_me",
+    "role": "submitter",
+    "display_name": "Your Name"
+  },
+  {
+    "username": "reviewer_username",
+    "password": "change_me",
+    "role": "reviewer",
+    "display_name": "Reviewer Name"
+  }
+]

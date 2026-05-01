@@ -1,0 +1,45 @@
+# Secrets & local config — NEVER commit
+.env
+config.yaml
+users.json
+Anthropic key.txt
+*.pem
+*.key
+
+# Vendored repo (clone separately per autocad-mcp README)
+autocad-mcp/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# Logs & runtime artifacts
+*.log
+*.log.*
+.uvicorn.*
+
+# User-uploaded files & saved analyses
+uploads/
+analysis/
+
+# Build / debug artifacts
+_latest_render.png
+_smoke_render_v*.png
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*~
+
+# Claude Code session data (contains conversation transcripts)
+.claude/

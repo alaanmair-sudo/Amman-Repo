@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>تسجيل الدخول · النظام الذكي لامانة عمان الكبرى</title>
+<link rel="icon" type="image/png" href="/static/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="/static/app.css?v=37" />
+<link rel="stylesheet" href="/static/auth.css?v=9" />
+<script src="/static/auth.js?v=9"></script>
+</head>
+<body class="auth-body rtl">
+  <main class="auth-shell">
+    <section class="auth-card">
+      <div class="auth-brand">
+        <div class="auth-logo auth-logo--img" aria-hidden="true">
+          <img src="/static/logo.png" alt="أمانة عمان الكبرى" />
+        </div>
+        <div class="auth-titles">
+          <h1 class="auth-title">النظام الذكي لامانة عمان الكبرى</h1>
+          <p class="auth-sub">منصة الترخيص بالذكاء الاصطناعي</p>
+        </div>
+      </div>
+
+      <form id="login-form" class="auth-form" autocomplete="off">
+        <label class="auth-field">
+          <span class="auth-label">اسم المستخدم</span>
+          <input type="text" id="login-username" name="username" placeholder="reviewer" autocomplete="username" required />
+        </label>
+        <label class="auth-field">
+          <span class="auth-label">كلمة المرور</span>
+          <input type="password" id="login-password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+        </label>
+
+        <label class="auth-check">
+          <input type="checkbox" id="login-remember" checked />
+          <span>أبقني مسجّل الدخول على هذا الجهاز</span>
+        </label>
+
+        <div id="login-error" class="auth-error" hidden></div>
+
+        <button type="submit" class="primary-btn auth-submit">
+          <span class="btn-label">تسجيل الدخول</span>
+          <svg class="btn-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 10h12M12 4l6 6-6 6"/>
+          </svg>
+        </button>
+
+        <p class="auth-hint">حسابات العرض: <code>Akram_Atteyeh</code> · <code>Mohammad_Najdawi</code> · <code>Tareq_aldalal'a</code> — كلمة المرور <code>demo123</code>.</p>
+      </form>
+
+      <footer class="auth-foot">
+        <span class="auth-foot-dot"></span>
+        <span>AutoCAD LT · MCP</span>
+      </footer>
+    </section>
+
+    <aside class="auth-hero" aria-hidden="true">
+      <div class="hero-eyebrow">محتويات الواجهة</div>
+      <h2 class="hero-title">راجع طلبات رخص البناء بخط تحليل متوازٍ.</h2>
+      <ul class="hero-list">
+        <li>
+          <span class="hero-bullet hero-bullet--blue"></span>
+          <div>
+            <strong>هندسة CAD</strong>
+            <span>ارتدادات كل جهة، تغطية المبنى، وحساب الغرامات.</span>
+          </div>
+        </li>
+        <li>
+          <span class="hero-bullet hero-bullet--orange"></span>
+          <div>
+            <strong>استخراج السند</strong>
+            <span>المالك، الحوض، القرية، القطعة — مستخرجة من سند التسجيل.</span>
+          </div>
+        </li>
+        <li>
+          <span class="hero-bullet hero-bullet--teal"></span>
+          <div>
+            <strong>خطة مساحة الطابقية</strong>
+            <span>جداول الطوابق مطابقة مع المجاميع المطبوعة.</span>
+          </div>
+        </li>
+      </ul>
+    </aside>
+  </main>
+</body>
+</html>

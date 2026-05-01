@@ -1,0 +1,285 @@
+/* =================================================================
+   Auth (login) screen — uses the design tokens from app.css
+   ================================================================= */
+
+body.auth-body {
+  min-height: 100vh;
+  overflow: auto;
+  display: grid;
+  place-items: center;
+  padding: 32px 24px;
+  background:
+    radial-gradient(1100px 520px at 15% -10%, #e3e7f5 0%, transparent 60%),
+    radial-gradient(800px 440px at 100% 10%, #eff6ff 0%, transparent 55%),
+    radial-gradient(900px 520px at 90% 110%, #fff0e6 0%, transparent 60%),
+    var(--c-bg);
+}
+
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(280px, 420px);
+  gap: 32px;
+  align-items: stretch;
+  width: 100%;
+  max-width: 920px;
+  /* Scale the whole login screen (both panels, text, logo, padding) by 10%
+     in one shot — supported in Chrome/Edge/Safari/Firefox. */
+  zoom: 1.1;
+}
+
+@media (max-width: 820px) {
+  .auth-shell { grid-template-columns: 1fr; gap: 20px; }
+  .auth-hero  { order: -1; }
+}
+
+/* ---- Card ---- */
+.auth-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-3);
+  padding: 32px 30px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.auth-brand { display: flex; align-items: center; gap: 16px; }
+.auth-logo {
+  width: 44px; height: 44px;
+  border-radius: var(--r-lg);
+  display: grid; place-items: center;
+  background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(37, 99, 235,.28);
+}
+.auth-logo svg { width: 22px; height: 22px; }
+
+/* PNG-logo variant for the login screen — generously sized so the
+   Amanah Amman seal is the visual anchor of the auth card. */
+.auth-logo--img {
+  width: 72px; height: 72px;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 10px;
+  padding: 4px;
+  flex-shrink: 0;
+}
+.auth-logo--img img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.auth-titles { display: flex; flex-direction: column; gap: 2px; }
+.auth-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--c-text);
+}
+.auth-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--c-muted);
+}
+
+/* ---- Form ---- */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-2);
+  letter-spacing: 0.01em;
+}
+
+.auth-field input[type="text"],
+.auth-field input[type="password"] {
+  font-family: var(--ff-sans);
+  font-size: 14px;
+  color: var(--c-text);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color .14s var(--ease), box-shadow .14s var(--ease), background .14s var(--ease);
+}
+.auth-field input:hover   { border-color: #d6dae5; }
+.auth-field input:focus   {
+  border-color: var(--c-brand);
+  box-shadow: 0 0 0 3px var(--c-brand-ring);
+  background: #fff;
+}
+.auth-field input::placeholder { color: var(--c-subtle); }
+
+.auth-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--c-muted);
+  user-select: none;
+  cursor: pointer;
+}
+.auth-check input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--c-brand);
+  cursor: pointer;
+}
+
+.auth-submit {
+  margin-top: 4px;
+  width: 100%;
+  justify-content: center;
+}
+.auth-submit[disabled] { opacity: .5; cursor: not-allowed; }
+
+.auth-hint {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--c-subtle);
+  text-align: center;
+}
+.auth-hint code {
+  padding: 1px 6px;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: 4px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--c-text);
+}
+
+.auth-error {
+  padding: 8px 12px;
+  background: var(--c-error-soft);
+  color: var(--c-error);
+  border: 1px solid var(--c-error-bd);
+  border-radius: 8px;
+  font-size: 12.5px;
+  text-align: center;
+  direction: rtl;
+}
+.auth-error[hidden] { display: none; }
+
+/* ---- Footer ---- */
+.auth-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--c-border-2);
+  padding-top: 14px;
+  font-size: 11.5px;
+  color: var(--c-muted);
+  letter-spacing: 0.02em;
+}
+.auth-foot-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--c-success);
+  box-shadow: 0 0 0 3px rgba(5,150,105,.15);
+}
+
+/* ---- Hero (right-side explainer) ---- */
+.auth-hero {
+  background: linear-gradient(180deg, #111827 0%, #1f2042 100%);
+  color: #e5e7eb;
+  border-radius: var(--r-xl);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  /* Tightened from 18 → 10 so there's less breathing room below the
+     one-line hero title. */
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--sh-3);
+}
+.auth-hero::before {
+  content: "";
+  position: absolute;
+  inset: -40% -20% auto auto;
+  width: 360px; height: 360px;
+  background: radial-gradient(closest-side, rgba(59, 130, 246,.28), transparent 70%);
+  pointer-events: none;
+}
+.auth-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto auto -30% -30%;
+  width: 300px; height: 300px;
+  background: radial-gradient(closest-side, rgba(234,88,12,.22), transparent 70%);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #93c5fd;
+  font-weight: 600;
+}
+.hero-title {
+  margin: 0;
+  /* Reduced 20 → 17 and forced white-space: nowrap so the full Arabic
+     headline stays on a single line inside the hero panel. */
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #f8fafc;
+  position: relative;
+  white-space: nowrap;
+}
+
+.hero-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+.hero-list li {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.hero-list li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hero-list strong {
+  color: #f1f5f9;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.hero-list span {
+  color: #94a3b8;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.hero-bullet {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  margin-top: 6px;
+  box-shadow: 0 0 0 4px rgba(255,255,255,.04);
+}
+.hero-bullet--blue   { background: #60a5fa; }
+.hero-bullet--orange { background: #fb923c; }
+.hero-bullet--teal   { background: #2dd4bf; }

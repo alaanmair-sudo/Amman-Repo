@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Design 4 — Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=JetBrains+Mono:wght@400;500&display=swap" />
+<style>
+  :root {
+    --night: #0a1628;
+    --night-2: #142339;
+    --dusk: #1a2c47;
+    --gold: #d4a574;
+    --gold-2: #b88a4f;
+    --copper: #c87f3e;
+    --tan: #c8a878;
+    --paper: #f5ecd9;
+    --paper-2: #e7daba;
+    --leaf: #6b8e5a;
+    --water: #2a4d6e;
+    --pass: #6dbb7a;
+    --warn: #e8a534;
+    --fail: #d65a4f;
+    --serious: #a02e2e;
+    --line-gold: rgba(212,165,116,.25);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: 'Inter', 'Noto Kufi Arabic', system-ui, sans-serif;
+    background: var(--night);
+    color: var(--paper);
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+  .design-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,22,40,.85); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line-gold);
+    padding: 10px 22px; display: flex; gap: 4px; align-items: center;
+  }
+  .design-bar-label {
+    font-family: 'Cormorant Garamond', serif; font-style: italic;
+    font-size: 14px; color: var(--gold); margin-inline-start: auto;
+    letter-spacing: .1em;
+  }
+  .design-bar button {
+    background: transparent; border: 1px solid rgba(212,165,116,.18); color: rgba(245,236,217,.7);
+    padding: 6px 14px; border-radius: 0; font-size: 12px; cursor: pointer;
+    font-family: inherit; letter-spacing: .04em;
+  }
+  .design-bar button:hover { color: var(--paper); border-color: var(--gold); }
+  .design-bar button.active { background: var(--gold); color: var(--night); border-color: var(--gold); font-weight: 600; }
+
+  main { padding-top: 48px; }
+  .screen { display: none; min-height: calc(100vh - 48px); }
+  .screen.active { display: block; }
+
+  /* ============= AERIAL/SATELLITE MOCK ============= */
+  .aerial-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 1200px 800px at 30% 10%, rgba(255,180,80,.18), transparent 60%),
+      radial-gradient(ellipse 800px 600px at 70% 80%, rgba(212,165,116,.15), transparent 60%),
+      radial-gradient(circle at 20% 70%, var(--leaf) 0, transparent 4%),
+      radial-gradient(circle at 25% 65%, var(--leaf) 0, transparent 3%),
+      radial-gradient(circle at 60% 30%, var(--leaf) 0, transparent 5%),
+      radial-gradient(circle at 80% 50%, var(--leaf) 0, transparent 4%),
+      linear-gradient(135deg, #2a3a52 0%, #3d4d68 30%, #5a6b80 60%, #4a5870 100%);
+    background-blend-mode: normal;
+    overflow: hidden;
+  }
+  .aerial-bg::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(transparent 0%, transparent 49.5%, rgba(20,35,57,.5) 49.7%, rgba(20,35,57,.5) 50%, transparent 50.3%),
+      linear-gradient(90deg, transparent 0%, transparent 19.5%, rgba(20,35,57,.4) 19.7%, rgba(20,35,57,.4) 20%, transparent 20.3%, transparent 39.5%, rgba(20,35,57,.4) 39.7%, rgba(20,35,57,.4) 40%, transparent 40.3%, transparent 64.5%, rgba(20,35,57,.4) 64.7%, rgba(20,35,57,.4) 65%, transparent 65.3%, transparent 89.5%, rgba(20,35,57,.4) 89.7%, rgba(20,35,57,.4) 90%, transparent 90.3%);
+    background-size: 100% 100%;
+  }
+
+  .aerial-bg svg.bg-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* Skyline silhouette at bottom */
+  .skyline {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 220px;
+    background: linear-gradient(180deg, transparent 0%, rgba(10,22,40,.4) 30%, var(--night) 95%);
+    pointer-events: none;
+  }
+  .skyline svg { position: absolute; bottom: 0; left: 0; width: 100%; height: 180px; }
+
+  /* ============= LOGIN ============= */
+  #login.active { display: block; position: relative; }
+  .login-stage {
+    position: relative; min-height: calc(100vh - 48px); overflow: hidden;
+  }
+  .login-wordmark {
+    position: absolute; top: 50px; right: 60px; z-index: 5;
+    text-align: end;
+  }
+  .login-wordmark .ar {
+    font-family: 'Noto Kufi Arabic'; font-size: 22px; font-weight: 600; color: var(--paper);
+    letter-spacing: .02em;
+  }
+  .login-wordmark .lat {
+    font-family: 'Cormorant Garamond', serif; font-size: 18px; font-style: italic;
+    color: var(--gold); margin-top: 4px; letter-spacing: .12em;
+  }
+  .login-titlecard {
+    position: absolute; left: 60px; bottom: 250px; z-index: 5;
+    max-width: 540px;
+  }
+  .login-titlecard .eyebrow {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold);
+    letter-spacing: .25em; text-transform: uppercase; margin-bottom: 18px;
+  }
+  .login-titlecard h1 {
+    font-family: 'Cormorant Garamond', serif; font-weight: 500;
+    font-size: 76px; line-height: .95; letter-spacing: -.02em;
+    margin: 0 0 18px; color: var(--paper);
+  }
+  .login-titlecard h1 em { font-style: italic; color: var(--gold); }
+  .login-titlecard p {
+    font-family: 'Cormorant Garamond', serif; font-style: italic;
+    font-size: 19px; color: rgba(245,236,217,.8); max-width: 460px; line-height: 1.5;
+  }
+  .login-coords {
+    position: absolute; left: 60px; top: 82px; z-index: 5;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: rgba(212,165,116,.8); letter-spacing: .12em;
+    line-height: 2; border-inline-start: 1px solid var(--gold); padding-inline-start: 14px;
+  }
+
+  .login-form {
+    position: absolute; right: 60px; bottom: 80px; z-index: 5;
+    width: 380px;
+    background: rgba(10,22,40,.55); backdrop-filter: blur(24px);
+    border: 1px solid var(--line-gold); padding: 32px 30px;
+  }
+  .login-form .corner { position: absolute; width: 12px; height: 12px; border: 1px solid var(--gold); }
+  .login-form .corner.tl { top: -1px; left: -1px; border-inline-end: 0; border-bottom: 0; }
+  .login-form .corner.tr { top: -1px; right: -1px; border-inline-start: 0; border-bottom: 0; }
+  .login-form .corner.bl { bottom: -1px; left: -1px; border-inline-end: 0; border-top: 0; }
+  .login-form .corner.br { bottom: -1px; right: -1px; border-inline-start: 0; border-top: 0; }
+  .login-form h3 {
+    font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 500;
+    margin: 0 0 4px; color: var(--gold);
+  }
+  .login-form p { font-size: 12.5px; color: rgba(245,236,217,.6); margin: 0 0 22px; }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--gold); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%; background: rgba(0,0,0,.35); border: 0; border-bottom: 1px solid rgba(212,165,116,.3);
+    padding: 10px 4px; font-size: 14px; color: var(--paper); font-family: 'Cormorant Garamond', serif;
+    border-radius: 0;
+  }
+  .field input:focus { outline: 0; border-bottom-color: var(--gold); }
+
+  .login-btn {
+    margin-top: 22px; width: 100%; background: var(--gold); color: var(--night);
+    border: 0; padding: 13px; font-weight: 600; font-size: 12.5px;
+    cursor: pointer; font-family: 'JetBrains Mono', monospace;
+    letter-spacing: .15em; text-transform: uppercase;
+  }
+  .login-btn:hover { background: var(--paper); }
+
+  .login-meta {
+    margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(212,165,116,.15);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: rgba(245,236,217,.4);
+    letter-spacing: .04em; line-height: 1.7;
+  }
+
+  /* ============= DASHBOARD ============= */
+  .atlas-shell {
+    display: grid; grid-template-columns: 1fr 420px;
+    height: calc(100vh - 48px); position: relative;
+  }
+  .atlas-map {
+    position: relative; overflow: hidden; background: var(--dusk);
+  }
+  .atlas-map .topbar-overlay {
+    position: absolute; top: 18px; left: 18px; right: 18px; z-index: 5;
+    display: flex; gap: 12px; align-items: center;
+  }
+  .crystal-stat {
+    background: rgba(10,22,40,.7); backdrop-filter: blur(16px);
+    border: 1px solid var(--line-gold); padding: 10px 16px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .crystal-stat .lbl { font-size: 10px; color: var(--gold); letter-spacing: .15em; text-transform: uppercase; }
+  .crystal-stat .val { font-size: 20px; font-weight: 600; color: var(--paper); margin-top: 2px; font-family: 'Cormorant Garamond', serif; }
+
+  .atlas-compass {
+    position: absolute; top: 18px; right: 18px; z-index: 5;
+    width: 80px; height: 80px;
+  }
+  .atlas-compass svg { width: 100%; height: 100%; }
+
+  .atlas-scalebar {
+    position: absolute; bottom: 18px; left: 18px; z-index: 5;
+    display: flex; gap: 10px; align-items: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--gold);
+    letter-spacing: .12em; text-transform: uppercase;
+  }
+  .atlas-scalebar .bar { width: 80px; height: 4px; background: linear-gradient(90deg, var(--gold) 0 50%, transparent 50% 100%); border: 1px solid var(--gold); }
+
+  /* lot pin glow */
+  .lot-pin {
+    position: absolute; transform: translate(-50%, -50%); cursor: pointer;
+  }
+  .lot-pin .ring {
+    width: 28px; height: 28px; border-radius: 50%; position: relative;
+  }
+  .lot-pin.pass .ring { background: radial-gradient(circle, rgba(109,187,122,.5), transparent 70%); }
+  .lot-pin.warn .ring { background: radial-gradient(circle, rgba(232,165,52,.55), transparent 70%); }
+  .lot-pin.fail .ring { background: radial-gradient(circle, rgba(214,90,79,.6), transparent 70%); }
+  .lot-pin .core {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--paper);
+  }
+  .lot-pin.pass .core { background: var(--pass); }
+  .lot-pin.warn .core { background: var(--warn); }
+  .lot-pin.fail .core { background: var(--fail); }
+  .lot-pin.selected .core { width: 14px; height: 14px; border-width: 3px; }
+  .lot-pin .label {
+    position: absolute; top: 32px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,22,40,.85); backdrop-filter: blur(12px);
+    padding: 4px 10px; border: 1px solid var(--line-gold);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--paper);
+    white-space: nowrap; letter-spacing: .06em;
+  }
+
+  /* dashboard side panel */
+  .atlas-side {
+    background: var(--night); border-inline-start: 1px solid var(--line-gold);
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .atlas-side-head { padding: 22px 26px; border-bottom: 1px solid var(--line-gold); }
+  .atlas-side-head .greet { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; color: var(--gold); }
+  .atlas-side-head h2 { margin: 6px 0 0; font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 30px; line-height: 1.1; color: var(--paper); }
+  .atlas-side-head .ar { font-family: 'Noto Kufi Arabic'; font-size: 14px; color: rgba(245,236,217,.6); margin-top: 8px; }
+
+  .atlas-search { padding: 16px 26px; border-bottom: 1px solid var(--line-gold); }
+  .atlas-search input {
+    width: 100%; background: var(--night-2); border: 1px solid var(--line-gold);
+    padding: 9px 12px; color: var(--paper); font-size: 12.5px; font-family: 'JetBrains Mono', monospace;
+  }
+  .atlas-search input::placeholder { color: rgba(245,236,217,.35); }
+
+  .atlas-queue { flex: 1; overflow-y: auto; }
+  .queue-item {
+    padding: 16px 26px; border-bottom: 1px solid rgba(212,165,116,.1); cursor: pointer;
+    display: grid; grid-template-columns: 1fr auto; gap: 4px 16px;
+  }
+  .queue-item:hover { background: var(--night-2); }
+  .queue-item.selected { background: var(--night-2); border-inline-start: 3px solid var(--gold); padding-inline-start: 23px; }
+  .queue-item-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--gold); letter-spacing: .12em; grid-column: 1; }
+  .queue-item-name { font-family: 'Noto Kufi Arabic'; font-weight: 600; font-size: 14px; color: var(--paper); grid-column: 1; }
+  .queue-item-meta { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 13px; color: rgba(245,236,217,.6); grid-column: 1; }
+  .queue-item-verdict { grid-column: 2; grid-row: 1 / 4; align-self: center; }
+  .verdict-dot {
+    display: inline-flex; flex-direction: column; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+  }
+  .verdict-dot::before {
+    content: ''; width: 14px; height: 14px; border-radius: 50%;
+  }
+  .verdict-dot.pass::before { background: var(--pass); box-shadow: 0 0 12px rgba(109,187,122,.6); }
+  .verdict-dot.pass { color: var(--pass); }
+  .verdict-dot.warn::before { background: var(--warn); box-shadow: 0 0 12px rgba(232,165,52,.6); }
+  .verdict-dot.warn { color: var(--warn); }
+  .verdict-dot.fail::before { background: var(--fail); box-shadow: 0 0 14px rgba(214,90,79,.7); }
+  .verdict-dot.fail { color: var(--fail); }
+
+  /* ============= INTAKE ============= */
+  .intake-shell { padding: 50px 60px; max-width: 1200px; margin: 0 auto; position: relative; }
+  .intake-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold); letter-spacing: .25em; text-transform: uppercase; }
+  .intake-h1 {
+    font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 64px;
+    margin: 12px 0 6px; color: var(--paper); letter-spacing: -.02em; line-height: 1;
+  }
+  .intake-h1 em { font-style: italic; color: var(--gold); }
+  .intake-h1 .ar { display: block; font-family: 'Noto Kufi Arabic'; font-size: 22px; margin-top: 16px; font-weight: 500; color: rgba(245,236,217,.7); }
+  .intake-lead { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; color: rgba(245,236,217,.7); max-width: 600px; margin: 18px 0 32px; }
+
+  .intake-aerial {
+    position: relative; height: 180px; border: 1px solid var(--line-gold); margin-bottom: 28px;
+    overflow: hidden;
+  }
+  .intake-aerial .pin-marker {
+    position: absolute; top: 50%; left: 60%; transform: translate(-50%, -50%); z-index: 5;
+  }
+  .intake-aerial .coords {
+    position: absolute; top: 16px; left: 16px; z-index: 5;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--gold);
+    letter-spacing: .12em; line-height: 1.7;
+    background: rgba(10,22,40,.7); padding: 8px 12px; backdrop-filter: blur(10px); border: 1px solid var(--line-gold);
+  }
+
+  .intake-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .intake-doc {
+    background: var(--night-2); border: 1px solid var(--line-gold); padding: 22px 24px; position: relative;
+  }
+  .intake-doc.done { border-inline-start: 3px solid var(--pass); padding-inline-start: 22px; }
+  .intake-doc .lbl { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--gold); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 6px; }
+  .intake-doc h3 { font-family: 'Cormorant Garamond', serif; font-size: 22px; margin: 0 0 4px; color: var(--paper); }
+  .intake-doc h3 .ar { font-family: 'Noto Kufi Arabic'; font-weight: 500; font-size: 16px; }
+  .intake-doc .extracted { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: rgba(245,236,217,.7); margin-top: 12px; line-height: 1.7; }
+
+  .intake-issue {
+    margin-top: 28px; background: rgba(232,165,52,.08); border: 1px solid rgba(232,165,52,.3);
+    padding: 22px 26px;
+  }
+  .intake-issue h4 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 22px; margin: 0; color: var(--warn); }
+  .intake-issue p { color: rgba(245,236,217,.85); margin: 8px 0 0; font-size: 13.5px; line-height: 1.7; }
+
+  .intake-actions { margin-top: 28px; display: flex; gap: 12px; }
+  .btn-ghost-gold {
+    background: transparent; color: var(--paper); border: 1px solid var(--gold);
+    padding: 12px 22px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: .15em; text-transform: uppercase; cursor: pointer;
+  }
+  .btn-fill-gold {
+    background: var(--gold); color: var(--night); border: 1px solid var(--gold);
+    padding: 12px 24px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: .15em; text-transform: uppercase; cursor: pointer; font-weight: 600;
+  }
+
+  /* ============= REVIEW ============= */
+  .rv-shell { display: grid; grid-template-columns: 1.2fr 1fr; height: calc(100vh - 48px); }
+  .rv-spatial { position: relative; overflow: hidden; background: var(--dusk); }
+  .rv-spatial-overlay {
+    position: absolute; top: 18px; left: 18px; right: 18px; z-index: 5;
+    display: flex; align-items: flex-start; gap: 14px;
+  }
+  .rv-id-card {
+    background: rgba(10,22,40,.75); backdrop-filter: blur(16px);
+    border: 1px solid var(--line-gold); padding: 14px 18px;
+  }
+  .rv-id-card .id { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--gold); letter-spacing: .15em; }
+  .rv-id-card h2 { font-family: 'Cormorant Garamond', serif; font-size: 26px; margin: 4px 0 2px; color: var(--paper); }
+  .rv-id-card h2 .ar { font-family: 'Noto Kufi Arabic'; font-weight: 500; font-size: 18px; }
+  .rv-id-card .meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(245,236,217,.6); letter-spacing: .08em; margin-top: 6px; }
+
+  .rv-overlay-toggle {
+    margin-inline-start: auto; display: flex; gap: 0;
+    background: rgba(10,22,40,.75); backdrop-filter: blur(16px);
+    border: 1px solid var(--line-gold);
+  }
+  .rv-overlay-toggle button {
+    background: transparent; border: 0; color: rgba(245,236,217,.7);
+    padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: .12em; text-transform: uppercase; cursor: pointer;
+  }
+  .rv-overlay-toggle button + button { border-inline-start: 1px solid var(--line-gold); }
+  .rv-overlay-toggle button.active { background: var(--gold); color: var(--night); }
+
+  .rv-spatial-canvas { width: 100%; height: 100%; position: relative; }
+  .rv-spatial-canvas svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .rv-violation-callout {
+    position: absolute; bottom: 80px; left: 30px; z-index: 5;
+    background: rgba(214,90,79,.18); backdrop-filter: blur(14px);
+    border: 1px solid var(--fail); padding: 14px 18px; max-width: 280px;
+  }
+  .rv-violation-callout .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--fail); letter-spacing: .15em; text-transform: uppercase; }
+  .rv-violation-callout .v { font-family: 'Cormorant Garamond', serif; font-size: 38px; color: var(--paper); line-height: 1; margin: 4px 0 4px; font-weight: 600; }
+  .rv-violation-callout .desc { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 13px; color: rgba(245,236,217,.8); }
+  .rv-violation-callout .leader {
+    position: absolute; top: 50%; right: -100px;
+    width: 100px; border-top: 1px dashed var(--fail);
+  }
+
+  /* right panel */
+  .rv-info {
+    background: var(--night); border-inline-start: 1px solid var(--line-gold);
+    display: flex; flex-direction: column; min-height: 0; min-width: 0;
+  }
+  .rv-decisions {
+    padding: 18px 26px; border-bottom: 1px solid var(--line-gold); display: flex; gap: 8px; background: var(--night-2);
+  }
+  .rv-decisions button { flex: 1; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; border: 1px solid var(--line-gold); background: transparent; color: var(--paper); }
+  .rv-decisions .approve { background: var(--gold); color: var(--night); border-color: var(--gold); font-weight: 600; }
+  .rv-decisions .reject { color: var(--fail); border-color: rgba(214,90,79,.4); }
+
+  .rv-info-content { flex: 1; overflow-y: auto; padding: 26px 30px; }
+  .rv-section { margin-bottom: 32px; }
+  .rv-section-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--gold);
+    letter-spacing: .2em; text-transform: uppercase; margin: 0 0 14px;
+    border-top: 1px solid var(--line-gold); padding-top: 14px;
+    display: flex; align-items: center;
+  }
+  .rv-section-title .count { margin-inline-start: auto; font-family: 'Cormorant Garamond', serif; font-style: italic; text-transform: none; letter-spacing: 0; font-size: 12px; color: rgba(245,236,217,.6); }
+
+  .rv-headline {
+    font-family: 'Cormorant Garamond', serif; font-size: 64px;
+    color: var(--paper); line-height: .95; font-weight: 500;
+    margin: 0 0 18px;
+  }
+  .rv-headline em { font-style: italic; color: var(--warn); }
+  .rv-headline .ar { display: block; font-family: 'Noto Kufi Arabic'; font-weight: 500; font-size: 20px; margin-top: 16px; line-height: 1.5; color: rgba(245,236,217,.75); }
+
+  .compare-block { display: grid; grid-template-columns: 1fr 60px 1fr; align-items: center; padding: 14px 0; border-bottom: 1px solid rgba(212,165,116,.1); }
+  .compare-block:first-of-type { border-top: 1px solid rgba(212,165,116,.1); }
+  .compare-block .side .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: rgba(245,236,217,.5); letter-spacing: .12em; text-transform: uppercase; }
+  .compare-block .side .v { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--paper); margin-top: 2px; font-weight: 500; }
+  .compare-block .side .desc { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 12px; color: rgba(245,236,217,.55); margin-top: 2px; }
+  .compare-block .delta {
+    text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 6px; letter-spacing: .04em; font-weight: 600;
+  }
+  .compare-block .delta.pass { color: var(--pass); }
+  .compare-block .delta.fail { color: var(--fail); }
+
+  .summary-quote {
+    font-family: 'Cormorant Garamond', serif; font-style: italic;
+    font-size: 17px; line-height: 1.7; color: rgba(245,236,217,.85);
+    border-inline-start: 2px solid var(--gold); padding: 4px 18px;
+  }
+  .summary-quote .ar { font-family: 'Noto Kufi Arabic'; font-style: normal; font-size: 14px; line-height: 1.85; display: block; margin-top: 14px; color: rgba(245,236,217,.7); }
+
+  .arabic { font-family: 'Noto Kufi Arabic'; }
+</style>
+</head>
+<body>
+
+<nav class="design-bar">
+  <button data-screen="login">Login</button>
+  <button data-screen="dashboard" class="active">Dashboard</button>
+  <button data-screen="intake">Intake (Submitter)</button>
+  <button data-screen="review">Review (Reviewer)</button>
+  <span class="design-bar-label">Design 4 · Atlas</span>
+</nav>
+
+<main>
+
+<!-- ================ LOGIN ================ -->
+<section id="login" class="screen">
+  <div class="login-stage">
+    <div class="aerial-bg">
+      <svg class="bg-svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+        <!-- mocked road grid + buildings -->
+        <g opacity="0.4">
+          <path d="M0,200 Q400,180 800,220 T1600,200" stroke="#d4a574" stroke-width="2" fill="none"/>
+          <path d="M0,420 Q400,460 800,440 T1600,460" stroke="#d4a574" stroke-width="1.5" fill="none"/>
+          <path d="M0,640 Q400,620 800,680 T1600,640" stroke="#d4a574" stroke-width="1.5" fill="none"/>
+          <path d="M200,0 Q220,300 200,600 T220,900" stroke="#d4a574" stroke-width="1.5" fill="none"/>
+          <path d="M600,0 Q580,300 620,600 T600,900" stroke="#d4a574" stroke-width="1.5" fill="none"/>
+          <path d="M1100,0 Q1080,300 1120,600 T1100,900" stroke="#d4a574" stroke-width="1.5" fill="none"/>
+        </g>
+        <!-- mocked building footprints -->
+        <g fill="#3d4d68" opacity="0.55">
+          <rect x="80" y="280" width="40" height="60"/>
+          <rect x="140" y="290" width="50" height="40"/>
+          <rect x="220" y="310" width="60" height="50"/>
+          <rect x="320" y="280" width="40" height="70"/>
+          <rect x="400" y="320" width="55" height="40"/>
+          <rect x="500" y="290" width="60" height="60"/>
+          <rect x="640" y="280" width="50" height="50"/>
+          <rect x="720" y="310" width="60" height="40"/>
+          <rect x="820" y="290" width="40" height="60"/>
+          <rect x="900" y="300" width="55" height="50"/>
+          <rect x="1000" y="280" width="40" height="60"/>
+          <rect x="1080" y="320" width="60" height="40"/>
+          <rect x="1180" y="290" width="50" height="60"/>
+          <rect x="1280" y="310" width="60" height="40"/>
+          <rect x="1380" y="280" width="40" height="60"/>
+          <rect x="80" y="500" width="50" height="50"/>
+          <rect x="160" y="490" width="60" height="60"/>
+          <rect x="260" y="510" width="40" height="50"/>
+          <rect x="340" y="480" width="55" height="65"/>
+          <rect x="440" y="500" width="50" height="50"/>
+          <rect x="540" y="510" width="60" height="40"/>
+          <rect x="660" y="490" width="50" height="50"/>
+          <rect x="760" y="500" width="60" height="50"/>
+          <rect x="860" y="490" width="40" height="60"/>
+          <rect x="940" y="510" width="55" height="40"/>
+          <rect x="1040" y="490" width="60" height="60"/>
+          <rect x="1140" y="500" width="40" height="50"/>
+          <rect x="1220" y="510" width="60" height="40"/>
+          <rect x="1340" y="490" width="50" height="60"/>
+          <rect x="1440" y="500" width="55" height="50"/>
+        </g>
+        <!-- highlighted lot pulsing -->
+        <g>
+          <polygon points="700,420 850,415 855,500 705,505" fill="rgba(212,165,116,.3)" stroke="#d4a574" stroke-width="2"/>
+          <polygon points="700,420 850,415 855,500 705,505" fill="none" stroke="#d4a574" stroke-width="3" opacity="0.5">
+            <animate attributeName="stroke-width" values="3;7;3" dur="2.4s" repeatCount="indefinite"/>
+          </polygon>
+        </g>
+      </svg>
+    </div>
+
+    <div class="skyline">
+      <svg viewBox="0 0 1600 180" preserveAspectRatio="xMidYMax slice">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#0a1628" stop-opacity="0"/>
+            <stop offset="1" stop-color="#0a1628" stop-opacity="1"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,180 L0,140 L60,140 L70,120 L120,120 L130,135 L180,135 L195,100 L210,100 L220,110 L260,110 L275,130 L320,130 L335,90 L355,90 L370,108 L420,108 L430,125 L470,125 L485,75 L500,75 L515,95 L560,95 L575,115 L620,115 L640,60 L660,60 L678,82 L720,82 L735,105 L780,105 L800,55 L815,55 L830,80 L880,80 L895,98 L940,98 L960,68 L975,68 L995,90 L1040,90 L1058,112 L1100,112 L1118,78 L1140,78 L1155,100 L1200,100 L1218,120 L1260,120 L1280,72 L1300,72 L1320,92 L1370,92 L1385,108 L1430,108 L1445,75 L1465,75 L1485,98 L1530,98 L1548,118 L1600,118 L1600,180 Z" fill="url(#sky)"/>
+      </svg>
+    </div>
+
+    <div class="login-coords">
+      31°57′21″N · 35°54′47″E<br>
+      AMMAN · ELEV 778M
+    </div>
+
+    <div class="login-wordmark">
+      <div class="ar">النظام الذكي لأمانة عمان الكبرى</div>
+      <div class="lat">PERMIT ATLAS</div>
+    </div>
+
+    <div class="login-titlecard">
+      <div class="eyebrow">Greater Amman Municipality</div>
+      <h1>Every permit,<br>on the <em>map</em>.</h1>
+      <p>Twenty-three districts, one shared atlas. Each application anchored to its plot, each plot anchored to the city.</p>
+    </div>
+
+    <div class="login-form">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      <h3>Sign in</h3>
+      <p>Resume the review, exactly where you left it.</p>
+      <div class="field">
+        <label>Username</label>
+        <input type="text" value="reviewer.akram"/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" value="••••••••••"/>
+      </div>
+      <button class="login-btn">Enter Atlas →</button>
+      <div class="login-meta">
+        DEMO · reviewer.akram · submitter.tareq · admin.mohammad<br>
+        PASSWORD · demo123
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================ DASHBOARD ================ -->
+<section id="dashboard" class="screen active">
+  <div class="atlas-shell">
+
+    <div class="atlas-map">
+      <div class="aerial-bg">
+        <svg class="bg-svg" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice">
+          <!-- streets -->
+          <g opacity="0.5" stroke="#d4a574" fill="none">
+            <path d="M0,150 Q300,140 600,180 T1200,150" stroke-width="2.5"/>
+            <path d="M0,350 Q300,380 600,360 T1200,380" stroke-width="2"/>
+            <path d="M0,560 Q300,540 600,580 T1200,560" stroke-width="2"/>
+            <path d="M0,750 Q300,770 600,740 T1200,770" stroke-width="1.5"/>
+            <path d="M150,0 Q170,300 150,600 T170,900" stroke-width="2"/>
+            <path d="M450,0 Q430,300 470,600 T450,900" stroke-width="2"/>
+            <path d="M750,0 Q770,300 730,600 T770,900" stroke-width="2"/>
+            <path d="M1050,0 Q1030,300 1070,600 T1050,900" stroke-width="2"/>
+          </g>
+          <!-- building footprints -->
+          <g fill="#1a2c47" opacity="0.55">
+            <rect x="60" y="200" width="50" height="40"/>
+            <rect x="130" y="220" width="40" height="55"/>
+            <rect x="200" y="200" width="55" height="45"/>
+            <rect x="280" y="240" width="40" height="40"/>
+            <rect x="350" y="220" width="55" height="50"/>
+            <rect x="500" y="200" width="50" height="60"/>
+            <rect x="580" y="240" width="50" height="40"/>
+            <rect x="660" y="210" width="55" height="55"/>
+            <rect x="800" y="210" width="50" height="50"/>
+            <rect x="880" y="240" width="55" height="40"/>
+            <rect x="960" y="210" width="50" height="55"/>
+            <rect x="1080" y="220" width="55" height="50"/>
+            <rect x="60" y="430" width="55" height="45"/>
+            <rect x="140" y="410" width="50" height="60"/>
+            <rect x="220" y="440" width="55" height="40"/>
+            <rect x="300" y="420" width="50" height="55"/>
+            <rect x="510" y="420" width="55" height="55"/>
+            <rect x="600" y="450" width="50" height="40"/>
+            <rect x="680" y="420" width="55" height="55"/>
+            <rect x="810" y="430" width="50" height="50"/>
+            <rect x="890" y="410" width="55" height="60"/>
+            <rect x="970" y="440" width="50" height="40"/>
+            <rect x="1080" y="420" width="55" height="55"/>
+            <rect x="60" y="630" width="55" height="50"/>
+            <rect x="140" y="650" width="50" height="40"/>
+            <rect x="220" y="630" width="55" height="55"/>
+            <rect x="320" y="650" width="50" height="40"/>
+            <rect x="500" y="630" width="55" height="50"/>
+            <rect x="600" y="650" width="50" height="40"/>
+            <rect x="680" y="630" width="55" height="55"/>
+            <rect x="810" y="650" width="50" height="40"/>
+            <rect x="900" y="630" width="55" height="55"/>
+            <rect x="990" y="650" width="50" height="40"/>
+            <rect x="1080" y="630" width="55" height="50"/>
+          </g>
+          <!-- parks -->
+          <g fill="#6b8e5a" opacity="0.4">
+            <ellipse cx="380" cy="120" rx="40" ry="25"/>
+            <ellipse cx="780" cy="650" rx="50" ry="35"/>
+            <ellipse cx="180" cy="780" rx="45" ry="30"/>
+            <ellipse cx="950" cy="100" rx="35" ry="20"/>
+          </g>
+          <!-- highlighted lots (ours, with verdicts) -->
+          <polygon points="700,360 760,358 762,400 702,402" fill="rgba(232,165,52,.3)" stroke="#e8a534" stroke-width="2"/>
+          <polygon points="220,180 270,180 270,220 220,220" fill="rgba(109,187,122,.25)" stroke="#6dbb7a" stroke-width="2"/>
+          <polygon points="500,610 555,610 555,660 500,660" fill="rgba(214,90,79,.3)" stroke="#d65a4f" stroke-width="2"/>
+          <polygon points="850,200 905,200 905,245 850,245" fill="rgba(109,187,122,.25)" stroke="#6dbb7a" stroke-width="2"/>
+          <polygon points="380,440 430,440 430,490 380,490" fill="rgba(109,187,122,.25)" stroke="#6dbb7a" stroke-width="2"/>
+          <polygon points="640,440 690,440 690,485 640,485" fill="rgba(232,165,52,.25)" stroke="#e8a534" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <div class="topbar-overlay">
+        <div class="crystal-stat"><div class="lbl">Pending</div><div class="val">23</div></div>
+        <div class="crystal-stat"><div class="lbl">Today</div><div class="val">12</div></div>
+        <div class="crystal-stat"><div class="lbl">Auto-pass</div><div class="val">61%</div></div>
+        <div class="crystal-stat"><div class="lbl">Fines (week)</div><div class="val">42,180 <span style="font-size:10px;letter-spacing:.15em">JOD</span></div></div>
+      </div>
+
+      <div class="atlas-compass">
+        <svg viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="36" fill="rgba(10,22,40,.75)" stroke="rgba(212,165,116,.3)" stroke-width="1"/>
+          <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(212,165,116,.15)" stroke-width=".5"/>
+          <path d="M40,8 L46,40 L40,36 L34,40 Z" fill="#d4a574"/>
+          <path d="M40,72 L46,40 L40,44 L34,40 Z" fill="#3d4d68"/>
+          <text x="40" y="6" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#d4a574">N</text>
+          <text x="40" y="78" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="rgba(245,236,217,.4)">S</text>
+          <text x="76" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="rgba(245,236,217,.4)">E</text>
+          <text x="4" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="rgba(245,236,217,.4)">W</text>
+        </svg>
+      </div>
+
+      <div class="atlas-scalebar">
+        <div class="bar"></div>
+        <span>500 m</span>
+        <span style="opacity:.5;margin-inline-start:14px">SCALE 1:5,000</span>
+      </div>
+
+      <!-- pins -->
+      <div class="lot-pin warn selected" style="top:42%;left:60%">
+        <div class="ring"></div><div class="core"></div>
+        <div class="label">04219 · plot 234</div>
+      </div>
+      <div class="lot-pin pass" style="top:22%;left:20%"><div class="ring"></div><div class="core"></div></div>
+      <div class="lot-pin fail" style="top:71%;left:43%"><div class="ring"></div><div class="core"></div></div>
+      <div class="lot-pin pass" style="top:25%;left:72%"><div class="ring"></div><div class="core"></div></div>
+      <div class="lot-pin pass" style="top:52%;left:33%"><div class="ring"></div><div class="core"></div></div>
+      <div class="lot-pin warn" style="top:51%;left:55%"><div class="ring"></div><div class="core"></div></div>
+    </div>
+
+    <div class="atlas-side">
+      <div class="atlas-side-head">
+        <div class="greet">Good afternoon, Akram.</div>
+        <h2>Twenty-three<br>are waiting.</h2>
+        <div class="ar">قائمة طلبات بانتظار قرارك. اختَر طلبًا من الخريطة أو من القائمة.</div>
+      </div>
+
+      <div class="atlas-search">
+        <input placeholder="Search plot · district · submitter…" value="plot 234"/>
+      </div>
+
+      <div class="atlas-queue">
+        <div class="queue-item selected">
+          <div class="queue-item-id">APP-2026-04219 · 12s ago</div>
+          <div class="queue-item-name">محمد أحمد الخطيب</div>
+          <div class="queue-item-meta">Plot 234 · Tilaa Al Ali · vacant land</div>
+          <div class="queue-item-verdict"><span class="verdict-dot warn">Warn</span></div>
+        </div>
+        <div class="queue-item">
+          <div class="queue-item-id">APP-2026-04218 · 3m ago</div>
+          <div class="queue-item-name">مؤسسة الأبراج للإنشاءات</div>
+          <div class="queue-item-meta">Plot 812 · Shafa Badran · over existing</div>
+          <div class="queue-item-verdict"><span class="verdict-dot pass">Pass</span></div>
+        </div>
+        <div class="queue-item">
+          <div class="queue-item-id">APP-2026-04217 · 11m ago</div>
+          <div class="queue-item-name">سلوى نواف الدلاعلة</div>
+          <div class="queue-item-meta">Plot 114 · Abu Nseir · additions</div>
+          <div class="queue-item-verdict"><span class="verdict-dot fail">Fail</span></div>
+        </div>
+        <div class="queue-item">
+          <div class="queue-item-id">APP-2026-04216 · 34m ago</div>
+          <div class="queue-item-name">عمر طارق نجداوي</div>
+          <div class="queue-item-meta">Plot 56 · Marka · initial consult</div>
+          <div class="queue-item-verdict"><span class="verdict-dot pass">Pass</span></div>
+        </div>
+        <div class="queue-item">
+          <div class="queue-item-id">APP-2026-04215 · 1h ago</div>
+          <div class="queue-item-name">مكتب الهندسة الذهبية</div>
+          <div class="queue-item-meta">Plot 991 · Sweileh · occupancy</div>
+          <div class="queue-item-verdict"><span class="verdict-dot warn">Warn</span></div>
+        </div>
+        <div class="queue-item">
+          <div class="queue-item-id">APP-2026-04214 · 2h ago</div>
+          <div class="queue-item-name">شركة الفنار للمقاولات</div>
+          <div class="queue-item-meta">Plot 428 · Jubeiha · vacant land</div>
+          <div class="queue-item-verdict"><span class="verdict-dot pass">Pass</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================ INTAKE ================ -->
+<section id="intake" class="screen">
+  <div class="intake-shell">
+    <div class="intake-eyebrow">▍ NEW APPLICATION · APP-2026-04219</div>
+    <h1 class="intake-h1">Pin your plot.<em><br>Drop your drawings.</em><span class="ar">إرفع وثائقك ودع النظام يقرأها</span></h1>
+    <p class="intake-lead">The system anchors your application to its real-world location. Once your four documents are in, our AI cross-checks them against the drawing — before it ever reaches a reviewer's desk.</p>
+
+    <div class="intake-aerial aerial-bg">
+      <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 1200 180" preserveAspectRatio="xMidYMid slice">
+        <g opacity="0.5" stroke="#d4a574" fill="none">
+          <path d="M0,80 Q300,90 600,70 T1200,80" stroke-width="2"/>
+          <path d="M150,0 Q170,90 150,180" stroke-width="1.5"/>
+          <path d="M600,0 Q620,90 600,180" stroke-width="1.5"/>
+          <path d="M900,0 Q880,90 900,180" stroke-width="1.5"/>
+        </g>
+        <g fill="#1a2c47" opacity="0.55">
+          <rect x="60" y="50" width="40" height="50"/>
+          <rect x="130" y="40" width="50" height="60"/>
+          <rect x="220" y="60" width="40" height="40"/>
+          <rect x="320" y="40" width="50" height="60"/>
+          <rect x="450" y="50" width="50" height="50"/>
+          <rect x="700" y="40" width="50" height="60"/>
+          <rect x="800" y="50" width="50" height="50"/>
+          <rect x="950" y="40" width="50" height="60"/>
+          <rect x="1080" y="50" width="50" height="50"/>
+        </g>
+        <polygon points="540,70 605,68 608,108 543,110" fill="rgba(232,165,52,.3)" stroke="#e8a534" stroke-width="2"/>
+      </svg>
+      <div class="coords">31°59′12″N · 35°53′02″E<br>Tilaa Al Ali · Plot 234<br>4 دونم 877.170 م²</div>
+      <div class="pin-marker"><div class="lot-pin warn"><div class="ring"></div><div class="core"></div></div></div>
+    </div>
+
+    <div class="intake-grid">
+      <div class="intake-doc done">
+        <div class="lbl">CAD · 01 of 04</div>
+        <h3>Site &amp; building drawing<span class="ar"> · رسم المخطط</span></h3>
+        <div class="extracted">drawing-rev3.dwg · 4.1 MB · 12 layers<br>BUILDING (1) · LOT (1) · STREET (1) · all closed</div>
+      </div>
+      <div class="intake-doc done">
+        <div class="lbl">Deed · 02 of 04</div>
+        <h3>Land registration<span class="ar"> · سند التسجيل</span></h3>
+        <div class="extracted arabic">قطعة 234 · حوض 12 الياسمين · تلاع العلي<br>4 دونم 877.170 م² · المالك: محمد أحمد الخطيب</div>
+      </div>
+      <div class="intake-doc done">
+        <div class="lbl">Site plan · 03 of 04</div>
+        <h3>Regulatory site plan<span class="ar"> · مخطط موقع تنظيمي</span></h3>
+        <div class="extracted">Setbacks: front 5.0 · side 3.0 · rear 4.0 m<br>Use: residential D · not corner</div>
+      </div>
+      <div class="intake-doc done">
+        <div class="lbl">Floor plan · 04 of 04</div>
+        <h3>Floor-area schedule<span class="ar"> · خطة مساحة الطابقية</span></h3>
+        <div class="extracted">4 floors · 1,256 m² grand total<br>4 of 4 rows verified · printed = computed</div>
+      </div>
+    </div>
+
+    <div class="intake-issue">
+      <h4>One coordinate to reconcile.</h4>
+      <p>The CAD shows the building <strong>4.7 m</strong> from the front (north) lot edge, where the regulatory site plan requires <strong>5.0 m</strong>. This produces a violation polygon of <strong>8.4 m²</strong> along the street-facing strip and an indicative fine of <strong>1,680 JOD</strong>. You can revise the drawing now, or submit and let the reviewer decide.</p>
+    </div>
+
+    <div class="intake-actions">
+      <button class="btn-ghost-gold">Revise drawing</button>
+      <button class="btn-fill-gold">Submit · 1 issue acknowledged →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================ REVIEW ================ -->
+<section id="review" class="screen">
+  <div class="rv-shell">
+
+    <div class="rv-spatial">
+      <div class="aerial-bg">
+        <svg class="bg-svg" viewBox="0 0 1000 900" preserveAspectRatio="xMidYMid slice">
+          <g opacity="0.5" stroke="#d4a574" fill="none">
+            <path d="M0,200 Q250,180 500,220 T1000,200" stroke-width="3"/>
+            <path d="M0,560 Q250,540 500,580 T1000,560" stroke-width="2"/>
+            <path d="M150,0 Q170,300 150,600 T170,900" stroke-width="2"/>
+            <path d="M780,0 Q760,300 800,600 T780,900" stroke-width="2"/>
+          </g>
+          <g fill="#1a2c47" opacity="0.55">
+            <rect x="40" y="280" width="40" height="40"/>
+            <rect x="100" y="290" width="50" height="50"/>
+            <rect x="180" y="280" width="40" height="55"/>
+            <rect x="270" y="290" width="50" height="40"/>
+            <rect x="730" y="280" width="40" height="50"/>
+            <rect x="820" y="290" width="50" height="40"/>
+            <rect x="900" y="280" width="40" height="55"/>
+            <rect x="40" y="640" width="50" height="50"/>
+            <rect x="120" y="650" width="40" height="40"/>
+            <rect x="200" y="630" width="50" height="55"/>
+            <rect x="280" y="650" width="40" height="40"/>
+            <rect x="730" y="630" width="50" height="55"/>
+            <rect x="820" y="650" width="40" height="40"/>
+            <rect x="900" y="630" width="50" height="55"/>
+          </g>
+          <!-- the focused lot -->
+          <polygon points="380,330 660,325 668,540 388,545" fill="rgba(212,165,116,.18)" stroke="#d4a574" stroke-width="3"/>
+          <!-- buildable envelope (dashed) -->
+          <polygon points="420,370 620,367 626,500 426,505" fill="none" stroke="#f5ecd9" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.7"/>
+          <!-- building -->
+          <polygon points="440,395 600,392 605,485 445,487" fill="rgba(245,236,217,.85)" stroke="#0a1628" stroke-width="2"/>
+          <!-- violation hatch -->
+          <polygon points="440,367 600,364 605,395 440,395" fill="url(#vhatch)" stroke="#d65a4f" stroke-width="2" stroke-dasharray="3 2"/>
+          <defs>
+            <pattern id="vhatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="6" stroke="#d65a4f" stroke-width="1.5" opacity="0.7"/>
+            </pattern>
+          </defs>
+          <!-- street -->
+          <line x1="0" y1="200" x2="1000" y2="200" stroke="#d4a574" stroke-width="4" opacity="0.7"/>
+          <text x="500" y="190" fill="#d4a574" font-family="JetBrains Mono" font-size="11" text-anchor="middle" letter-spacing=".15em">FRONT · STREET</text>
+          <!-- compass on the lot -->
+          <text x="525" y="442" fill="#0a1628" font-family="Cormorant Garamond" font-size="22" font-style="italic" text-anchor="middle" font-weight="600">4 دونم 877.170</text>
+          <text x="525" y="465" fill="#0a1628" font-family="JetBrains Mono" font-size="10" text-anchor="middle" letter-spacing=".1em">320 m² FOOTPRINT</text>
+        </svg>
+      </div>
+
+      <div class="rv-spatial-overlay">
+        <div class="rv-id-card">
+          <div class="id">▍ APP-2026-04219 · STAGE 3</div>
+          <h2>Plot 234<span class="ar"> · محمد أحمد الخطيب</span></h2>
+          <div class="meta">31°59′12″N 35°53′02″E · Tilaa Al Ali · 4,877.17 m²</div>
+        </div>
+        <div class="rv-overlay-toggle">
+          <button class="active">Aerial</button>
+          <button>CAD</button>
+          <button>Both</button>
+        </div>
+      </div>
+
+      <div class="rv-violation-callout">
+        <div class="lbl">Violation · front edge</div>
+        <div class="v">8.4 <span style="font-size:18px">m²</span></div>
+        <div class="desc">Building encroaches the buildable envelope by 0.3 m along the street-facing edge.</div>
+        <div class="leader"></div>
+      </div>
+
+      <div class="atlas-scalebar">
+        <div class="bar"></div>
+        <span>10 m</span>
+        <span style="opacity:.5;margin-inline-start:14px">SCALE 1:200</span>
+      </div>
+      <div class="atlas-compass" style="bottom:18px;right:18px;top:auto">
+        <svg viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="36" fill="rgba(10,22,40,.75)" stroke="rgba(212,165,116,.3)" stroke-width="1"/>
+          <path d="M40,8 L46,40 L40,36 L34,40 Z" fill="#d4a574"/>
+          <path d="M40,72 L46,40 L40,44 L34,40 Z" fill="#3d4d68"/>
+          <text x="40" y="6" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#d4a574">N</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="rv-info">
+      <div class="rv-decisions">
+        <button class="reject">Reject</button>
+        <button>Revision</button>
+        <button class="approve">Approve →</button>
+      </div>
+
+      <div class="rv-info-content">
+        <h3 class="rv-headline">A minor <em>front-setback</em> violation.<span class="ar">مخالفة طفيفة في الارتداد الأمامي · ٠٫٣م دون الحد المطلوب · غرامة تقديرية ١٬٦٨٠ دينار.</span></h3>
+
+        <div class="rv-section">
+          <h4 class="rv-section-title">▍ Reconciled values <span class="count">4 of 5 match</span></h4>
+          <div class="compare-block">
+            <div class="side">
+              <div class="lbl arabic">سند التسجيل</div>
+              <div class="v">4,877.170 m²</div>
+              <div class="desc">declared lot area</div>
+            </div>
+            <div class="delta pass">±0.0</div>
+            <div class="side">
+              <div class="lbl">CAD</div>
+              <div class="v">4,877.17 m²</div>
+              <div class="desc">measured polygon</div>
+            </div>
+          </div>
+          <div class="compare-block">
+            <div class="side">
+              <div class="lbl">Floor plan</div>
+              <div class="v">1,256 m²</div>
+              <div class="desc">printed grand total</div>
+            </div>
+            <div class="delta pass">±0.0</div>
+            <div class="side">
+              <div class="lbl">Computed</div>
+              <div class="v">1,256.0 m²</div>
+              <div class="desc">Σ(dim × qty × sign)</div>
+            </div>
+          </div>
+          <div class="compare-block">
+            <div class="side">
+              <div class="lbl arabic">مخطط الموقع</div>
+              <div class="v">5.0 m</div>
+              <div class="desc">required front setback</div>
+            </div>
+            <div class="delta fail">−0.3 m</div>
+            <div class="side">
+              <div class="lbl">CAD</div>
+              <div class="v">4.7 m</div>
+              <div class="desc">building → north edge</div>
+            </div>
+          </div>
+          <div class="compare-block">
+            <div class="side">
+              <div class="lbl arabic">مخطط الموقع</div>
+              <div class="v">50%</div>
+              <div class="desc">max coverage allowed</div>
+            </div>
+            <div class="delta pass">−43.4%</div>
+            <div class="side">
+              <div class="lbl">CAD</div>
+              <div class="v">6.6%</div>
+              <div class="desc">320 / 4,877.17</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rv-section">
+          <h4 class="rv-section-title">▍ Compliance · stage 3</h4>
+          <div class="compare-block">
+            <div class="side">
+              <div class="lbl">Violation polygon</div>
+              <div class="v" style="color:var(--warn)">8.4 m²</div>
+            </div>
+            <div class="delta">·</div>
+            <div class="side">
+              <div class="lbl">Estimated fine</div>
+              <div class="v" style="color:var(--warn)">1,680 JOD</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:rgba(245,236,217,.6)">
+            Rate per m²: configurable · currently 200 JOD<br>
+            Severity: minor · building remains inside the lot polygon
+          </div>
+        </div>
+
+        <div class="rv-section">
+          <h4 class="rv-section-title">▍ Notes</h4>
+          <div class="summary-quote">
+            "All identity and geometry values reconcile. Only the front setback falls short — by 30 cm along the street-facing edge — producing the 8.4 m² violation strip you see hatched on the satellite view."
+            <span class="ar">جميع القيم متطابقة. الانحراف الوحيد في الارتداد الأمامي — ٣٠سم عن الحد المطلوب على الواجهة الشمالية — مما ينتج عنه شريط مخالفة ٨٫٤م².</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</main>
+
+<script>
+  document.querySelectorAll('.design-bar button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.design-bar button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+      document.getElementById(b.dataset.screen).classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Design 1 — Inspector's Cockpit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-2: #131923;
+    --panel: #161e2a;
+    --panel-2: #1c2533;
+    --border: #28323f;
+    --border-2: #344050;
+    --text: #d8dee9;
+    --text-2: #aab4c4;
+    --muted: #6f7c8e;
+    --accent: #00b8d4;
+    --accent-2: #4dd0e1;
+    --pass: #4ade80;
+    --warn: #f59e0b;
+    --fail: #ef4444;
+    --serious: #f43f5e;
+    --shadow: 0 1px 0 rgba(255,255,255,.02), 0 8px 24px rgba(0,0,0,.4);
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: 'Inter', 'Noto Kufi Arabic', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .design-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(13,17,23,.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px; display: flex; gap: 6px; align-items: center;
+  }
+  .design-bar-label { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-inline-start: auto; letter-spacing: .12em; text-transform: uppercase; }
+  .design-bar button {
+    background: transparent; border: 1px solid var(--border); color: var(--text-2);
+    padding: 5px 14px; border-radius: 4px; font-size: 12px; cursor: pointer;
+    font-family: inherit; transition: all .15s;
+  }
+  .design-bar button:hover { border-color: var(--border-2); color: var(--text); }
+  .design-bar button.active { background: var(--accent); color: #06121a; border-color: var(--accent); font-weight: 600; }
+
+  main { padding-top: 50px; }
+  .screen { display: none; min-height: calc(100vh - 50px); }
+  .screen.active { display: block; }
+
+  /* ========== LOGIN ========== */
+  #login {
+    display: none;
+    place-items: center; min-height: calc(100vh - 50px);
+    background: radial-gradient(ellipse at top, #18222e 0%, #0d1117 70%);
+    background-image:
+      radial-gradient(ellipse at top, #18222e 0%, #0d1117 70%),
+      linear-gradient(0deg, transparent 24%, rgba(0,184,212,.04) 25%, rgba(0,184,212,.04) 26%, transparent 27%, transparent 74%, rgba(0,184,212,.04) 75%, rgba(0,184,212,.04) 76%, transparent 77%),
+      linear-gradient(90deg, transparent 24%, rgba(0,184,212,.04) 25%, rgba(0,184,212,.04) 26%, transparent 27%, transparent 74%, rgba(0,184,212,.04) 75%, rgba(0,184,212,.04) 76%, transparent 77%);
+    background-size: 100% 100%, 50px 50px, 50px 50px;
+  }
+  #login.active { display: grid; }
+  .login-card {
+    width: 420px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 36px 32px; box-shadow: var(--shadow);
+  }
+  .login-brand { display: flex; gap: 10px; align-items: center; margin-bottom: 28px; }
+  .login-brand-mark {
+    width: 36px; height: 36px; border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent) 0%, #0088a3 100%);
+    display: grid; place-items: center; color: #0d1117; font-weight: 700;
+  }
+  .login-eyebrow { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: .15em; text-transform: uppercase; }
+  .login-title { font-size: 18px; font-weight: 600; margin: 4px 0 0; }
+  .login-sub { color: var(--muted); font-size: 12px; margin-top: 24px; line-height: 1.6; }
+  .field { margin-top: 16px; }
+  .field label { display: block; font-size: 11px; color: var(--text-2); margin-bottom: 6px; font-family: var(--mono); letter-spacing: .04em; text-transform: uppercase; }
+  .field input {
+    width: 100%; background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 9px 12px; color: var(--text);
+    font-family: inherit; font-size: 13px;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  .login-btn {
+    width: 100%; margin-top: 22px; background: var(--accent); color: #06121a;
+    border: 0; padding: 11px; border-radius: 4px; font-weight: 600;
+    cursor: pointer; font-size: 13px; font-family: inherit;
+  }
+  .login-demo { margin-top: 18px; padding: 12px; background: var(--bg-2); border-radius: 4px; font-family: var(--mono); font-size: 11px; color: var(--text-2); border: 1px dashed var(--border); }
+
+  /* ========== DASHBOARD ========== */
+  .dash-shell { display: grid; grid-template-columns: 220px 1fr 280px; gap: 0; height: calc(100vh - 50px); }
+  .dash-rail { background: var(--bg-2); border-inline-end: 1px solid var(--border); padding: 18px 14px; overflow-y: auto; }
+  .dash-rail-section { margin-bottom: 22px; }
+  .dash-rail h4 { margin: 0 0 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-family: var(--mono); font-weight: 500; }
+  .dash-rail-link { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 4px; color: var(--text-2); cursor: pointer; font-size: 12.5px; }
+  .dash-rail-link:hover { background: var(--panel); color: var(--text); }
+  .dash-rail-link.active { background: var(--panel); color: var(--accent); }
+  .dash-rail-link .pill { margin-inline-start: auto; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+  .dash-main { display: flex; flex-direction: column; min-width: 0; }
+  .dash-toolbar {
+    display: flex; align-items: center; gap: 10px; padding: 14px 18px;
+    border-bottom: 1px solid var(--border); background: var(--bg);
+  }
+  .dash-search { flex: 1; max-width: 360px; position: relative; }
+  .dash-search input {
+    width: 100%; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 4px; padding: 8px 12px 8px 32px; color: var(--text);
+    font-family: var(--mono); font-size: 12px;
+  }
+  .dash-search::before {
+    content: '⌕'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px;
+  }
+  .dash-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-chip {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
+    padding: 5px 10px; font-size: 11px; color: var(--text-2); font-family: var(--mono); cursor: pointer;
+  }
+  .filter-chip.active { background: rgba(0,184,212,.12); border-color: var(--accent); color: var(--accent); }
+  .dash-toolbar-actions { margin-inline-start: auto; display: flex; gap: 8px; }
+  .btn-primary { background: var(--accent); color: #06121a; border: 0; padding: 7px 14px; border-radius: 4px; font-weight: 600; font-size: 12px; cursor: pointer; }
+  .btn-ghost { background: transparent; color: var(--text-2); border: 1px solid var(--border); padding: 7px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+
+  .queue-table { flex: 1; overflow: auto; }
+  .queue-table table { width: 100%; border-collapse: collapse; }
+  .queue-table th {
+    text-align: start; font-size: 10px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--muted); font-family: var(--mono); font-weight: 500;
+    padding: 10px 14px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg);
+  }
+  .queue-table td {
+    padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--text-2);
+  }
+  .queue-table tr:hover td { background: var(--panel); }
+  .verdict-pill {
+    display: inline-block; padding: 2px 7px; border-radius: 3px; font-family: var(--mono);
+    font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .verdict-pill.pass { background: rgba(74,222,128,.12); color: var(--pass); border: 1px solid rgba(74,222,128,.3); }
+  .verdict-pill.warn { background: rgba(245,158,11,.12); color: var(--warn); border: 1px solid rgba(245,158,11,.3); }
+  .verdict-pill.fail { background: rgba(239,68,68,.12); color: var(--fail); border: 1px solid rgba(239,68,68,.3); }
+  .stage-mini { display: inline-flex; gap: 3px; align-items: center; }
+  .stage-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-2); }
+  .stage-dot.done { background: var(--pass); }
+  .stage-dot.fail { background: var(--fail); }
+  .stage-dot.warn { background: var(--warn); }
+  .num { font-family: var(--mono); }
+  .id-mono { font-family: var(--mono); color: var(--accent); font-size: 11px; }
+
+  .dash-side { background: var(--bg-2); border-inline-start: 1px solid var(--border); padding: 18px 16px; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 12px; margin-bottom: 10px; }
+  .stat-card h5 { margin: 0; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-family: var(--mono); font-weight: 500; }
+  .stat-value { font-family: var(--mono); font-size: 22px; font-weight: 600; margin-top: 6px; color: var(--text); }
+  .stat-delta { font-family: var(--mono); font-size: 11px; color: var(--pass); margin-top: 2px; }
+
+  /* ========== INTAKE ========== */
+  .intake-shell { max-width: 1100px; margin: 24px auto; padding: 0 24px; }
+  .intake-stepper {
+    display: flex; gap: 0; border: 1px solid var(--border); border-radius: 6px;
+    overflow: hidden; background: var(--panel);
+  }
+  .intake-stepper-step { flex: 1; padding: 14px 18px; position: relative; }
+  .intake-stepper-step + .intake-stepper-step { border-inline-start: 1px solid var(--border); }
+  .intake-stepper-step.active { background: rgba(0,184,212,.06); }
+  .intake-stepper-step .num-circle {
+    display: inline-grid; place-items: center; width: 22px; height: 22px;
+    border-radius: 50%; background: var(--bg-2); font-family: var(--mono); font-size: 11px;
+    color: var(--muted); margin-inline-end: 8px; border: 1px solid var(--border);
+  }
+  .intake-stepper-step.active .num-circle { background: var(--accent); color: #06121a; border-color: var(--accent); }
+  .intake-stepper-step.done .num-circle { background: var(--pass); color: #04140a; border-color: var(--pass); }
+  .intake-stepper-step strong { font-size: 12.5px; }
+  .intake-stepper-step span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; margin-inline-start: 30px; }
+
+  .intake-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-top: 24px; }
+  .upload-zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .upload-zone {
+    background: var(--panel); border: 1px dashed var(--border-2); border-radius: 6px;
+    padding: 18px; min-height: 120px; transition: all .15s; cursor: pointer;
+  }
+  .upload-zone:hover { border-color: var(--accent); background: rgba(0,184,212,.04); }
+  .upload-zone.filled { border-style: solid; border-color: var(--pass); background: rgba(74,222,128,.04); }
+  .upload-zone-eyebrow { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+  .upload-zone h4 { margin: 6px 0 4px; font-size: 14px; }
+  .upload-zone-sub { font-size: 11.5px; color: var(--muted); }
+  .upload-zone-status { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--mono); }
+
+  .intake-side {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 18px;
+  }
+  .intake-side h3 { margin: 0 0 12px; font-size: 13px; }
+  .pre-issue { padding: 10px; border-radius: 4px; margin-bottom: 8px; font-size: 12px; }
+  .pre-issue.warn { background: rgba(245,158,11,.08); border-inline-start: 3px solid var(--warn); }
+  .pre-issue.fail { background: rgba(239,68,68,.08); border-inline-start: 3px solid var(--fail); }
+  .pre-issue.pass { background: rgba(74,222,128,.08); border-inline-start: 3px solid var(--pass); }
+  .pre-issue strong { display: block; margin-bottom: 2px; }
+  .pre-issue span { color: var(--text-2); font-size: 11px; }
+
+  /* ========== REVIEW ========== */
+  .review-shell { display: grid; grid-template-columns: 240px 1fr 360px; height: calc(100vh - 50px); min-height: 0; }
+  .review-rail { background: var(--bg-2); border-inline-end: 1px solid var(--border); padding: 14px; overflow-y: auto; }
+  .review-rail h4 { margin: 0 0 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-family: var(--mono); font-weight: 500; }
+  .doc-tree { list-style: none; padding: 0; margin: 0 0 18px; }
+  .doc-tree li {
+    padding: 6px 8px; font-size: 12px; color: var(--text-2); cursor: pointer;
+    display: flex; align-items: center; gap: 6px; border-radius: 3px;
+  }
+  .doc-tree li:hover { background: var(--panel); }
+  .doc-tree li.active { background: var(--panel); color: var(--accent); }
+  .doc-tree .doc-status { margin-inline-start: auto; font-family: var(--mono); font-size: 10px; }
+  .doc-tree .doc-status.ok { color: var(--pass); }
+  .doc-tree .doc-status.warn { color: var(--warn); }
+
+  .layer-toggle { display: flex; align-items: center; padding: 4px 8px; font-size: 12px; color: var(--text-2); border-radius: 3px; }
+  .layer-toggle:hover { background: var(--panel); }
+  .layer-toggle input { margin-inline-end: 6px; accent-color: var(--accent); }
+  .layer-swatch { width: 10px; height: 10px; border-radius: 2px; margin-inline-end: 6px; }
+
+  .review-canvas { background: var(--bg); display: flex; flex-direction: column; min-width: 0; }
+  .canvas-tabs {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border); background: var(--bg-2);
+  }
+  .canvas-tab { padding: 10px 16px; font-size: 12px; color: var(--text-2); cursor: pointer; border-bottom: 2px solid transparent; font-family: var(--mono); letter-spacing: .04em; }
+  .canvas-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .canvas-area { flex: 1; padding: 18px; overflow: auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+  .canvas-frame {
+    flex: 1; background: linear-gradient(rgba(0,184,212,.02) 1px, transparent 1px) 0 0 / 20px 20px,
+                          linear-gradient(90deg, rgba(0,184,212,.02) 1px, transparent 1px) 0 0 / 20px 20px,
+                          var(--bg-2);
+    border: 1px solid var(--border); border-radius: 6px; position: relative; min-height: 360px;
+  }
+  .canvas-frame svg { width: 100%; height: 100%; }
+  .canvas-controls {
+    display: flex; gap: 6px; align-items: center; padding: 8px 12px; background: var(--bg-2);
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  .canvas-controls .filter-chip { font-size: 10px; padding: 4px 8px; }
+
+  .review-side { background: var(--bg-2); border-inline-start: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+  .review-side-header { padding: 14px; border-bottom: 1px solid var(--border); }
+  .review-side-header h3 { margin: 0; font-size: 14px; }
+  .review-side-header .verdict { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .review-side-content { flex: 1; overflow-y: auto; padding: 14px; }
+  .review-side-section { margin-bottom: 22px; }
+  .review-side-section h5 { margin: 0 0 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-family: var(--mono); font-weight: 500; display: flex; align-items: center; }
+  .review-side-section h5 .count { margin-inline-start: auto; }
+
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kpi-cell { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 10px; }
+  .kpi-cell-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-family: var(--mono); }
+  .kpi-cell-value { font-family: var(--mono); font-size: 16px; font-weight: 600; margin-top: 4px; color: var(--text); }
+  .kpi-cell-sub { font-size: 10px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+  .kpi-cell.warn .kpi-cell-value { color: var(--warn); }
+  .kpi-cell.fail .kpi-cell-value { color: var(--fail); }
+
+  .discrepancy-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px; background: var(--panel); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 6px; align-items: center; }
+  .discrepancy-row .label { font-size: 12px; }
+  .discrepancy-row .label small { display: block; color: var(--muted); font-size: 10px; margin-top: 2px; font-family: var(--mono); }
+  .discrepancy-row.fail { border-inline-start: 3px solid var(--fail); }
+  .discrepancy-row.pass { border-inline-start: 3px solid var(--pass); }
+
+  .summary-block { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 12px; font-size: 12px; line-height: 1.7; color: var(--text-2); }
+
+  .activity-bar {
+    border-top: 1px solid var(--border); background: #0a0e14; padding: 8px 14px;
+    font-family: var(--mono); font-size: 11px; color: var(--text-2); display: flex; align-items: center; gap: 12px; min-height: 32px;
+  }
+  .activity-bar .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+
+  /* shared layout helpers */
+  .row-flex { display: flex; align-items: center; gap: 8px; }
+  .grow { flex: 1; }
+  .text-muted { color: var(--muted); }
+  .arabic { font-family: 'Noto Kufi Arabic', system-ui, sans-serif; }
+</style>
+</head>
+<body>
+
+<nav class="design-bar">
+  <button data-screen="login">Login</button>
+  <button data-screen="dashboard" class="active">Dashboard</button>
+  <button data-screen="intake">Intake (Submitter)</button>
+  <button data-screen="review">Review (Reviewer)</button>
+  <span class="design-bar-label">Design 1 · Inspector's Cockpit</span>
+</nav>
+
+<main>
+
+<!-- ============================================================ LOGIN ============================================================ -->
+<section id="login" class="screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-brand-mark">A</div>
+      <div>
+        <div class="login-eyebrow">Permit Review Console</div>
+        <div class="login-title arabic">النظام الذكي لأمانة عمان الكبرى</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>USERNAME</label>
+      <input type="text" value="reviewer.akram" />
+    </div>
+    <div class="field">
+      <label>PASSWORD</label>
+      <input type="password" value="••••••••••" />
+    </div>
+    <button class="login-btn">SIGN IN</button>
+
+    <div class="login-demo">
+      Demo: reviewer.akram · submitter.tareq · admin.mohammad — pw <strong>demo123</strong>
+    </div>
+
+    <p class="login-sub arabic">منصة مراجعة طلبات الترخيص بالذكاء الاصطناعي · التحقق من المخططات والمستندات · المراحل الثلاث</p>
+  </div>
+</section>
+
+<!-- ============================================================ DASHBOARD ============================================================ -->
+<section id="dashboard" class="screen active">
+  <div class="dash-shell">
+
+    <aside class="dash-rail">
+      <div class="dash-rail-section">
+        <h4>Queue</h4>
+        <div class="dash-rail-link active">📥 All applications <span class="pill">147</span></div>
+        <div class="dash-rail-link">⏱ Pending review <span class="pill">23</span></div>
+        <div class="dash-rail-link">⚠ Needs revision <span class="pill">8</span></div>
+        <div class="dash-rail-link">✓ Approved (today) <span class="pill">12</span></div>
+        <div class="dash-rail-link">✗ Rejected (week) <span class="pill">4</span></div>
+      </div>
+      <div class="dash-rail-section">
+        <h4>Saved Views</h4>
+        <div class="dash-rail-link">High-fine violations</div>
+        <div class="dash-rail-link">Tilaa Al Ali district</div>
+        <div class="dash-rail-link">Mine · in progress <span class="pill">3</span></div>
+      </div>
+      <div class="dash-rail-section">
+        <h4>Filters</h4>
+        <div class="dash-rail-link">App type</div>
+        <div class="dash-rail-link">Submitter</div>
+        <div class="dash-rail-link">Date range</div>
+        <div class="dash-rail-link">Verdict</div>
+      </div>
+    </aside>
+
+    <div class="dash-main">
+      <div class="dash-toolbar">
+        <div class="dash-search"><input value="plot 234" /></div>
+        <div class="dash-filters">
+          <span class="filter-chip active">All</span>
+          <span class="filter-chip">PASS</span>
+          <span class="filter-chip">WARN</span>
+          <span class="filter-chip">FAIL</span>
+          <span class="filter-chip">Vacant land</span>
+          <span class="filter-chip">Over existing</span>
+        </div>
+        <div class="dash-toolbar-actions">
+          <button class="btn-ghost">Export CSV</button>
+          <button class="btn-primary">+ New review</button>
+        </div>
+      </div>
+
+      <div class="queue-table">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Submitter</th>
+              <th>Type</th>
+              <th>Plot</th>
+              <th>Stage</th>
+              <th>Verdict</th>
+              <th>Fine (JOD)</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="id-mono">APP-2026-04219</span></td>
+              <td class="arabic">محمد أحمد الخطيب</td>
+              <td>Vacant land</td>
+              <td><span class="num">234</span> · تلاع العلي</td>
+              <td><span class="stage-mini"><span class="stage-dot done"></span><span class="stage-dot done"></span><span class="stage-dot warn"></span></span> Stage 3</td>
+              <td><span class="verdict-pill warn">Warn</span></td>
+              <td class="num">1,680</td>
+              <td>just now</td>
+            </tr>
+            <tr>
+              <td><span class="id-mono">APP-2026-04218</span></td>
+              <td class="arabic">مؤسسة الأبراج للإنشاءات</td>
+              <td>Over existing</td>
+              <td><span class="num">812</span> · شفا بدران</td>
+              <td><span class="stage-mini"><span class="stage-dot done"></span><span class="stage-dot done"></span><span class="stage-dot done"></span></span> Done</td>
+              <td><span class="verdict-pill pass">Pass</span></td>
+              <td class="num">0</td>
+              <td>3 min</td>
+            </tr>
+            <tr>
+              <td><span class="id-mono">APP-2026-04217</span></td>
+              <td class="arabic">سلوى نواف الدلاعلة</td>
+              <td>Additions</td>
+              <td><span class="num">114</span> · أبو نصير</td>
+              <td><span class="stage-mini"><span class="stage-dot done"></span><span class="stage-dot fail"></span><span class="stage-dot"></span></span> Stage 2</td>
+              <td><span class="verdict-pill fail">Fail · serious</span></td>
+              <td class="num">14,400</td>
+              <td>11 min</td>
+            </tr>
+            <tr>
+              <td><span class="id-mono">APP-2026-04216</span></td>
+              <td class="arabic">عمر طارق نجداوي</td>
+              <td>Initial consultation</td>
+              <td><span class="num">56</span> · ماركا</td>
+              <td><span class="stage-mini"><span class="stage-dot done"></span><span class="stage-dot done"></span><span class="stage-dot"></span></span> Stage 2</td>
+              <td><span class="verdict-pill pass">Pass</span></td>
+              <td class="num">—</td>
+              <td>34 min</td>
+            </tr>
+            <tr>
+              <td><span class="id-mono">APP-2026-04215</span></td>
+              <td class="arabic">مكتب الهندسة الذهبية</td>
+              <td>Occupancy permit</td>
+              <td><span class="num">991</span> · صويلح</td>
+              <td><span class="stage-mini"><span class="stage-dot done"></span><span class="stage-dot warn"></span><span class="stage-dot"></span></span> Stage 2</td>
+              <td><span class="verdict-pill warn">Warn</span></td>
+              <td class="num">320</td>
+              <td>1 hr</td>
+            </tr>
+            <tr>
+              <td><span class="id-mono">APP-2026-04214</span></td>
+              <td class="arabic">شركة الفنار للمقاولات</td>
+              <td>Vacant land</td>
+              <td><span class="num">428</span> · الجبيهة</td>
+              <td><span class="stage-mini"><span class="stage-dot done"></span><span class="stage-dot done"></span><span class="stage-dot done"></span></span> Done</td>
+              <td><span class="verdict-pill pass">Pass</span></td>
+              <td class="num">0</td>
+              <td>2 hr</td>
+            </tr>
+            <tr>
+              <td><span class="id-mono">APP-2026-04213</span></td>
+              <td class="arabic">أحمد فؤاد العبسي</td>
+              <td>Amended plan</td>
+              <td><span class="num">772</span> · خلدا</td>
+              <td><span class="stage-mini"><span class="stage-dot done"></span><span class="stage-dot done"></span><span class="stage-dot fail"></span></span> Stage 3</td>
+              <td><span class="verdict-pill fail">Fail</span></td>
+              <td class="num">3,200</td>
+              <td>3 hr</td>
+            </tr>
+            <tr>
+              <td><span class="id-mono">APP-2026-04212</span></td>
+              <td class="arabic">رنا خالد العابد</td>
+              <td>Vacant land</td>
+              <td><span class="num">15</span> · دابوق</td>
+              <td><span class="stage-mini"><span class="stage-dot done"></span><span class="stage-dot done"></span><span class="stage-dot done"></span></span> Done</td>
+              <td><span class="verdict-pill pass">Pass</span></td>
+              <td class="num">0</td>
+              <td>4 hr</td>
+            </tr>
+            <tr>
+              <td><span class="id-mono">APP-2026-04211</span></td>
+              <td class="arabic">مكتب وصفي للهندسة</td>
+              <td>Technical consult</td>
+              <td><span class="num">301</span> · الياسمين</td>
+              <td><span class="stage-mini"><span class="stage-dot done"></span><span class="stage-dot warn"></span><span class="stage-dot"></span></span> Stage 2</td>
+              <td><span class="verdict-pill warn">Warn</span></td>
+              <td class="num">—</td>
+              <td>5 hr</td>
+            </tr>
+            <tr>
+              <td><span class="id-mono">APP-2026-04210</span></td>
+              <td class="arabic">شركة الإعمار الحديث</td>
+              <td>Over existing</td>
+              <td><span class="num">144</span> · المدينة الرياضية</td>
+              <td><span class="stage-mini"><span class="stage-dot done"></span><span class="stage-dot done"></span><span class="stage-dot done"></span></span> Done</td>
+              <td><span class="verdict-pill pass">Pass</span></td>
+              <td class="num">0</td>
+              <td>6 hr</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside class="dash-side">
+      <div class="stat-card">
+        <h5>Today's queue</h5>
+        <div class="stat-value">147</div>
+        <div class="stat-delta">+18 vs yesterday</div>
+      </div>
+      <div class="stat-card">
+        <h5>Avg processing</h5>
+        <div class="stat-value">4.2<span style="font-size:13px;color:var(--muted)"> min</span></div>
+        <div class="stat-delta">−1.1 min vs week</div>
+      </div>
+      <div class="stat-card">
+        <h5>Auto-pass rate</h5>
+        <div class="stat-value">61%</div>
+        <div class="stat-delta">stage 1 + 2 only</div>
+      </div>
+      <div class="stat-card">
+        <h5>Total fines (week)</h5>
+        <div class="stat-value">42,180<span style="font-size:13px;color:var(--muted)"> JOD</span></div>
+        <div class="stat-delta" style="color:var(--warn)">12 violations</div>
+      </div>
+    </aside>
+
+  </div>
+</section>
+
+<!-- ============================================================ INTAKE ============================================================ -->
+<section id="intake" class="screen">
+  <div class="intake-shell">
+
+    <div class="intake-stepper">
+      <div class="intake-stepper-step done">
+        <span class="num-circle">✓</span><strong>Classify</strong>
+        <span>Vacant land permit · plot 234</span>
+      </div>
+      <div class="intake-stepper-step active">
+        <span class="num-circle">2</span><strong>Upload &amp; AI pre-check</strong>
+        <span>4 of 4 files received · analyzing</span>
+      </div>
+      <div class="intake-stepper-step">
+        <span class="num-circle">3</span><strong>Review issues</strong>
+        <span>Decide before submission</span>
+      </div>
+      <div class="intake-stepper-step">
+        <span class="num-circle">4</span><strong>Submit</strong>
+        <span>Send to municipality reviewer</span>
+      </div>
+    </div>
+
+    <div class="intake-grid">
+      <div>
+        <div class="upload-zone-grid">
+          <div class="upload-zone filled">
+            <div class="upload-zone-eyebrow">CAD · required</div>
+            <h4 class="arabic">رسم المخطط</h4>
+            <div class="upload-zone-sub">DWG / DXF / DWF</div>
+            <div class="upload-zone-status"><span style="color:var(--pass)">●</span> drawing-rev3.dwg · 4.1 MB · 12 layers detected</div>
+          </div>
+          <div class="upload-zone filled">
+            <div class="upload-zone-eyebrow">سند التسجيل · required</div>
+            <h4 class="arabic">سند التسجيل</h4>
+            <div class="upload-zone-sub">PDF (deed)</div>
+            <div class="upload-zone-status"><span style="color:var(--pass)">●</span> deed.pdf · plot 234 · basin 12 · 4 دونم 877.170</div>
+          </div>
+          <div class="upload-zone filled">
+            <div class="upload-zone-eyebrow">مخطط موقع تنظيمي · required</div>
+            <h4 class="arabic">مخطط الموقع التنظيمي</h4>
+            <div class="upload-zone-sub">PDF (regulatory site plan)</div>
+            <div class="upload-zone-status"><span style="color:var(--pass)">●</span> setbacks: 5.0 / 3.0 / 4.0 m · use: residential D</div>
+          </div>
+          <div class="upload-zone filled">
+            <div class="upload-zone-eyebrow">خطة مساحة الطابقية · required</div>
+            <h4 class="arabic">خطة مساحة الطابقية</h4>
+            <div class="upload-zone-sub">PDF (floor-area plan)</div>
+            <div class="upload-zone-status"><span style="color:var(--pass)">●</span> 4 floors · 1,256 m² total · all rows verified</div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;padding:16px;background:var(--panel);border:1px solid var(--border);border-radius:6px;">
+          <div class="row-flex">
+            <h3 style="margin:0;font-size:13px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text-2)">AI pre-check log</h3>
+            <span class="grow"></span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">streaming · 8/12 steps</span>
+          </div>
+          <pre style="margin:12px 0 0;font-family:var(--mono);font-size:11px;color:var(--text-2);max-height:200px;overflow:auto;background:var(--bg-2);padding:10px;border-radius:4px;border:1px solid var(--border);line-height:1.7">
+[12:04:18] convert_dwf_if_needed       → already DWG
+[12:04:19] open_drawing                → opened in AutoCAD LT
+[12:04:20] list_layers                 → 12 layers · BUILDING, LOT, STREET, …
+[12:04:21] extract_polylines(BUILDING) → 1 closed polyline · 14 vertices
+[12:04:22] extract_polylines(LOT)      → 1 closed polyline · 4 vertices
+[12:04:23] extract_polylines(STREET)   → 1 polyline · 2 vertices
+[12:04:24] build_polygon(building)     → area 320.0 m²
+[12:04:25] build_polygon(lot)          → area 4877.17 m²
+[12:04:26] compute_setbacks            → 4 edges · min 4.7 m (north)
+[12:04:27] compute_compliance          → violation 8.4 m² · fine 1,680 JOD
+[12:04:28] render_visualization        → PNG 412 KB rendered
+          </pre>
+        </div>
+      </div>
+
+      <aside class="intake-side">
+        <h3>Issues found before submission</h3>
+        <div class="pre-issue fail">
+          <strong>Front setback below required</strong>
+          <span>CAD shows 4.7 m on north edge · site plan requires 5.0 m · violation 8.4 m² · fine 1,680 JOD</span>
+        </div>
+        <div class="pre-issue pass">
+          <strong>Lot area matches deed</strong>
+          <span>4,877.17 m² (CAD) = 4 دونم 877.170 (سند)</span>
+        </div>
+        <div class="pre-issue pass">
+          <strong>Floor-plan totals verified</strong>
+          <span>1,256 m² across 4 floors · every row dim × qty matches printed total</span>
+        </div>
+        <div class="pre-issue pass">
+          <strong>Coverage within allowed</strong>
+          <span>6.6% (cad) ≤ 50% (site plan)</span>
+        </div>
+
+        <hr style="margin:16px 0;border:0;border-top:1px solid var(--border)" />
+
+        <button class="btn-ghost" style="width:100%;margin-bottom:8px">Edit files &amp; re-upload</button>
+        <button class="btn-primary" style="width:100%">Submit anyway · 1 issue acknowledged</button>
+        <p style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6">If you submit with known issues, the reviewer will see a "submitted with known issues" badge and the decision may take longer.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ REVIEW ============================================================ -->
+<section id="review" class="screen">
+  <div class="review-shell">
+
+    <!-- LEFT RAIL: documents + layers -->
+    <aside class="review-rail">
+      <h4>Documents</h4>
+      <ul class="doc-tree">
+        <li class="active">📐 drawing-rev3.dwg <span class="doc-status ok">12 layers</span></li>
+        <li>📄 سند التسجيل.pdf <span class="doc-status ok">ok</span></li>
+        <li>📄 مخطط موقع تنظيمي.pdf <span class="doc-status ok">ok</span></li>
+        <li>📄 خطة مساحة الطابقية.pdf <span class="doc-status warn">1 mismatch</span></li>
+      </ul>
+
+      <h4>CAD Layers</h4>
+      <div class="layer-toggle"><input type="checkbox" checked /><span class="layer-swatch" style="background:var(--accent)"></span>BUILDING</div>
+      <div class="layer-toggle"><input type="checkbox" checked /><span class="layer-swatch" style="background:#a78bfa"></span>LOT</div>
+      <div class="layer-toggle"><input type="checkbox" checked /><span class="layer-swatch" style="background:#fbbf24"></span>STREET</div>
+      <div class="layer-toggle"><input type="checkbox" checked /><span class="layer-swatch" style="background:#94a3b8"></span>SETBACK_DIMS</div>
+      <div class="layer-toggle"><input type="checkbox" checked /><span class="layer-swatch" style="background:var(--fail)"></span>VIOLATION</div>
+      <div class="layer-toggle"><input type="checkbox" /><span class="layer-swatch" style="background:#475569"></span>DIMS · text</div>
+      <div class="layer-toggle"><input type="checkbox" /><span class="layer-swatch" style="background:#475569"></span>HATCH</div>
+
+      <h4 style="margin-top:18px">Stage Pipeline</h4>
+      <div style="font-family:var(--mono);font-size:11px;line-height:2;color:var(--text-2)">
+        <div><span style="color:var(--pass)">●</span> 1. Structure validation</div>
+        <div><span style="color:var(--pass)">●</span> 2. Discrepancy review</div>
+        <div><span style="color:var(--warn)">●</span> 3. Violation review</div>
+      </div>
+    </aside>
+
+    <!-- CENTER: visualization -->
+    <div class="review-canvas">
+      <div class="canvas-tabs">
+        <div class="canvas-tab active">Drawing</div>
+        <div class="canvas-tab">Documents</div>
+        <div class="canvas-tab">Live thinking</div>
+        <div class="canvas-tab">Floor table</div>
+        <div class="canvas-tab">Raw report</div>
+      </div>
+
+      <div class="canvas-area">
+        <div class="canvas-controls">
+          <span class="filter-chip active">Fit</span>
+          <span class="filter-chip">100%</span>
+          <span class="filter-chip">Pan</span>
+          <span class="filter-chip">Measure</span>
+          <span style="margin-inline-start:auto;font-family:var(--mono);font-size:11px;color:var(--muted)">Plot 234 · drawing-rev3.dwg · scale 1:200</span>
+        </div>
+
+        <div class="canvas-frame">
+          <svg viewBox="0 0 600 400" preserveAspectRatio="xMidYMid meet">
+            <!-- Lot polygon -->
+            <polygon points="80,50 540,50 540,330 80,330" fill="rgba(167,139,250,.04)" stroke="#a78bfa" stroke-width="2" />
+            <!-- Buildable envelope (dashed) -->
+            <polygon points="120,90 510,90 510,290 120,290" fill="none" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="6 4" opacity="0.6" />
+            <!-- Building -->
+            <polygon points="180,110 480,110 480,260 180,260" fill="rgba(0,184,212,.12)" stroke="#00b8d4" stroke-width="2" />
+            <!-- Violation hatch (front, north — slight overlap above envelope) -->
+            <polygon points="180,90 480,90 480,110 180,110" fill="url(#hatchPattern)" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3 2" />
+            <defs>
+              <pattern id="hatchPattern" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="6" stroke="#ef4444" stroke-width="1.2" opacity="0.6" />
+              </pattern>
+            </defs>
+            <!-- Street -->
+            <line x1="80" y1="40" x2="540" y2="40" stroke="#fbbf24" stroke-width="3" />
+            <text x="310" y="32" fill="#fbbf24" font-size="11" text-anchor="middle" font-family="JetBrains Mono">STREET (front)</text>
+            <!-- Setback dim arrows -->
+            <line x1="330" y1="50" x2="330" y2="110" stroke="#94a3b8" stroke-width="1" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+            <text x="340" y="84" fill="#fbbf24" font-size="11" font-family="JetBrains Mono">4.7 m (req 5.0)</text>
+            <line x1="540" y1="180" x2="480" y2="180" stroke="#94a3b8" stroke-width="1" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+            <text x="495" y="175" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">3.1</text>
+            <line x1="80" y1="180" x2="180" y2="180" stroke="#94a3b8" stroke-width="1" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+            <text x="115" y="175" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">8.5</text>
+            <line x1="330" y1="260" x2="330" y2="330" stroke="#94a3b8" stroke-width="1" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+            <text x="340" y="298" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">4.0</text>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="#94a3b8" />
+              </marker>
+            </defs>
+            <!-- Labels -->
+            <text x="330" y="190" fill="#00b8d4" font-size="13" text-anchor="middle" font-family="Inter" font-weight="600">BUILDING · 320 m²</text>
+            <text x="100" y="65" fill="#a78bfa" font-size="10" font-family="JetBrains Mono">LOT · 4,877.17 m²</text>
+            <text x="180" y="100" fill="#ef4444" font-size="10" font-family="JetBrains Mono">VIOLATION 8.4 m²</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="activity-bar">
+        <span class="dot"></span>
+        <span>compute_compliance</span>
+        <span style="color:var(--muted)">→</span>
+        <span>violation_polygon area=8.4 m² · fine=1,680 JOD · serious=false</span>
+        <span style="margin-inline-start:auto;color:var(--muted)">turn 9/25 · 12,840 tokens</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: findings -->
+    <aside class="review-side">
+      <div class="review-side-header">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em">APP-2026-04219</div>
+        <h3 class="arabic">محمد أحمد الخطيب · قطعة 234</h3>
+        <div class="verdict">
+          <span class="verdict-pill pass">Stage 1 PASS</span>
+          <span class="verdict-pill pass">Stage 2 PASS</span>
+          <span class="verdict-pill warn">Stage 3 WARN</span>
+        </div>
+      </div>
+
+      <div class="review-side-content">
+
+        <div class="review-side-section">
+          <h5>KPIs</h5>
+          <div class="kpi-grid">
+            <div class="kpi-cell"><div class="kpi-cell-label">LOT</div><div class="kpi-cell-value">4,877.17</div><div class="kpi-cell-sub">m² · cad</div></div>
+            <div class="kpi-cell"><div class="kpi-cell-label">BUILDING</div><div class="kpi-cell-value">320.0</div><div class="kpi-cell-sub">m² · footprint</div></div>
+            <div class="kpi-cell"><div class="kpi-cell-label">COVERAGE</div><div class="kpi-cell-value">6.6%</div><div class="kpi-cell-sub">≤ 50% allowed</div></div>
+            <div class="kpi-cell"><div class="kpi-cell-label">FLOORS Σ</div><div class="kpi-cell-value">1,256</div><div class="kpi-cell-sub">m² · 4 floors</div></div>
+            <div class="kpi-cell warn"><div class="kpi-cell-label">VIOLATION</div><div class="kpi-cell-value">8.4</div><div class="kpi-cell-sub">m² · front edge</div></div>
+            <div class="kpi-cell warn"><div class="kpi-cell-label">FINE</div><div class="kpi-cell-value">1,680</div><div class="kpi-cell-sub">JOD · @200/m²</div></div>
+          </div>
+        </div>
+
+        <div class="review-side-section">
+          <h5>Discrepancies <span class="count" style="color:var(--warn)">1 of 5 fail</span></h5>
+          <div class="discrepancy-row pass">
+            <div class="label">Lot area<small>deed 4,877.170 ↔ cad 4,877.17</small></div>
+            <span class="verdict-pill pass">±0.0</span>
+          </div>
+          <div class="discrepancy-row pass">
+            <div class="label">Floor totals<small>printed 1,256 ↔ computed 1,256</small></div>
+            <span class="verdict-pill pass">±0.0</span>
+          </div>
+          <div class="discrepancy-row fail">
+            <div class="label">Front setback<small>required 5.0 ↔ measured 4.7</small></div>
+            <span class="verdict-pill fail">−0.3 m</span>
+          </div>
+          <div class="discrepancy-row pass">
+            <div class="label">Floor count<small>deed 4 ↔ floor plan 4</small></div>
+            <span class="verdict-pill pass">match</span>
+          </div>
+          <div class="discrepancy-row pass">
+            <div class="label">Coverage<small>cad 6.6% ↔ allowed 50%</small></div>
+            <span class="verdict-pill pass">−43.4%</span>
+          </div>
+        </div>
+
+        <div class="review-side-section">
+          <h5>Compliance verdict</h5>
+          <div class="summary-block">
+            <strong style="color:var(--warn)">Setback violation · minor</strong><br>
+            Building footprint encroaches on the front buildable envelope by <strong class="num">8.4 m²</strong>.<br>
+            Fine: <strong class="num">1,680 JOD</strong> (8.4 × 200 JOD/m²).<br>
+            <span style="color:var(--muted)">Not serious — building stays inside the lot polygon.</span>
+          </div>
+        </div>
+
+        <div class="review-side-section">
+          <h5>AI summary</h5>
+          <div class="summary-block arabic" style="text-align:right">
+            تم تحليل المخطط بنجاح. جميع المساحات (القطعة، المبنى، الطوابق) متطابقة مع المستندات. <strong>الارتداد الأمامي ٤٫٧م</strong> دون الحد المطلوب ٥٫٠م في مخطط الموقع التنظيمي، مما ينتج عنه مخالفة بمساحة <strong>٨٫٤م²</strong> وغرامة <strong>١٬٦٨٠ دينار</strong>. التغطية والارتدادات الأخرى ضمن الحدود المسموح بها.
+          </div>
+        </div>
+
+        <div class="review-side-section">
+          <h5>Actions</h5>
+          <button class="btn-primary" style="width:100%;margin-bottom:6px">Approve</button>
+          <button class="btn-ghost" style="width:100%;margin-bottom:6px">Return for revision</button>
+          <button class="btn-ghost" style="width:100%;color:var(--fail);border-color:rgba(239,68,68,.3)">Reject</button>
+        </div>
+
+      </div>
+    </aside>
+  </div>
+</section>
+
+</main>
+
+<script>
+  document.querySelectorAll('.design-bar button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.design-bar button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+      document.getElementById(b.dataset.screen).classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+
+</body>
+</html>

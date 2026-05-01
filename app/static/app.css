@@ -1,0 +1,5766 @@
+/* =================================================================
+   Design tokens
+   ================================================================= */
+:root {
+  /* Neutrals (slate-tinted) */
+  --c-bg:        #f7f8fb;
+  --c-bg-soft:   #eef1f7;
+  --c-surface:   #ffffff;
+  --c-surface-2: #fbfcfe;
+  --c-border:    #e6e9f0;
+  --c-border-2:  #eef0f5;
+  --c-text:      #0f172a;
+  --c-text-2:    #334155;
+  --c-muted:     #64748b;
+  --c-subtle:    #94a3b8;
+
+  /* Accents */
+  --c-brand:        #2563eb;
+  --c-brand-hover:  #1d4ed8;
+  --c-brand-soft:   #eff6ff;
+  --c-brand-ring:   rgba(37, 99, 235, 0.22);
+
+  --c-success:      #059669;
+  --c-success-soft: #ecfdf5;
+  --c-success-bd:   #a7f3d0;
+
+  --c-warn:         #b45309;
+  --c-warn-soft:    #fffbeb;
+  --c-warn-bd:      #fde68a;
+
+  --c-error:        #b91c1c;
+  --c-error-soft:   #fef2f2;
+  --c-error-bd:     #fecaca;
+
+  /* Shadows */
+  --sh-1: 0 1px 2px rgba(16,24,40,.04);
+  --sh-2: 0 1px 3px rgba(16,24,40,.04), 0 6px 18px rgba(16,24,40,.05);
+  --sh-3: 0 1px 3px rgba(16,24,40,.05), 0 12px 28px rgba(16,24,40,.08);
+  --sh-inset: inset 0 0 0 1px rgba(15,23,42,.04);
+
+  /* Radii */
+  --r-sm: 6px;
+  --r:    8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+
+  /* Typography */
+  --ff-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ff-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --ff-ar:   "Noto Kufi Arabic", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+
+  /* Motion */
+  --ease: cubic-bezier(.2,.7,.2,1);
+}
+
+/* =================================================================
+   Reset / base
+   ================================================================= */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+
+/* HTML `hidden` attribute must win over class-level display rules. */
+[hidden] { display: none !important; }
+
+/* Arabic typography — applied when body is in RTL mode */
+html[lang="ar"] body,
+body.rtl {
+  font-family: var(--ff-ar);
+}
+/* Keep monospace (numbers, code blocks) crisp — override the Arabic font */
+body.rtl .chip-num,
+body.rtl .step-detail,
+body.rtl .step-result,
+body.rtl .coverage-pct,
+body.rtl .cs-value,
+body.rtl .penalty-total,
+body.rtl .penalty-item,
+body.rtl .side-value,
+body.rtl .overall-row span:last-child,
+body.rtl .pdf-field-value,
+body.rtl .po-value,
+body.rtl pre { font-family: var(--ff-mono); }
+
+/* Sides grid: keep geographic layout (N/W/E/S) regardless of text direction */
+.sides-grid { direction: ltr; }
+
+/* Logical border for the summary-brand accent so RTL mirrors it correctly */
+.summary-details, .pdf-section {
+  border-left-width: 1px;
+}
+.summary-details { border-inline-start: 3px solid var(--c-brand); }
+.pdf-section     { border-inline-start: 3px solid #ea580c; }
+body.rtl .summary-details,
+body.rtl .pdf-section {
+  border-left: 1px solid rgba(37, 99, 235,0.14); /* neutralize original left */
+}
+
+
+body {
+  font-family: var(--ff-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--c-text);
+  background:
+    radial-gradient(900px 500px at 20% -10%, #e8ecf6 0%, transparent 60%),
+    radial-gradient(700px 420px at 100% 0%, #eff6ff 0%, transparent 55%),
+    var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv11","ss01";
+  min-height: 100vh;
+}
+
+button { font-family: inherit; }
+pre    { font-family: var(--ff-mono); }
+
+/* =================================================================
+   App shell — viewport-constrained so no outer scrolling is needed
+   ================================================================= */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =================================================================
+   Topbar
+   ================================================================= */
+.topbar {
+  flex: 0 0 auto;
+  height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.78);
+  backdrop-filter: saturate(1.4) blur(10px);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--c-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.topbar-brand { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: linear-gradient(140deg, #2563eb 0%, #2563eb 100%);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 5px rgba(37, 99, 235,0.32);
+}
+.logo svg { width: 15px; height: 15px; }
+
+/* Image logo variant — used after switching from inline SVG to the official
+   Amanah Amman PNG. Sized so the logo reads clearly in the topbar without
+   crowding the title. The wrapper is intentionally chrome-free (no
+   background/shadow) so the logo's own colors carry the brand. */
+.logo--img {
+  width: 44px; height: 44px;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 8px;
+  padding: 2px;
+  flex-shrink: 0;
+}
+.logo--img img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.topbar-titles { display: flex; flex-direction: column; line-height: 1.1; }
+.topbar-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--c-text);
+}
+.topbar-sub {
+  font-size: 11px;
+  color: var(--c-muted);
+  margin-top: 2px;
+}
+.topbar-meta { display: flex; gap: 5px; align-items: center; }
+
+/* Language toggle */
+.lang-toggle {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 26px 26px;
+  align-items: center;
+  justify-items: center;
+  width: 52px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  background: var(--c-surface);
+  cursor: pointer;
+  font-family: var(--ff-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+  user-select: none;
+  overflow: hidden;
+  transition: border-color 0.15s var(--ease);
+}
+.lang-toggle:hover { border-color: var(--c-brand); }
+.lang-toggle .lang-opt {
+  position: relative;
+  z-index: 2;
+  line-height: 1;
+  transition: color 0.2s var(--ease);
+  font-family: var(--ff-sans);
+}
+.lang-toggle .lang-opt[data-lang="ar"] { font-family: var(--ff-ar); font-size: 13px; }
+.lang-toggle[data-active="en"] .lang-opt[data-lang="en"],
+.lang-toggle[data-active="ar"] .lang-opt[data-lang="ar"] {
+  color: #fff;
+}
+.lang-toggle .lang-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(140deg, #2563eb 0%, #2563eb 100%);
+  box-shadow: 0 1px 3px rgba(37, 99, 235,0.35);
+  transition: transform 0.25s var(--ease);
+  z-index: 1;
+}
+.lang-toggle[data-active="ar"] .lang-thumb { transform: translateX(24px); }
+/* Do not mirror the thumb in RTL — the toggle positions are logical (EN left, AR right) by design */
+body.rtl .lang-toggle { direction: ltr; }
+
+/* =================================================================
+   Chips (tiny pills)
+   ================================================================= */
+.chip {
+  font-size: 11px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-2);
+  white-space: nowrap;
+}
+.chip-muted { background: var(--c-surface-2); color: var(--c-muted); }
+.chip-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--c-success);
+  box-shadow: 0 0 0 3px rgba(5,150,105,0.15);
+}
+.chip-num {
+  font-family: var(--ff-mono);
+  font-weight: 500;
+  padding: 0 9px 0 7px;
+  background: var(--c-brand-soft);
+  color: var(--c-brand);
+  border-color: transparent;
+}
+.chip-num .chip-label {
+  font-family: var(--ff-sans);
+  font-weight: 500;
+  color: var(--c-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 9.5px;
+}
+
+/* =================================================================
+   Main — flex column that fills the viewport under the topbar
+   ================================================================= */
+.main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+  gap: 10px;
+}
+
+/* =================================================================
+   Upload view
+   ================================================================= */
+.upload-view {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+/* Widened from 680px so the 4-tile drop grid (CAD + deed + floor + extras)
+   has room to breathe — each tile now gets ~220px instead of ~140px, so the
+   Arabic labels ("تحميل رسم CAD", "تحميل ملف سند التسجيل PDF", etc.) stop
+   wrapping into awkward 3-line fragments. */
+.upload-form { width: 100%; max-width: 960px; }
+.upload-shell {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  padding: 22px 28px 20px;
+  box-shadow: var(--sh-2);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.upload-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(500px 180px at 50% -30%, rgba(37, 99, 235,0.10), transparent 70%);
+  pointer-events: none;
+}
+.upload-eyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-brand);
+  font-weight: 600;
+  position: relative;
+}
+.upload-title {
+  margin: 4px 0 6px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--c-text);
+  position: relative;
+}
+.upload-tagline {
+  margin: 0 auto 16px;
+  color: var(--c-muted);
+  max-width: 420px;
+  font-size: 13px;
+  line-height: 1.5;
+  position: relative;
+}
+
+.drop-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.drop-grid.drop-grid-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.drop-grid.drop-grid-4 {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+.drop-grid.drop-grid-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+@media (max-width: 1300px) {
+  .drop-grid.drop-grid-5 { grid-template-columns: 1fr 1fr 1fr; }
+}
+@media (max-width: 1100px) {
+  .drop-grid.drop-grid-4 { grid-template-columns: 1fr 1fr; }
+  .drop-grid.drop-grid-5 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 900px) {
+  .drop-grid.drop-grid-3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 540px) {
+  .drop-grid { grid-template-columns: 1fr; }
+  .drop-grid.drop-grid-5 { grid-template-columns: 1fr; }
+}
+
+.drop-zone {
+  display: block;
+  border: 1.5px dashed var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface-2);
+  padding: 16px 14px;
+  cursor: pointer;
+  transition: background 0.18s var(--ease), border-color 0.18s var(--ease);
+  position: relative;
+}
+
+/* Wrapper around each drop-zone that also holds the inline validation
+   error slot. Lives in the same grid cell so the error appears directly
+   under the field it refers to. */
+.drop-zone-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Inline, per-field error message (Arabic, RTL-native). Shown when the
+   upload endpoint returns 422 with `{errors: {field: arabic_message}}`. */
+.field-error {
+  padding: 8px 12px;
+  background: var(--c-error-soft);
+  color: var(--c-error);
+  border: 1px solid var(--c-error-bd);
+  border-radius: 8px;
+  font-family: "Noto Kufi Arabic", var(--ff-sans);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-line;  /* multiple missing-layer lines land on separate rows */
+  text-align: right;
+  direction: rtl;
+}
+
+/* Red outline on the drop-zone itself whenever the error slot in the same
+   wrapper is visible, so the user's eye is drawn to the offending zone. */
+.drop-zone-wrap:has(> .field-error:not([hidden])) > .drop-zone {
+  border-color: var(--c-error);
+  background: var(--c-error-soft);
+}
+.drop-zone:hover,
+.drop-zone.dragover {
+  background: var(--c-brand-soft);
+  border-color: var(--c-brand);
+}
+.drop-zone.has-file {
+  border-color: var(--c-success);
+  background: var(--c-success-soft);
+}
+.drop-zone-pdf:hover,
+.drop-zone-pdf.dragover {
+  background: #fef3c7;
+  border-color: #b45309;
+}
+.drop-zone-pdf .drop-icon-wrap { color: #b45309; }
+.drop-zone-pdf.has-file {
+  border-color: var(--c-success);
+  background: var(--c-success-soft);
+}
+.drop-zone-pdf.has-file .drop-icon-wrap { color: var(--c-success); }
+
+/* Floor-area plan drop zone — teal accent to distinguish from the deed PDF */
+.drop-zone-floor:hover,
+.drop-zone-floor.dragover {
+  background: #ccfbf1;
+  border-color: #0d9488;
+}
+.drop-zone-floor .drop-icon-wrap { color: #0d9488; }
+.drop-zone-floor .drop-zone-eyebrow { color: #0d9488; }
+.drop-zone-floor.has-file {
+  border-color: var(--c-success);
+  background: var(--c-success-soft);
+}
+.drop-zone-floor.has-file .drop-icon-wrap,
+.drop-zone-floor.has-file .drop-zone-eyebrow { color: var(--c-success); }
+
+/* Additional-PDFs drop zone — indigo accent to distinguish from the other
+ * three zones; accepts multiple files and shows a count when populated. */
+.drop-zone-extras:hover,
+.drop-zone-extras.dragover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+.drop-zone-extras .drop-icon-wrap { color: #3b82f6; }
+.drop-zone-extras .drop-zone-eyebrow { color: #3b82f6; }
+.drop-zone-extras.has-file {
+  border-color: var(--c-success);
+  background: var(--c-success-soft);
+}
+.drop-zone-extras.has-file .drop-icon-wrap,
+.drop-zone-extras.has-file .drop-zone-eyebrow { color: var(--c-success); }
+
+/* Site-plan (مخطط موقع تنظيمي) drop zone — purple accent. Carries the
+ * required setbacks used by the compliance pipeline. */
+.drop-zone-site-plan:hover,
+.drop-zone-site-plan.dragover {
+  background: #f5f3ff;
+  border-color: #7c3aed;
+}
+.drop-zone-site-plan .drop-icon-wrap { color: #7c3aed; }
+.drop-zone-site-plan .drop-zone-eyebrow { color: #7c3aed; }
+.drop-zone-site-plan.has-file {
+  border-color: var(--c-success);
+  background: var(--c-success-soft);
+}
+.drop-zone-site-plan.has-file .drop-icon-wrap,
+.drop-zone-site-plan.has-file .drop-zone-eyebrow { color: var(--c-success); }
+
+.drop-zone-eyebrow {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--c-brand);
+  margin-bottom: 2px;
+}
+.drop-zone-pdf .drop-zone-eyebrow { color: #b45309; }
+.drop-zone.has-file .drop-zone-eyebrow,
+.drop-zone-pdf.has-file .drop-zone-eyebrow { color: var(--c-success); }
+.drop-zone-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.drop-icon-wrap {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: var(--c-surface);
+  box-shadow: var(--sh-inset), var(--sh-1);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--c-brand);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+  margin-bottom: 2px;
+}
+.drop-zone:hover .drop-icon-wrap {
+  transform: translateY(-1px);
+  box-shadow: var(--sh-inset), 0 4px 12px rgba(37, 99, 235,0.18);
+}
+.drop-icon { width: 18px; height: 18px; }
+.drop-text {
+  font-weight: 500;
+  color: var(--c-text);
+  font-size: 13.5px;
+}
+.drop-hint {
+  font-size: 11px;
+  color: var(--c-subtle);
+  letter-spacing: 0.05em;
+}
+
+.primary-btn {
+  margin-top: 14px;
+  min-width: 140px;
+  padding: 0 18px;
+  height: 38px;
+  border: 0;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: box-shadow 0.2s var(--ease), transform 0.08s var(--ease);
+  box-shadow: 0 1px 2px rgba(29, 78, 216,0.25), 0 6px 16px rgba(29, 78, 216,0.22);
+}
+.primary-btn:hover:not(:disabled) {
+  box-shadow: 0 1px 2px rgba(29, 78, 216,0.30), 0 8px 22px rgba(29, 78, 216,0.30);
+}
+.primary-btn:active:not(:disabled) { transform: translateY(1px); }
+.primary-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+  background: #a1a5c9;
+}
+.btn-arrow { width: 14px; height: 14px; transition: transform 0.2s var(--ease); }
+.primary-btn:hover:not(:disabled) .btn-arrow { transform: translateX(3px); }
+/* Fallback size for any svg dropped inside a primary-btn without .btn-arrow —
+   without this the SVG can stretch to fill the flex line box and swallow
+   the whole button (seen on the dashboard's طلب جديد and ارفع طلبًا buttons). */
+.primary-btn > svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* =================================================================
+   Work view — viewport-constrained split layout
+   ================================================================= */
+.work-view {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.work-statusbar {
+  flex: 0 0 auto;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: var(--sh-1);
+}
+.sb-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sb-titles { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.sb-title {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sb-file {
+  font-size: 11px;
+  color: var(--c-muted);
+  font-family: var(--ff-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+.sb-right { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2.2px solid var(--c-brand-soft);
+  border-top-color: var(--c-brand);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ghost-btn {
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.ghost-btn svg { width: 12px; height: 12px; }
+.ghost-btn:hover {
+  background: var(--c-brand-soft);
+  color: var(--c-brand);
+  border-color: transparent;
+}
+
+/* =================================================================
+   Work grid — thinking | results
+   ================================================================= */
+.work-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);  /* 30% / 70% */
+  align-items: start;
+  gap: 8px;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+}
+.pane-head {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--c-border-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(180deg, rgba(247,248,251,0.55), transparent);
+}
+.pane-head h2 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--c-text);
+}
+.pane-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--c-muted);
+  margin-top: 1px;
+}
+.pane-head-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--c-success);
+  font-weight: 500;
+}
+.pane-pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--c-success);
+  position: relative;
+}
+.pane-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--c-success);
+  animation: pulseRing 1.4s var(--ease) infinite;
+  opacity: 0;
+}
+@keyframes pulseRing {
+  0%   { opacity: 0.6; transform: scale(0.6); }
+  100% { opacity: 0;   transform: scale(1.5); }
+}
+.pane-pulse-label { letter-spacing: 0.04em; text-transform: uppercase; font-size: 9.5px; }
+
+/* Archive-replay mode: the live pulse & "STREAMING" label aren't accurate
+ * for a finished job loaded from history, so dim the pulse ring. The label
+ * text is swapped to "ARCHIVE" in JS (loadSavedAnalysis). */
+body.is-archive .pane-pulse {
+  background: var(--c-muted);
+  animation: none;
+}
+body.is-archive .pane-pulse::after { display: none; }
+body.is-archive .pane-pulse-label { color: var(--c-muted); }
+
+/* =================================================================
+   Thinking feed
+   ================================================================= */
+.feed {
+  flex: 1 1 auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.feed::-webkit-scrollbar { width: 8px; }
+.feed::-webkit-scrollbar-thumb {
+  background: var(--c-border);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 8px;
+}
+.feed::-webkit-scrollbar-thumb:hover { background: var(--c-subtle); background-clip: padding-box; }
+
+/* --- Tool step card (compact, single-row, expandable) --- */
+.step {
+  border: 1px solid var(--c-border-2);
+  border-radius: 7px;
+  background: var(--c-surface);
+  animation: slideIn 0.22s var(--ease);
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+  overflow: hidden;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.step.running { border-color: #fde68a; background: var(--c-warn-soft); }
+.step.done    { border-color: var(--c-success-bd); background: var(--c-success-soft); }
+.step.error   { border-color: var(--c-error-bd); background: var(--c-error-soft); }
+
+.step-row {
+  display: grid;
+  /* toggle | icon | title+detail | status. Each child is placed by explicit
+     grid-column below, so the status badge stays right-aligned even when the
+     toggle is `hidden` (display:none). */
+  grid-template-columns: 22px 22px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  padding: 5px 8px 5px 7px;
+}
+.step-row > .step-toggle { grid-column: 1; }
+.step-row > .step-icon   { grid-column: 2; }
+.step-row > .step-main   { grid-column: 3; }
+.step-row > .step-status { grid-column: 4; }
+
+.step-icon {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ff-mono);
+  font-weight: 600;
+  font-size: 11px;
+  background: var(--c-bg-soft);
+  color: var(--c-muted);
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.step.running .step-icon {
+  background: #fef3c7;
+  color: #b45309;
+  animation: softPulse 1.3s var(--ease) infinite;
+}
+@keyframes softPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.07); }
+}
+.step.done  .step-icon { background: #bbf7d0; color: var(--c-success); }
+.step.error .step-icon { background: #fecaca; color: var(--c-error); }
+.step-check { width: 13px; height: 13px; stroke-dasharray: 20; stroke-dashoffset: 20; animation: drawCheck 0.32s var(--ease) forwards; }
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+.step-main {
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  overflow: hidden;
+}
+.step-title {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--c-text);
+  letter-spacing: -0.002em;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.step-detail {
+  font-size: 11.5px;
+  color: var(--c-muted);
+  font-family: var(--ff-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.step.done .step-detail { color: var(--c-text-2); }
+.step.error .step-detail { color: var(--c-error); }
+
+.step-status {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--c-bg-soft);
+  color: var(--c-muted);
+  font-family: var(--ff-sans);
+}
+.step.running .step-status { background: #fef3c7; color: #b45309; }
+.step.done    .step-status { background: #bbf7d0; color: var(--c-success); }
+.step.error   .step-status { background: #fecaca; color: var(--c-error); }
+
+.step-toggle {
+  width: 22px; height: 22px;
+  border: 0;
+  background: transparent;
+  color: var(--c-muted);
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease), transform 0.2s var(--ease);
+}
+.step-toggle svg { width: 11px; height: 11px; transition: transform 0.2s var(--ease); }
+.step-toggle:hover { background: rgba(15,23,42,0.06); color: var(--c-text-2); }
+.step.expanded .step-toggle svg { transform: rotate(90deg); }
+
+.step-details {
+  border-top: 1px dashed rgba(15,23,42,0.08);
+  padding: 8px 10px 9px;
+  background: rgba(255,255,255,0.55);
+  font-size: 11.5px;
+  color: var(--c-text-2);
+  max-height: 240px;
+  overflow-y: auto;
+  animation: slideIn 0.18s var(--ease);
+}
+
+.td-heading {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-muted);
+  font-weight: 600;
+  margin: 0 0 5px;
+}
+.td-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 1px 0;
+  font-size: 11.5px;
+}
+.td-key { color: var(--c-muted); }
+.td-val {
+  font-family: var(--ff-mono);
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  word-break: break-all;
+}
+.td-layer-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 3px 10px;
+}
+.td-layer-list li {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--c-text);
+  padding: 2px 6px;
+  background: rgba(15,23,42,0.04);
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.td-sample-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.td-sample-list li {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--c-text-2);
+  padding: 2px 0;
+}
+.td-idx { color: var(--c-muted); margin-right: 6px; }
+
+/* --- Streaming reasoning bubble ---
+   Styled to match the .step cards around it so the feed reads as a single
+   surface. Keeps the indigo left accent + "CLAUDE" eyebrow so the block is
+   still recognizable as Claude's thinking rather than a tool call. */
+.reasoning {
+  padding: 8px 12px 8px 13px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-2);
+  border-left: 3px solid var(--c-brand);
+  border-radius: 7px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--c-text-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  animation: slideIn 0.22s var(--ease);
+}
+.reasoning::before {
+  content: var(--i18n-reasoning-label, "Claude's reasoning");
+  display: block;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-brand);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.reasoning.streaming::after {
+  content: "";
+  display: inline-block;
+  width: 4px; height: 12px;
+  background: var(--c-brand);
+  margin-left: 2px;
+  vertical-align: -2px;
+  animation: cursorBlink 0.9s steps(2) infinite;
+}
+@keyframes cursorBlink { 50% { opacity: 0; } }
+
+/* --- System message (renders as a done step card — see appendSystemMsg) ---
+   Small overrides on top of `.step.done` so long text (e.g. upload filename
+   with appended PDF names) wraps instead of being clipped by .step-main's
+   overflow-hidden / .step-title's nowrap. */
+.system-step .step-main { overflow: visible; flex-wrap: wrap; }
+.system-step .step-title {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  flex-shrink: 1;
+}
+
+/* =================================================================
+   Result pane
+   ================================================================= */
+.result-body {
+  flex: 1 1 auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.result-body::-webkit-scrollbar { width: 8px; }
+.result-body::-webkit-scrollbar-thumb {
+  background: var(--c-border);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 8px;
+}
+
+/* Placeholder shown while waiting for final */
+.result-placeholder {
+  margin: auto;
+  text-align: center;
+  padding: 20px 14px;
+  color: var(--c-muted);
+  max-width: 280px;
+}
+.placeholder-illus {
+  width: 56px; height: 56px;
+  margin: 0 auto 10px;
+  color: var(--c-subtle);
+  opacity: 0.6;
+}
+.placeholder-title {
+  font-size: 12.5px;
+  color: var(--c-text-2);
+  margin: 0 0 12px;
+  font-weight: 500;
+}
+.placeholder-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.placeholder-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--c-muted);
+}
+/* Only the FIRST span is the numbered chip. The second span is the list
+   item's description — must not be forced into an 18×18 box, or the text
+   wraps letter-by-letter and collides with neighbouring rows. */
+.placeholder-list li span:first-child {
+  font-family: var(--ff-mono);
+  font-weight: 500;
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  background: var(--c-bg-soft);
+  color: var(--c-text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+.placeholder-list li span + span { color: var(--c-muted); min-width: 0; }
+
+/* Real result content */
+.result-content { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+
+/* =================================================================
+   Dashboard layout — applied on top of .result-content.
+   Each `.dash-row` is a labelled zone (metrics / geometry / documents /
+   raw output) that wraps existing widgets in a 2-column responsive grid.
+   Nothing inside the zones has changed IDs; only their grouping did.
+   ================================================================= */
+.result-content.dashboard { gap: 14px; }
+
+.dash-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px 4px;
+  border-bottom: 1px dashed var(--c-border-2);
+}
+.dash-row-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-brand);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235,0.12);
+}
+.dash-row-dot--metrics  { background: var(--c-brand);   box-shadow: 0 0 0 3px rgba(37, 99, 235,0.12); }
+.dash-row-dot--geometry { background: #0d9488;           box-shadow: 0 0 0 3px rgba(13,148,136,0.14); }
+.dash-row-dot--docs     { background: #ea580c;           box-shadow: 0 0 0 3px rgba(234,88,12,0.14); }
+.dash-row-dot--reports  { background: var(--c-subtle);   box-shadow: 0 0 0 3px rgba(148,163,184,0.18); }
+
+.dash-row-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--c-text-2);
+  flex-shrink: 0;
+}
+.dash-row-hint {
+  font-size: 10.5px;
+  color: var(--c-muted);
+  letter-spacing: 0.01em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Geometry grid — now holds just the rendered visualization (the N/E/S/W
+   compass moved into the coverage widget; the overall-stats card was removed
+   entirely). Single column so the PNG takes the full row width, but the
+   drawing card itself is capped at 50% and centered so the rendered PNG
+   appears half the size of a full-width render. */
+.dash-geometry-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  align-items: start;
+}
+.dash-geometry-grid > .drawing-panel {
+  max-width: 50%;
+  margin-inline: auto;
+}
+@media (max-width: 720px) {
+  .dash-geometry-grid > .drawing-panel { max-width: 100%; }
+}
+
+/* Document intelligence stack — the three PDF sections render one on top
+   of another, each full-width, matching the live-thinking block above. They
+   are pre-rendered (no `hidden`) so their space is reserved and incoming
+   data fills in without shifting layout. */
+.dash-docs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+/* Raw-output grid — markdown and JSON collapsibles side by side. */
+.dash-reports-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .dash-reports-grid { grid-template-columns: 1fr; }
+}
+
+/* =================================================================
+   Coverage widget — polished layout: 2-col "mini stat cards" for
+   building/lot, a soft divider, then the N/E/S/W compass with gradient
+   tiles and a unit suffix (" m") via pseudo-element.
+   ================================================================= */
+.coverage-widget .coverage-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.coverage-widget .coverage-bar-track { height: 8px; }
+
+/* Building vs Lot as two small cards, not a far-apart row */
+.coverage-widget .coverage-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.coverage-widget .coverage-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 9px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(37, 99, 235,0.14);
+  border-radius: 7px;
+}
+.coverage-widget .coverage-stat .cs-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--c-subtle);
+}
+.coverage-widget .coverage-stat .cs-value {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+  line-height: 1.2;
+}
+.coverage-widget .coverage-stat .cs-value::after {
+  content: " m²";
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--c-subtle);
+  margin-inline-start: 2px;
+}
+
+/* Divider + per-side compass nested inside the coverage widget */
+.coverage-sides {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(37, 99, 235,0.22);
+}
+.coverage-sides-label {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--c-brand);
+}
+/* Per-side setbacks — compact list. Same 3-col grid shape as the penalty
+   breakdown (badge | name | value) but with the brand-purple palette. */
+.sides-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.side-item {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-2);
+}
+.si-badge {
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  background: rgba(37, 99, 235,0.12);
+  color: var(--c-brand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--ff-sans);
+}
+.si-name {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--c-muted);
+  font-family: var(--ff-sans);
+}
+.si-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-brand);
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+}
+.si-value::after {
+  content: " m";
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--c-subtle);
+  margin-inline-start: 2px;
+}
+
+/* Make the drawing panel feel like a proper dashboard tile — matches the
+   surrounding card styling. */
+.dash-geometry-grid .drawing-panel {
+  border-radius: var(--r);
+  padding: 8px;
+}
+
+/* Collapsibles inside the reports grid — lean card look */
+.dash-reports-grid > .collapsible {
+  background: var(--c-surface);
+}
+
+/* Collapsible Claude's-summary — default closed, click to open */
+.summary-details {
+  background: linear-gradient(140deg, rgba(37, 99, 235,0.045), rgba(37, 99, 235,0.015));
+  border: 1px solid rgba(37, 99, 235,0.14);
+  border-left: 3px solid var(--c-brand);
+  border-radius: 8px;
+  padding: 6px 11px;
+}
+.summary-details > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+}
+.summary-details > summary::-webkit-details-marker { display: none; }
+.summary-chevron {
+  width: 10px; height: 10px;
+  color: var(--c-brand);
+  transition: transform 0.2s var(--ease);
+}
+.summary-details[open] .summary-chevron { transform: rotate(90deg); }
+.summary-summary-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-brand);
+  font-weight: 600;
+}
+.summary-box {
+  margin-top: 6px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(37, 99, 235,0.14);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--c-text);
+}
+
+/* =================================================================
+   PDF summary section (independent of CAD summary)
+   ================================================================= */
+.pdf-section {
+  background: linear-gradient(140deg, rgba(234,88,12,0.05), rgba(234,88,12,0.02));
+  border: 1px solid rgba(234,88,12,0.18);
+  border-left: 3px solid #ea580c;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pdf-section > summary.pdf-head {
+  cursor: pointer;
+  list-style: none;
+}
+.pdf-section > summary.pdf-head::-webkit-details-marker { display: none; }
+.pdf-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.pdf-section > summary.pdf-head .pdf-chevron {
+  align-self: center;
+  flex-shrink: 0;
+  color: #c2410c;
+  transition: transform 0.2s var(--ease);
+}
+.pdf-section[open] > summary.pdf-head .pdf-chevron { transform: rotate(90deg); }
+.pdf-section > summary.pdf-head .pdf-head-left { flex: 1; }
+.pdf-head-left { display: flex; flex-direction: column; line-height: 1.2; }
+.pdf-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #c2410c;
+  font-weight: 600;
+}
+.pdf-sub {
+  font-size: 10.5px;
+  color: var(--c-muted);
+  margin-top: 1px;
+}
+.pdf-status {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.pdf-status-running { background: #fef3c7; color: #b45309; }
+.pdf-status-done    { background: #bbf7d0; color: var(--c-success); }
+.pdf-status-error   { background: #fecaca; color: var(--c-error); }
+
+.pdf-body { display: flex; flex-direction: column; gap: 8px; }
+.pdf-loading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--c-muted);
+  padding: 4px 0;
+}
+.pdf-summary-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--c-text);
+}
+.pdf-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 6px;
+}
+.pdf-field {
+  background: #fff;
+  border: 1px solid rgba(234,88,12,0.14);
+  border-radius: 7px;
+  padding: 6px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pdf-field-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+.pdf-field-en {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-muted);
+  font-weight: 600;
+}
+.pdf-field-ar {
+  font-size: 11px;
+  color: #c2410c;
+  font-weight: 500;
+}
+.pdf-field-value {
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text);
+  word-break: break-word;
+  text-align: right;
+}
+.pdf-empty {
+  font-size: 11.5px;
+  color: var(--c-muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+.pdf-other {
+  border: 1px dashed rgba(234,88,12,0.22);
+  border-radius: 6px;
+  padding: 5px 10px;
+  background: rgba(255,255,255,0.5);
+}
+.pdf-other > summary {
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  color: #c2410c;
+  list-style: none;
+  padding: 2px 0;
+}
+.pdf-other > summary::-webkit-details-marker { display: none; }
+.pdf-other > summary::before {
+  content: "›";
+  font-size: 13px;
+  margin-right: 5px;
+  display: inline-block;
+  transition: transform 0.2s var(--ease);
+}
+.pdf-other[open] > summary::before { transform: rotate(90deg); }
+.pdf-other-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px dashed rgba(234,88,12,0.14);
+}
+.pdf-other-row {
+  display: grid;
+  grid-template-columns: minmax(100px, auto) 1fr;
+  gap: 10px;
+  font-size: 11.5px;
+}
+.po-label {
+  color: var(--c-muted);
+  font-weight: 500;
+  text-align: right;
+}
+.po-value {
+  color: var(--c-text);
+  font-family: var(--ff-mono);
+  word-break: break-word;
+  text-align: right;
+}
+.pdf-error {
+  background: var(--c-error-soft);
+  color: var(--c-error);
+  border: 1px solid var(--c-error-bd);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 11.5px;
+  font-family: var(--ff-mono);
+  white-space: pre-wrap;
+}
+
+/* Stream error banner (pipeline-time failures) — sits above the reviewer
+   banner in the work view. Arabic-native, RTL layout. */
+.stream-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 16px 0;
+  padding: 14px 18px;
+  background: var(--c-error-soft);
+  color: var(--c-error);
+  border: 1.5px solid var(--c-error-bd);
+  border-radius: 12px;
+  font-family: "Noto Kufi Arabic", var(--ff-sans);
+  direction: rtl;
+}
+.stream-error-banner[hidden] { display: none; }
+.stream-error-banner .seb-icon {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stream-error-banner .seb-icon svg { width: 100%; height: 100%; }
+.stream-error-banner .seb-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.stream-error-banner .seb-title {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+.stream-error-banner .seb-msg {
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-line;
+  word-break: break-word;
+}
+.stream-error-banner .seb-retry {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--c-error-bd);
+  background: #fff;
+  color: var(--c-error);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s var(--ease);
+}
+.stream-error-banner .seb-retry:hover {
+  background: #fff5f5;
+}
+.stream-error-banner .seb-retry svg { width: 16px; height: 16px; }
+
+/* =================================================================
+   Review panel — reviewer card inside `.rb-analysis-right`, below
+   the KPI grid. Hosts the missing-data checklist, status chip, and
+   the approve / needs-revision / reject action bar.
+   ================================================================= */
+.review-panel {
+  margin-top: 16px;
+  padding: 16px 18px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-family: "Noto Kufi Arabic", var(--ff-sans);
+}
+/* Full-width modifier — applied when the review panel is hoisted out of
+   the right-side column to sit below the chart + KPIs row. Forces the
+   panel to span 100% of its banner-section parent, plus a slightly
+   wider top margin so it visually separates from the analysis grid. */
+.review-panel.review-panel--full {
+  width: 100%;
+  margin-top: 20px;
+}
+.rp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rp-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+/* ---- Communication timeline (inside review panel) ---- */
+.rp-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+}
+
+/* ============================================================
+   Documents panel (.dp) — current-round files + collapsible
+   previous-round versions. Both roles see it; both can download.
+   Sits between the timeline and the issues panel inside the
+   review section.
+   ============================================================ */
+.dp {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--c-surface, #fff);
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 10px;
+}
+.dp[hidden] { display: none; }
+.dp-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+.dp-header svg {
+  width: 16px; height: 16px;
+  flex: 0 0 auto;
+  color: #2563eb;
+}
+.dp-title { flex: 1 1 auto; }
+.dp-round-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.10);
+  color: #1d4ed8;
+}
+.dp-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+}
+.dp-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--c-surface-2, #f8fafc);
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 8px;
+  min-width: 0;
+}
+.dp-file-icon {
+  width: 28px; height: 28px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+}
+.dp-file-icon svg { width: 16px; height: 16px; }
+.dp-file--cad .dp-file-icon { background: rgba(20, 184, 166, 0.10); color: #0f766e; }
+.dp-file--pdf_deed .dp-file-icon { background: rgba(124, 58, 237, 0.10); color: #6d28d9; }
+.dp-file--pdf_floor .dp-file-icon { background: rgba(2, 132, 199, 0.10); color: #0369a1; }
+.dp-file--pdf_site_plan .dp-file-icon { background: rgba(202, 138, 4, 0.10); color: #b45309; }
+.dp-file--pdf_extras .dp-file-icon { background: rgba(100, 116, 139, 0.10); color: #475569; }
+
+.dp-file-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dp-file-slot {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted, #64748b);
+  letter-spacing: 0.01em;
+}
+.dp-file-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-text);
+  word-break: break-all;
+  line-height: 1.35;
+}
+.dp-file-link {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #fff;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  border-radius: 6px;
+  text-decoration: none;
+}
+.dp-file-link:hover {
+  background: rgba(37, 99, 235, 0.06);
+  border-color: rgba(37, 99, 235, 0.45);
+}
+.dp-file-link svg { width: 12px; height: 12px; }
+.dp-file-missing {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--c-muted, #94a3b8);
+  font-style: italic;
+}
+
+/* Previous-rounds collapsible: each round is its own block with a
+   round header (date + status) followed by a small files grid. */
+.dp-prev {
+  border-top: 1px dashed var(--c-border, #e2e8f0);
+  padding-top: 10px;
+}
+.dp-prev[hidden] { display: none; }
+.dp-prev-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--c-text-soft, #475569);
+  font-weight: 600;
+  list-style: none;
+  user-select: none;
+}
+.dp-prev-summary::-webkit-details-marker { display: none; }
+.dp-prev-summary .dp-chev {
+  width: 12px; height: 12px;
+  transition: transform 0.15s ease;
+  color: #94a3b8;
+}
+.dp-prev[open] .dp-prev-summary .dp-chev { transform: rotate(90deg); }
+.dp-prev-count {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-muted, #94a3b8);
+}
+.dp-prev-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dp-prev-round {
+  padding: 10px 12px;
+  background: var(--c-surface-2, #f8fafc);
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 8px;
+}
+.dp-prev-round-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  color: var(--c-text-soft, #475569);
+}
+.dp-prev-round-num {
+  font-weight: 700;
+  color: var(--c-text);
+}
+.dp-prev-round-date { color: var(--c-muted, #94a3b8); }
+.dp-prev-round-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #475569;
+  margin-inline-start: auto;
+}
+.dp-prev-round-status--needs_revision { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+.dp-prev-round-status--approved { background: rgba(16, 185, 129, 0.12); color: #047857; }
+.dp-prev-round-status--rejected { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+.dp-prev-round-status--pending { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+.dp-prev-round-status--draft { background: rgba(100, 116, 139, 0.12); color: #475569; }
+.dp-prev-round-issues {
+  font-size: 11.5px;
+  color: var(--c-muted, #64748b);
+  margin-inline-start: 6px;
+}
+.dp-prev-round .dp-files { gap: 6px; }
+.dp-prev-round .dp-file { padding: 8px 10px; }
+.dp-prev-round .dp-file-icon { width: 24px; height: 24px; }
+.dp-prev-round .dp-file-icon svg { width: 14px; height: 14px; }
+.rp-timeline-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+.rp-timeline-count {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--c-muted);
+}
+.rp-timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rp-timeline-empty {
+  padding: 12px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--c-muted);
+  background: var(--c-surface);
+  border: 1px dashed var(--c-border);
+  border-radius: 8px;
+}
+.rp-te {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+}
+.rp-te-icon {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-surface-2);
+  color: var(--c-muted);
+}
+.rp-te-icon svg { width: 15px; height: 15px; }
+.rp-te--submission .rp-te-icon       { background: #dbeafe; color: #1d4ed8; }
+.rp-te--resubmission .rp-te-icon     { background: #dbeafe; color: #1d4ed8; }
+.rp-te--approved .rp-te-icon         { background: var(--c-success-soft); color: var(--c-success); }
+.rp-te--rejected .rp-te-icon         { background: var(--c-error-soft); color: var(--c-error); }
+.rp-te--needs_revision .rp-te-icon   { background: #fff7ed; color: #c2410c; }
+.rp-te-body { flex: 1 1 auto; min-width: 0; }
+.rp-te-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+.rp-te-actor {
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--c-text);
+}
+.rp-te-date {
+  font-size: 11px;
+  color: var(--c-muted);
+}
+.rp-te-transition {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  font-size: 11.5px;
+  color: var(--c-muted);
+  margin-bottom: 4px;
+}
+.rp-te-arrow { opacity: 0.5; }
+.rp-te-label { font-weight: 500; color: var(--c-text-2); }
+.rp-te-after {
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--c-surface-2);
+}
+.rp-te--approved       .rp-te-after { background: var(--c-success-soft); color: var(--c-success); }
+.rp-te--rejected       .rp-te-after { background: var(--c-error-soft); color: var(--c-error); }
+.rp-te--needs_revision .rp-te-after { background: #fff7ed; color: #c2410c; }
+.rp-te--submission     .rp-te-after,
+.rp-te--resubmission   .rp-te-after { background: #dbeafe; color: #1d4ed8; }
+.rp-te-before {
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  background: var(--c-surface-2);
+  color: var(--c-muted);
+}
+.rp-te-note {
+  margin-top: 4px;
+  padding: 6px 10px;
+  background: var(--c-surface-2);
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--c-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Per-event expandable round details — attached by app.js's
+   _attachTimelineRoundDetails after /history loads. Lets the user click
+   any draft_started/resubmission row to see what the AI flagged in
+   that round and download the exact files uploaded then. */
+.rp-te-round {
+  margin-top: 6px;
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--c-surface, #fff);
+}
+.rp-te-round[open] {
+  background: var(--c-surface-2, #f8fafc);
+}
+.rp-te-round-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: var(--c-text-2, #475569);
+  user-select: none;
+}
+.rp-te-round-summary::-webkit-details-marker { display: none; }
+.rp-te-round-summary::marker { content: ""; }
+.rp-te-round-summary:hover { color: var(--c-text, #0f172a); }
+.rp-te-round-chev {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  transition: transform 0.15s ease;
+  /* Caret points into the RTL flow by default (←); rotate when open. */
+  transform: rotate(180deg);
+}
+.rp-te-round[open] .rp-te-round-chev { transform: rotate(90deg); }
+.rp-te-round-summary-text { flex: 1 1 auto; min-width: 0; }
+.rp-te-round-body {
+  padding: 4px 10px 10px;
+  border-top: 1px solid var(--c-border, #e2e8f0);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rp-te-round-section-head {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--c-muted, #64748b);
+  margin-top: 4px;
+}
+.rp-te-round-files {
+  /* Reuse .dp-files grid via the second class name on the <ul>; this
+     rule just trims the gap so the inline placement stays compact. */
+  gap: 6px;
+}
+.rp-te-round-issues {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rp-te-round-issue {
+  padding: 6px 8px;
+  background: var(--c-surface, #fff);
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--c-text, #0f172a);
+}
+.rp-te-round-issue-doc {
+  font-weight: 600;
+  color: var(--c-text-2, #475569);
+}
+.rp-te-round-issue-action {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--c-muted, #64748b);
+}
+.rp-te-round-ok {
+  padding: 6px 8px;
+  background: var(--c-success-soft, #dcfce7);
+  color: var(--c-success, #166534);
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+
+/* ============================================================
+   Issues panel (.ip) — single shell that owns the missing-data
+   cards + reviewer note + role-aware action footer + inline
+   confirms + partial-resubmit form. Replaces the old stack of
+   .rp-issues / .rp-known-issues-banner / .rp-needs-revision-
+   banner / .rp-submitter-* blocks (all removed).
+   ============================================================ */
+.ip {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px 18px;
+  background: var(--c-surface, #fff);
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-right: 4px solid #f59e0b;   /* RTL "left border" — accent stripe */
+  border-radius: 12px;
+}
+.ip[hidden] { display: none; }
+.ip--clean { border-right-color: #10b981; }    /* no issues at all      */
+.ip--review-pending { border-right-color: #2563eb; }  /* reviewer queue */
+
+/* ── Header strip ─────────────────────────────────────────────────── */
+.ip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.ip-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.ip-status-icon {
+  width: 22px; height: 22px;
+  flex: 0 0 auto;
+  color: #d97706;
+}
+.ip--clean .ip-status-icon { color: #059669; }
+.ip--review-pending .ip-status-icon { color: #2563eb; }
+.ip-status-text { min-width: 0; }
+.ip-status-title {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: #9a3412;
+  line-height: 1.3;
+}
+.ip--clean .ip-status-title { color: #047857; }
+.ip--review-pending .ip-status-title { color: #1d4ed8; }
+.ip-status-sub {
+  font-size: 12px;
+  color: var(--c-muted, #64748b);
+  margin-top: 2px;
+}
+
+/* ── Reviewer-only "submitted with known issues" chip ─────────────── */
+.ip-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #92400e;
+  font-weight: 600;
+}
+.ip-chip svg { width: 16px; height: 16px; flex: 0 0 auto; color: #d97706; }
+
+/* ── Reviewer's overall freeform note (returned-for-revision view) ── */
+.ip-rn {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.ip-rn-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.ip-rn-head svg {
+  width: 18px; height: 18px;
+  flex: 0 0 auto;
+  color: #b45309;
+  margin-top: 2px;
+}
+.ip-rn-titles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: baseline;
+  min-width: 0;
+}
+.ip-rn-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #92400e;
+}
+.ip-rn-by {
+  font-size: 11.5px;
+  color: #b45309;
+}
+.ip-rn-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #78350f;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ip-rn-body:empty::before {
+  content: "—";
+  color: #d4a23b;
+  font-size: 12px;
+}
+
+/* ── Issue cards ──────────────────────────────────────────────────── */
+.ip-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ip-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--c-surface-2, #f8fafc);
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-right: 3px solid #f59e0b;
+  border-radius: 10px;
+}
+.ip-card--persistent { border-right-color: #ef4444; }   /* still flagged after a resubmit */
+.ip-card--new { border-right-color: #2563eb; }          /* did not exist last round       */
+.ip-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ip-card-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: rgba(146, 64, 14, 0.08);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #92400e;
+}
+.ip-card-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  white-space: nowrap;
+}
+.ip-card-status--persistent { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+.ip-card-status--new { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+
+/* Group count chip — appears in the card head when 2+ observations
+   share a document. Reads as "N ملاحظات / N observations" so the user
+   knows the single card holds multiple findings. */
+.ip-card-count {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #475569;
+  white-space: nowrap;
+}
+
+/* Observation list — only shown inside a grouped card (.ip-card--grouped).
+   Each <li.ip-obs> is one numbered observation; a thin top divider
+   separates them so the eye can scan multiple findings at a glance. */
+.ip-card--grouped { gap: 6px; }
+.ip-obs-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--c-surface, #fff);
+}
+.ip-obs {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--c-border, #e2e8f0);
+}
+.ip-obs:first-child { border-top: none; }
+.ip-obs-num {
+  flex: 0 0 auto;
+  font-weight: 700;
+  font-size: 13px;
+  color: #94a3b8;
+  font-feature-settings: "tnum";
+  /* Reserve a small gutter so 1.– 9. align cleanly */
+  min-width: 18px;
+  line-height: 1.5;
+}
+.ip-obs-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ip-obs-status {
+  align-self: flex-start;
+  margin-bottom: -2px;
+}
+.ip-card-issue {
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--c-text, #1f2937);
+}
+.ip-card-action {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--c-text-soft, #475569);
+}
+.ip-card-action::before {
+  content: "←";
+  color: #94a3b8;
+  font-weight: 700;
+  flex: 0 0 auto;
+  line-height: 1.55;
+}
+
+/* Reviewer comment — read-only text shown to submitter */
+.ip-card-rcmt {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #78350f;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ip-card-rcmt-icon {
+  width: 16px; height: 16px;
+  flex: 0 0 auto;
+  color: #b45309;
+  margin-top: 2px;
+}
+
+/* Reviewer comment — editable textarea (reviewer view) */
+.ip-card-rcmt-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--c-surface, #fff);
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--c-text);
+  resize: vertical;
+  box-sizing: border-box;
+}
+.ip-card-rcmt-input:focus {
+  outline: none;
+  border-color: var(--c-brand, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.ip-card-rcmt-label {
+  font-size: 11.5px;
+  color: var(--c-muted, #64748b);
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Previous-round comment — collapsible "memory" of what reviewer said
+   about this same key in the previous resubmission. Always read-only. */
+.ip-card-prev {
+  border-top: 1px dashed var(--c-border, #cbd5e1);
+  padding-top: 8px;
+}
+.ip-card-prev-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 11.5px;
+  color: #64748b;
+  cursor: pointer;
+  font-family: inherit;
+}
+.ip-card-prev-toggle:hover { color: #334155; }
+.ip-card-prev-toggle svg { width: 12px; height: 12px; transition: transform 0.15s ease; }
+.ip-card-prev[open] .ip-card-prev-toggle svg { transform: rotate(90deg); }
+.ip-card-prev-body {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #475569;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Per-card "edit this document" shortcut (submitter view) */
+.ip-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.ip-card-edit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.ip-card-edit-link:hover { background: rgba(37, 99, 235, 0.12); }
+.ip-card-edit-link svg { width: 12px; height: 12px; }
+
+/* ── Resolved strip (round 2+ only) ───────────────────────────────── */
+.ip-resolved {
+  padding: 10px 12px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+}
+.ip-resolved-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: #047857;
+  margin-bottom: 6px;
+}
+.ip-resolved-head svg { width: 14px; height: 14px; flex: 0 0 auto; color: #059669; }
+.ip-resolved-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ip-resolved-list li {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #065f46;
+  padding-right: 16px;
+  position: relative;
+}
+.ip-resolved-list li::before {
+  content: "·";
+  position: absolute;
+  right: 4px;
+  color: #34d399;
+  font-weight: 700;
+}
+
+/* ── Action footer (role-aware) ───────────────────────────────────── */
+.ip-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-border, #e2e8f0);
+}
+.ip-rev-note-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--c-text-soft, #475569);
+  font-weight: 600;
+}
+.ip-rev-note-optional {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--c-muted, #94a3b8);
+}
+.ip-rev-note-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--c-surface, #fff);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--c-text);
+  resize: vertical;
+  box-sizing: border-box;
+}
+.ip-rev-note-input:focus {
+  outline: none;
+  border-color: var(--c-brand, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.ip-rev-buttons,
+.ip-sub-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ip-sub-clean-msg {
+  margin: 0;
+  padding: 10px 14px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  color: #047857;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+/* ── Inline confirm panels (replace the legacy modal-ish #rp-notes
+      and #rp-submitter-confirm blocks). ──────────────────────────── */
+.ip-confirm {
+  padding: 12px 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+}
+.ip-confirm p {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #78350f;
+}
+.ip-confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── Buttons (.ip-btn variants) — share the .rp-btn baseline so the
+      reset/hover behavior already wired in app.css carries over. ─── */
+.ip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.2;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.ip-btn svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.ip-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.ip-btn--primary {
+  background: #2563eb;
+  color: #fff;
+  border-color: #1d4ed8;
+}
+.ip-btn--primary:hover { background: #1d4ed8; }
+.ip-btn--approve {
+  background: #10b981;
+  color: #fff;
+  border-color: #059669;
+}
+.ip-btn--approve:hover { background: #059669; }
+.ip-btn--revision {
+  background: #fff;
+  color: #b45309;
+  border-color: #fbbf24;
+}
+.ip-btn--revision:hover { background: #fffbeb; }
+.ip-btn--reject {
+  background: #fff;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.ip-btn--reject:hover { background: #fef2f2; }
+.ip-btn--warn {
+  background: #f59e0b;
+  color: #fff;
+  border-color: #d97706;
+}
+.ip-btn--warn:hover { background: #d97706; }
+.ip-btn--warn-ghost {
+  background: #fff;
+  color: #b45309;
+  border-color: #fcd34d;
+}
+.ip-btn--warn-ghost:hover { background: #fffbeb; }
+.ip-btn--ghost {
+  background: transparent;
+  color: var(--c-text-soft, #475569);
+  border-color: var(--c-border, #e2e8f0);
+}
+.ip-btn--ghost:hover { background: var(--c-surface-2, #f8fafc); }
+
+/* Embedded partial-resubmit form lives inside the panel — give it some
+   visual separation from the action footer above. */
+.ip-edit {
+  margin-top: 6px;
+  padding: 14px;
+  background: var(--c-surface-2, #f8fafc);
+  border: 1px dashed var(--c-border, #cbd5e1);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Action bar */
+.rp-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.rp-btn svg { width: 15px; height: 15px; }
+.rp-btn--approve {
+  background: var(--c-success);
+  color: #fff;
+}
+.rp-btn--approve:hover { background: #047857; }
+.rp-btn--reject {
+  background: #fff;
+  color: var(--c-error);
+  border-color: var(--c-error-bd);
+}
+.rp-btn--reject:hover { background: var(--c-error-soft); }
+.rp-btn--revision {
+  background: #f97316;
+  color: #fff;
+}
+.rp-btn--revision:hover { background: #ea580c; }
+.rp-btn--ghost {
+  background: transparent;
+  color: var(--c-muted);
+  border-color: var(--c-border);
+}
+.rp-btn--ghost:hover { background: var(--c-surface-2); }
+.rp-btn--primary {
+  background: var(--c-brand);
+  color: #fff;
+}
+.rp-btn--primary:hover { background: var(--c-brand-strong, #1d4ed8); }
+
+/* Action feedback toast inside the review panel — shown after approve /
+   reject / needs_revision lands, right before the redirect to the
+   dashboard. RTL, Arabic-native. */
+.rp-toast {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  direction: rtl;
+  font-family: "Noto Kufi Arabic", var(--ff-sans);
+}
+.rp-toast[hidden] { display: none; }
+.rp-toast--ok {
+  background: var(--c-success-soft);
+  color: var(--c-success);
+  border: 1px solid var(--c-success-bd);
+}
+.rp-toast--err {
+  background: var(--c-error-soft);
+  color: var(--c-error);
+  border: 1px solid var(--c-error-bd);
+}
+
+/* =================================================================
+   Submitter upload overlay — covers the .upload-shell while the
+   POST to /api/jobs is in flight. The submitter must NEVER see the
+   reviewer work view (live thinking, KPIs, approve/reject buttons),
+   so we show this instead until the redirect to /dashboard fires.
+   ================================================================= */
+.submitter-upload-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  font-family: "Noto Kufi Arabic", var(--ff-sans);
+}
+.submitter-upload-overlay[hidden] { display: none; }
+.sub-upload-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 32px 40px;
+  text-align: center;
+  direction: rtl;
+  max-width: 460px;
+}
+.sub-upload-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--c-text);
+}
+.sub-upload-sub {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--c-muted);
+}
+
+/* =================================================================
+   Analysis loading view (.al) — centered card on the existing light
+   app shell. The topbar / footer / page background remain unchanged
+   so the screen feels like part of the same app rather than a
+   different identity. The dark 3D box inside the card is treated as
+   a contained "canvas" element (like a video/code panel).
+   - Hero: cyan 3D perspective box with a stylized blueprint inside
+     and a scanning beam sweeping left → right on a 10s loop.
+   - 5 validation dots inside the box: red BEFORE the matching stage
+     flips done, green checkmark AFTER. Driven by [data-state] on each
+     .al-dot, mirrored from the corresponding .al-stage by JS.
+   - 5-stage list below with backend-driven [data-state] transitions
+     (waiting / active / done). Brand blue (var(--c-brand)) is used for
+     the active state — no gold accents anywhere on the screen.
+   ================================================================= */
+.al {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 220px);
+  padding: 24px 16px;
+  font-family: "Noto Kufi Arabic", var(--ff-sans);
+}
+.al[hidden] { display: none; }
+
+.al-card {
+  width: 100%;
+  max-width: 940px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-2);
+  padding: 28px 32px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+/* subtle moving brand accent across the top edge — same trick as the
+   reviewer banner's leading rail, in the brand blue. */
+.al-card::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2563eb 0%, #60a5fa 50%, #2563eb 100%);
+  background-size: 200% 100%;
+  animation: al-rail 2.4s linear infinite;
+}
+@keyframes al-rail {
+  from { background-position: 0% 0%; }
+  to   { background-position: -200% 0%; }
+}
+
+.al-title {
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+  color: var(--c-text);
+}
+.al-sub {
+  margin: -4px auto 4px;
+  max-width: 640px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--c-muted);
+}
+.al-dots {
+  display: inline-flex;
+  gap: 4px;
+  margin-inline-start: 6px;
+  vertical-align: middle;
+}
+.al-dots i {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--c-brand);
+  display: inline-block;
+  animation: al-dot-bounce 1.4s ease-in-out infinite;
+}
+.al-dots i:nth-child(2) { animation-delay: .2s; }
+.al-dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes al-dot-bounce {
+  0%, 80%, 100% { opacity: .25; transform: translateY(0); }
+  40%           { opacity: 1;   transform: translateY(-3px); }
+}
+
+/* 3D box hero — stays dark, treated as an embedded canvas. The
+   surrounding card stays light so the screen still belongs to the
+   existing app theme. */
+.al-hero {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  aspect-ratio: 1180 / 620;
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: radial-gradient(1200px 700px at 50% 35%, #16315c 0%, #0c1f42 45%, #08152e 100%);
+  filter: drop-shadow(0 12px 30px rgba(15, 23, 42, .12));
+}
+.al-hero svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* scanning beam — one-directional sweep, 10s validation cycle */
+.al-beam {
+  transform-origin: center;
+  animation: al-beam-sweep 10s linear infinite;
+  mix-blend-mode: screen;
+}
+@keyframes al-beam-sweep {
+  0%   { transform: translateX(-540px); opacity: 0; }
+  3%   { opacity: 1; }
+  60%  { transform: translateX(540px);  opacity: 1; }
+  65%  { transform: translateX(540px);  opacity: 0; }
+  100% { transform: translateX(-540px); opacity: 0; }
+}
+
+/* validation dots inside the box — state mirrored from .al-stage by JS */
+.al-dot-pre,
+.al-dot-post {
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: opacity .4s var(--ease), transform .4s var(--ease);
+}
+.al-dot-pulse {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: al-dot-pulse 2.2s ease-in-out infinite;
+}
+@keyframes al-dot-pulse {
+  0%, 100% { opacity: .55; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.4); }
+}
+.al-dot[data-state="waiting"] .al-dot-pre,
+.al-dot[data-state="active"]  .al-dot-pre  { opacity: 1; }
+.al-dot[data-state="waiting"] .al-dot-post,
+.al-dot[data-state="active"]  .al-dot-post { opacity: 0; transform: scale(.3); }
+.al-dot[data-state="done"] .al-dot-pre  { opacity: 0; }
+.al-dot[data-state="done"] .al-dot-post { opacity: 1; transform: scale(1); animation: al-dot-stamp .55s ease-out; }
+@keyframes al-dot-stamp {
+  0%   { opacity: 0; transform: scale(.3); }
+  60%  { opacity: 1; transform: scale(1.18); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* 5-stage list — light theme, brand-blue accents (no gold) */
+.al-stages {
+  list-style: none;
+  margin: 4px auto 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 720px;
+  text-align: start;
+}
+.al-stage {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  color: var(--c-text-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  transition: background .25s var(--ease), border-color .25s var(--ease), color .25s var(--ease);
+}
+.al-stage-icon {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1.4px solid var(--c-border);
+  background: var(--c-bg-soft);
+  color: var(--c-muted);
+  display: grid;
+  place-items: center;
+  transition: all .25s var(--ease);
+}
+.al-stage-icon svg { width: 16px; height: 16px; }
+.al-stage-text {
+  font-family: "Noto Kufi Arabic", var(--ff-sans);
+}
+.al-stage-status { width: 22px; height: 22px; display: grid; place-items: center; }
+.al-stage-spinner { display: none; }
+.al-stage-check {
+  width: 18px; height: 18px;
+  display: none;
+  color: var(--c-success);
+}
+
+/* state: active — brand-blue filled icon, brighter text */
+.al-stage[data-state="active"] {
+  background: var(--c-brand-soft);
+  border-color: rgba(37, 99, 235, .25);
+  color: var(--c-text);
+}
+.al-stage[data-state="active"] .al-stage-icon {
+  color: #fff;
+  background: var(--c-brand);
+  border-color: var(--c-brand);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+.al-stage[data-state="active"] .al-stage-spinner { display: inline-block; }
+
+/* state: done — green-tinted, checkmark visible */
+.al-stage[data-state="done"] {
+  background: var(--c-success-soft);
+  border-color: var(--c-success-bd);
+  color: var(--c-text);
+}
+.al-stage[data-state="done"] .al-stage-icon {
+  color: #fff;
+  background: var(--c-success);
+  border-color: var(--c-success);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+}
+.al-stage[data-state="done"] .al-stage-check { display: block; }
+.al-stage[data-state="done"] .al-stage-spinner { display: none; }
+
+/* Granular progress block — replaces the 5-stage list. Counter +
+   percentage + bar + single rotating phase label. JS in app.js
+   (_alIncrementProgress / _alRenderProgress) writes directly to the
+   #al-progress-* elements based on real SSE events. */
+.al-progress {
+  width: 100%;
+  max-width: 720px;
+  margin: 4px auto 0;
+  text-align: start;
+}
+.al-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--c-muted);
+}
+.al-progress-step-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.al-progress-step-num {
+  color: var(--c-brand);
+  font-weight: 800;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  min-width: 16px;
+  display: inline-block;
+  text-align: center;
+}
+.al-progress-step-total {
+  color: var(--c-text);
+  font-weight: 700;
+}
+.al-progress-pct-num {
+  color: var(--c-brand);
+  font-weight: 700;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.al-progress-bar {
+  height: 8px;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+}
+.al-progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #60a5fa 0%, #2563eb 100%);
+  border-radius: 4px;
+  transition: width 0.45s var(--ease);
+  box-shadow: 0 0 14px rgba(37, 99, 235, 0.35);
+}
+.al-progress-phase {
+  margin-top: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--c-muted);
+  font-weight: 500;
+}
+.al-progress-phase-text {
+  color: var(--c-brand);
+  font-weight: 700;
+}
+
+/* small viewports */
+@media (max-width: 640px) {
+  .al-card { padding: 20px 18px; gap: 14px; }
+  .al-title { font-size: 18px; }
+  .al-stages { font-size: 13px; }
+  .al-progress-row { font-size: 12.5px; }
+  .al-progress-step-num { font-size: 16px; }
+  .al-progress-pct-num { font-size: 14px; }
+  .al-progress-phase { font-size: 12.5px; }
+}
+
+/* respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .al-card::before, .al-beam, .al-dot-pulse, .al-dots i { animation: none; }
+  .al-dot-post { transition: none; }
+  .al-beam { display: none; }
+  .al-progress-bar-fill { transition: none; }
+}
+
+/* =================================================================
+   Submission guide — acceptance-requirements card on the upload
+   view. Collapsible, Arabic-native RTL.
+   ================================================================= */
+.submission-guide {
+  margin: 18px 0 22px 0;
+  padding: 18px 22px;
+  background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  font-family: "Noto Kufi Arabic", var(--ff-sans);
+  overflow: hidden;
+  transition: padding 0.25s var(--ease);
+  /* .upload-shell sets text-align: center; override so every descendant
+     picks up natural start-alignment (RTL → right, LTR → left). Without
+     this the bullet text floats in the middle of each section card. */
+  text-align: start;
+}
+.submission-guide * { text-align: inherit; }
+.sg-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.sg-head-left {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.sg-head-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sg-head-icon svg { width: 22px; height: 22px; }
+.sg-head-titles { min-width: 0; }
+.sg-title {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+.sg-intro {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #1e40af;
+}
+
+.sg-toggle {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s var(--ease);
+}
+.sg-toggle:hover { background: #dbeafe; }
+.sg-chevron {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.25s var(--ease);
+}
+.submission-guide.sg-collapsed .sg-chevron { transform: rotate(-90deg); }
+
+.sg-body {
+  margin-top: 18px;
+  max-height: 2000px;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-height 0.3s var(--ease), opacity 0.2s var(--ease), margin-top 0.25s var(--ease);
+}
+.submission-guide.sg-collapsed .sg-body {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
+.sg-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sg-section {
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #e0e7ff;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sg-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sg-num {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: Inter, var(--ff-sans);
+}
+.sg-section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sg-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.sg-list li {
+  position: relative;
+  padding: 0 22px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #334155;
+}
+/* RTL checkmark bullet */
+body.rtl .sg-list li::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 6px;
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2316a34a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><path d='M3 8.5l3.3 3L13 5'/></svg>");
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+.sg-list li code {
+  display: inline-block;
+  padding: 1px 7px;
+  background: #eef2ff;
+  color: #3730a3;
+  border: 1px solid #e0e7ff;
+  border-radius: 5px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.sg-hint {
+  margin: 4px 0 0 0;
+  padding: 8px 10px;
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+/* =================================================================
+   Metrics row — coverage + penalty tiles side by side
+   ================================================================= */
+.metrics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  .metrics-row { grid-template-columns: 1fr; }
+}
+
+/* Building-coverage widget */
+.coverage-widget {
+  background: linear-gradient(140deg, rgba(37, 99, 235,0.06), rgba(37, 99, 235,0.03));
+  border: 1px solid rgba(37, 99, 235,0.18);
+  border-radius: var(--r);
+  padding: 9px 12px;
+}
+.coverage-widget > summary.coverage-head {
+  cursor: pointer;
+  list-style: none;
+}
+.coverage-widget > summary.coverage-head::-webkit-details-marker { display: none; }
+.coverage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.coverage-widget > summary.coverage-head .coverage-chevron {
+  align-self: center;
+  flex-shrink: 0;
+  color: var(--c-brand);
+  transition: transform 0.2s var(--ease);
+}
+.coverage-widget[open] > summary.coverage-head .coverage-chevron { transform: rotate(90deg); }
+.coverage-widget > summary.coverage-head .coverage-label { flex: 1; }
+.coverage-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 7px;
+}
+.coverage-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--c-brand);
+  font-weight: 600;
+}
+.coverage-pct {
+  font-family: var(--ff-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-brand);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.coverage-bar-track {
+  height: 6px;
+  background: rgba(37, 99, 235,0.10);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.coverage-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #2563eb 0%, #2563eb 100%);
+  border-radius: 999px;
+  transition: width 0.7s var(--ease);
+  box-shadow: 0 0 12px rgba(37, 99, 235,0.35);
+}
+.coverage-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11.5px;
+}
+.coverage-stat {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.cs-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 9.5px;
+  color: var(--c-muted);
+  font-weight: 600;
+}
+.cs-value {
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--c-text);
+}
+
+/* =================================================================
+   Setback-penalty widget (next to building-coverage)
+   ================================================================= */
+.penalty-widget {
+  background: linear-gradient(140deg, rgba(185,28,28,0.06), rgba(234,88,12,0.03));
+  border: 1px solid rgba(185,28,28,0.20);
+  border-radius: var(--r);
+  padding: 9px 12px;
+}
+.penalty-widget > summary.penalty-head {
+  cursor: pointer;
+  list-style: none;
+}
+.penalty-widget > summary.penalty-head::-webkit-details-marker { display: none; }
+.penalty-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.penalty-widget > summary.penalty-head .penalty-chevron {
+  align-self: center;
+  flex-shrink: 0;
+  color: var(--c-error);
+  transition: transform 0.2s var(--ease);
+}
+.penalty-widget[open] > summary.penalty-head .penalty-chevron { transform: rotate(90deg); }
+.penalty-widget > summary.penalty-head .penalty-label { flex: 1; }
+.penalty-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 7px;
+}
+.penalty-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--c-error);
+  font-weight: 600;
+}
+.penalty-total {
+  font-family: var(--ff-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--c-error);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.penalty-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+}
+.penalty-item {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-2);
+}
+.pi-side {
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  background: rgba(185,28,28,0.12);
+  color: var(--c-error);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+.pi-calc {
+  font-size: 10.5px;
+  color: var(--c-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pi-amount {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--c-error);
+}
+.penalty-compliant {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--c-success);
+  font-weight: 500;
+  padding: 2px 0;
+}
+.penalty-compliant svg { width: 13px; height: 13px; }
+.penalty-formula {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--c-muted);
+  line-height: 1.4;
+  padding-top: 5px;
+  border-top: 1px dashed rgba(185,28,28,0.15);
+  margin-top: 1px;
+}
+.penalty-threshold-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-error);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.penalty-rule-text { font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+.drawing-panel {
+  background:
+    repeating-linear-gradient(0deg, rgba(15,23,42,0.025) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, rgba(15,23,42,0.025) 0 1px, transparent 1px 20px),
+    var(--c-surface-2);
+  border: 1px solid var(--c-border-2);
+  border-radius: var(--r);
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+#drawing-img {
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+  background: white;
+}
+
+/* =================================================================
+   Interactive SVG renderer (Option C). Sits inside .drawing-panel
+   alongside #drawing-img; one of the two is shown at a time, toggled
+   by JS when geometry_json is present in the analysis result.
+   ================================================================= */
+.drawing-svg-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  background: white;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#drawing-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;     /* prevent the browser eating wheel/pan on touch */
+}
+#drawing-svg.dragging { cursor: grabbing; }
+
+/* Hover affordances on interactive elements rendered inside the SVG. */
+#drawing-svg .lot-edge,
+#drawing-svg .pair-marker {
+  cursor: help;
+  transition: opacity 0.12s ease;
+}
+#drawing-svg .lot-edge:hover { opacity: 0.78; }
+#drawing-svg .pair-marker:hover { opacity: 0.78; }
+#drawing-svg .pair-leader { pointer-events: none; }
+#drawing-svg .pair-label { pointer-events: none; }
+
+/* The interactive SVG is intentionally chrome-free — no toolbar,
+   tooltip, layer popover, coord readout, or help overlay. Mouse-only
+   navigation: wheel = zoom-at-cursor, drag = pan. The only chrome is
+   a single floating ruler button (.smv-launcher) that opens the
+   full-screen measurement viewer. */
+
+/* Ruler launcher — small floating toggle in the top corner of the
+   SVG. Pressed state (data-pressed="true") indicates measure mode
+   is active; the same click toggles it off again. */
+.smv-launcher {
+  position: absolute;
+  top: 10px;
+  inset-inline-end: 10px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  border-radius: 7px;
+  cursor: pointer;
+  z-index: 5;
+  padding: 0;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
+}
+.smv-launcher:hover {
+  background: rgba(37, 99, 235, 0.10);
+  border-color: rgba(37, 99, 235, 0.35);
+  color: #1d4ed8;
+}
+.smv-launcher[aria-pressed="true"] {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(29, 78, 216, 0.32);
+}
+.smv-launcher[aria-pressed="true"]:hover { background: #1e40af; }
+.smv-launcher:active { transform: scale(0.95); }
+
+/* Measure-mode cursor on the SVG. Triggered by .smv-measuring class
+   on the wrap; reverts on exit. */
+.drawing-svg-wrap.smv-measuring #drawing-svg              { cursor: crosshair; }
+.drawing-svg-wrap.smv-measuring #drawing-svg.dragging,
+.drawing-svg-wrap.smv-measuring #drawing-svg.is-panning   { cursor: grabbing; }
+
+/* =================================================================
+   Inline measurement tool selector. A vertical column of two small
+   icon buttons (distance, area) that drops down directly under the
+   ruler launcher when measure mode is on. Visually mirrors the
+   launcher's chip styling so the three look like one consistent
+   floating control. Hint text and action buttons (undo/clear/exit)
+   were removed — keyboard shortcuts (Z, M, A, ESC) cover the same
+   actions and the chart stays clean.
+   ================================================================= */
+.smv-bar {
+  position: absolute;
+  /* launcher: top:10 + height:32 + 6 gap = 48 */
+  top: 48px;
+  inset-inline-end: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 6;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: smv-bar-in 0.16s ease;
+}
+@keyframes smv-bar-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.smv-bar-btn-tool {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 8px;
+  color: #475569;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.10);
+  font-family: inherit;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.smv-bar-btn-tool:hover {
+  background: #f8fafc;
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.45);
+}
+.smv-bar-btn-tool.is-active {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #1d4ed8;
+  box-shadow: 0 4px 10px rgba(29, 78, 216, 0.32);
+}
+.smv-bar-btn-tool.is-active:hover {
+  background: #1e40af;
+  color: #ffffff;
+  border-color: #1e40af;
+}
+.smv-bar-btn-tool:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+/* =================================================================
+   Measurement list — sits directly under the tool selector. Each
+   row is just the value + a small × to delete it. Panel is glassy
+   (translucent + backdrop blur) so the chart stays readable behind
+   it; hides entirely when empty.
+   ================================================================= */
+.smv-list {
+  position: absolute;
+  /* launcher (top:10 + 32) + 6 gap + tool-bar (32 + 6 + 32) + 8 gap = 126 */
+  top: 126px;
+  inset-inline-end: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px;
+  min-width: 80px;
+  max-width: 160px;
+  max-height: calc(100% - 140px);
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 6;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: smv-bar-in 0.16s ease;
+}
+
+.smv-list-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 2px;
+  border-radius: 5px;
+  background: transparent;
+  cursor: default;
+  transition: background 0.12s ease;
+}
+.smv-list-row:hover,
+.smv-list-row.is-highlight {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.smv-list-value {
+  flex: 1;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* RTL-friendly: numbers + Arabic unit ("12.34 م²") read correctly. */
+  direction: ltr;
+  text-align: start;
+  padding-inline-start: 2px;
+}
+
+.smv-list-del {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.smv-list-del:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.smv-list-del:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 1px;
+}
+
+/* Measurement marks rendered inside the SVG. Distance line + label,
+   area polygon + label, snap-target ring, in-flight rubber-band line.
+   The .smv-meas-group wraps each completed measurement so a single
+   :hover lights up its parts and reveals the × delete badge. */
+.smv-meas-line        { stroke: #0f172a; fill: none; pointer-events: stroke; transition: stroke 0.12s ease; }
+.smv-meas-poly        { fill: rgba(37, 99, 235, 0.14); stroke: #1d4ed8; pointer-events: fill; transition: fill 0.12s ease, stroke 0.12s ease; }
+.smv-meas-endpoint    { fill: #fff; stroke: #0f172a; pointer-events: none; }
+.smv-rubber-line      { stroke: #1d4ed8; stroke-dasharray: 5 4; fill: none; pointer-events: none; }
+.smv-rubber-poly      { fill: rgba(37, 99, 235, 0.10); stroke: #1d4ed8; stroke-dasharray: 5 4; pointer-events: none; }
+.smv-snap-ring        {
+  fill: rgba(37, 99, 235, 0.22);
+  stroke: #1d4ed8;
+  pointer-events: none;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: smv-snap-pulse 1.4s ease-in-out infinite;
+}
+@keyframes smv-snap-pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1.0;  transform: scale(1.18); }
+}
+.smv-cursor-ghost { fill: rgba(37, 99, 235, 0.45); pointer-events: none; }
+
+.smv-meas-pill        { fill: #0f172a; pointer-events: none; }
+.smv-meas-pill-text   { fill: #fff; font-family: "Inter", "Noto Kufi Arabic", sans-serif; font-weight: 700; pointer-events: none; }
+
+/* Group-hover styling: the whole measurement gets a subtle highlight
+   + the × delete badge fades in. The group stops at .smv-meas-group
+   per measurement so individual measurements don't bleed into each
+   other when crossing the cursor. */
+.smv-meas-group:hover .smv-meas-line,
+.smv-meas-group.is-highlight .smv-meas-line { stroke: #1d4ed8; }
+.smv-meas-group:hover .smv-meas-poly,
+.smv-meas-group.is-highlight .smv-meas-poly { fill: rgba(37, 99, 235, 0.24); stroke: #1e3a8a; }
+
+@media (prefers-reduced-motion: reduce) {
+  .smv-modal { animation: none; }
+}
+@media (max-width: 760px) {
+  .smv-shell { width: 100vw; height: 100vh; border-radius: 0; }
+  .smv-toolbar { grid-template-columns: 1fr auto; }
+  .smv-toolbar-left { display: none; }
+}
+
+.sides-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.panel-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-muted);
+  font-weight: 600;
+}
+
+.sides-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 4px;
+  align-items: center;
+}
+.side {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 7px;
+  padding: 6px 4px;
+  text-align: center;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.side:hover {
+  border-color: var(--c-brand);
+  transform: translateY(-1px);
+}
+.side-north { grid-column: 2; grid-row: 1; }
+.side-west  { grid-column: 1; grid-row: 2; }
+.side-east  { grid-column: 3; grid-row: 2; }
+.side-south { grid-column: 2; grid-row: 3; }
+.side-label {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-subtle);
+  margin-bottom: 1px;
+  font-weight: 600;
+}
+.side-value {
+  font-family: var(--ff-mono);
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-brand);
+  line-height: 1.1;
+}
+
+.overall-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border-2);
+  border-radius: 7px;
+  padding: 7px 11px;
+}
+.overall-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--c-muted);
+}
+.overall-row span:last-child {
+  color: var(--c-text);
+  font-weight: 500;
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Collapsibles */
+.collapsible {
+  border: 1px solid var(--c-border-2);
+  border-radius: 7px;
+  padding: 5px 10px;
+  background: var(--c-surface-2);
+}
+.collapsible summary {
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--c-text-2);
+  padding: 2px 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.collapsible summary::before {
+  content: "›";
+  font-size: 14px;
+  line-height: 1;
+  color: var(--c-subtle);
+  transition: transform 0.2s var(--ease);
+}
+.collapsible[open] summary::before { transform: rotate(90deg); }
+.collapsible summary:hover { color: var(--c-text); }
+.collapsible pre {
+  margin: 6px 0 0;
+  background: #0b1220;
+  color: #d6dbe3;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.5;
+}
+
+/* =================================================================
+   Error view
+   ================================================================= */
+.error-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-error-bd);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  box-shadow: var(--sh-1);
+}
+.error-inner {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 12px;
+  align-items: flex-start;
+}
+.error-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: var(--c-error-soft);
+  color: var(--c-error);
+  display: flex; align-items: center; justify-content: center;
+}
+.error-icon svg { width: 18px; height: 18px; }
+.error-body h2 {
+  margin: 0 0 6px;
+  color: var(--c-error);
+  font-size: 14px;
+  font-weight: 600;
+}
+#error-message {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  background: var(--c-error-soft);
+  color: var(--c-error);
+  border-radius: 6px;
+  font-size: 11.5px;
+  white-space: pre-wrap;
+}
+
+/* =================================================================
+   Work stack — full-width single-column replacement for the old
+   two-column work-grid. Live thinking became a collapsible section
+   that sits directly above the document-intelligence zone.
+   ================================================================= */
+.work-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.live-thinking-section {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+  overflow: hidden;
+}
+.live-thinking-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(180deg, rgba(247,248,251,0.55), transparent);
+  border-bottom: 1px solid transparent;
+}
+.live-thinking-section[open] > .live-thinking-summary {
+  border-bottom-color: var(--c-border-2);
+}
+.live-thinking-summary::-webkit-details-marker { display: none; }
+.live-thinking-summary .summary-chevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  transition: transform 0.18s var(--ease);
+}
+.live-thinking-section[open] > .live-thinking-summary .summary-chevron {
+  transform: rotate(90deg);
+}
+.live-thinking-head-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.live-thinking-head-text h2 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--c-text);
+}
+.live-thinking-head-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--c-success);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.live-thinking-body {
+  padding: 0;
+}
+
+/* =================================================================
+   Responsive — stack on narrow screens
+   ================================================================= */
+@media (max-width: 1000px) {
+  .work-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .main { padding: 8px; gap: 8px; }
+  .topbar { padding: 0 12px; }
+  .topbar-meta { display: none; }
+  .upload-shell { padding: 18px 16px 16px; }
+  .upload-title { font-size: 18px; }
+  .work-statusbar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .sb-right { justify-content: flex-start; }
+}
+
+/* =================================================================
+   Floor-area plan section — Claude's per-floor breakdown + lot-area ratio
+   Uses the existing .pdf-section base and adds its own accent + widgets.
+   ================================================================= */
+.floor-section { border-inline-start: 3px solid #0d9488; }
+body.rtl .floor-section { border-left: 1px solid rgba(37, 99, 235,0.14); }
+
+.floor-totals { margin-bottom: 10px; }
+/* Two display-only header cards: building total (PDF) and licensed total (PDF).
+ * No Python recomputation at this level — per-row checks live inside each
+ * floor's table below. */
+.floor-header-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+@media (max-width: 520px) { .floor-header-cards { grid-template-columns: 1fr; } }
+.floor-header-card {
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.floor-header-card .ft-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+.floor-header-card .ft-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--c-text);
+  font-family: var(--ff-mono);
+}
+.floor-header-card .ft-unit { font-size: 11px; color: var(--c-muted); margin-inline-start: 4px; font-weight: 500; }
+
+/* Banner beneath the header cards: one sentence stating how many rows failed
+ * the dim × qty = printed total check (or that every row is clean). */
+.floor-recon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.floor-recon .fr-state-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--c-muted);
+  flex: 0 0 auto;
+}
+.floor-recon .fr-state-text { flex: 1 1 auto; color: var(--c-text); font-weight: 500; }
+.floor-recon.is-clean    { border-color: #0d9488; background: #f0fdfa; }
+.floor-recon.is-clean .fr-state-dot { background: #0d9488; }
+.floor-recon.is-mismatch { border-color: #b45309; background: #fef3c7; }
+.floor-recon.is-mismatch .fr-state-dot { background: #b45309; }
+
+.floor-comparison {
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.floor-comparison.is-over  { border-color: #b45309; background: #fef3c7; }
+.floor-comparison.is-under { border-color: #0d9488; background: #f0fdfa; }
+.floor-comparison .fc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  gap: 10px;
+}
+.floor-comparison .fc-row + .fc-row { margin-top: 4px; }
+.floor-comparison .fc-label { color: var(--c-muted); }
+.floor-comparison .fc-value { font-family: var(--ff-mono); font-weight: 600; }
+.floor-comparison .fc-ratio { font-size: 15px; font-weight: 700; }
+
+.floor-floor {
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.floor-floor.is-mismatch { border-color: #b45309; }
+.floor-floor-subtotal {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  color: var(--c-muted);
+  margin-inline-start: auto;
+}
+.floor-floor > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--c-surface-2);
+  user-select: none;
+}
+.floor-floor > summary::-webkit-details-marker { display: none; }
+.floor-floor-name {
+  flex: 1 1 auto;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--c-text);
+}
+.floor-floor-totals {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  color: var(--c-muted);
+}
+.floor-pdf-subtotal {
+  margin-inline-start: 6px;
+  color: #b45309;
+  font-weight: 600;
+}
+.floor-floor-flag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Page hint + verification tick on the summary row. */
+.floor-floor-page {
+  font-size: 10.5px;
+  color: var(--c-muted);
+  font-family: var(--ff-mono);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+}
+.floor-floor-verified {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #ecfeff;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+}
+
+/* Verification tick shown next to the row number after a verification pass. */
+.floor-row-ver {
+  display: inline-block;
+  margin-inline-start: 4px;
+  font-size: 10px;
+  color: #0369a1;
+}
+.floor-row-ver.is-agreed { color: #64748b; }
+.floor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: var(--ff-mono);
+}
+.floor-table th,
+.floor-table td {
+  padding: 6px 10px;
+  border-top: 1px solid var(--c-border);
+  text-align: start;
+  white-space: nowrap;
+}
+.floor-table th {
+  font-weight: 600;
+  font-size: 10.5px;
+  color: var(--c-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--c-surface);
+}
+.floor-table tr.is-mismatch td { background: #fef3c7; }
+.floor-table tr.is-autocad td { color: var(--c-muted); font-style: italic; }
+.floor-table td.num { text-align: end; }
+/* The Mismatch-flag column cell — no inline-block; just a normal narrow td that
+ * holds the badge when the row's printed vs. Claude-computed values diverge. */
+.floor-table td.floor-row-flag { text-align: start; width: 1%; padding-inline-start: 8px; }
+
+/* ================================================================
+   Top "Application data" summary — one consolidated view that merges
+   fields from the deed + every additional PDF, dedup'd, organised
+   into an "Identity" group and a "Building & project" group.
+   ================================================================ */
+.app-summary-section {
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  background: var(--c-surface);
+  padding: 14px 16px 12px;
+  margin-bottom: 12px;
+  border-inline-start: 3px solid #2563eb;
+}
+.app-summary-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--c-border);
+}
+.app-summary-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1d4ed8;
+}
+.app-summary-sub { font-size: 11px; color: var(--c-muted); }
+
+.app-summary-group { margin-top: 10px; }
+.app-summary-group:first-of-type { margin-top: 0; }
+.app-summary-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 6px;
+}
+
+/* Grid of label/value cells. Two columns wide on desktop; stacks on mobile.
+ * Each row in the grid is a single "cell" visually mimicking the screenshot:
+ * bilingual label on top, value below, with a subtle row separator. */
+.app-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--c-surface-2);
+}
+@media (max-width: 640px) { .app-summary-grid { grid-template-columns: 1fr; } }
+.app-summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--c-surface);
+  border-top: 1px solid var(--c-border);
+  border-inline-start: 1px solid var(--c-border);
+  min-width: 0;
+}
+.app-summary-row:nth-child(1),
+.app-summary-row:nth-child(2) { border-top: none; }
+.app-summary-row:nth-child(odd) { border-inline-start: none; }
+@media (max-width: 640px) {
+  .app-summary-row { border-inline-start: none; }
+  .app-summary-row:nth-child(2) { border-top: 1px solid var(--c-border); }
+}
+.app-summary-row-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.app-summary-row-en {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+.app-summary-row-ar {
+  font-size: 11px;
+  color: #2563eb;
+  font-weight: 600;
+}
+.app-summary-row-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-text);
+  font-family: var(--ff-mono);
+  word-break: break-word;
+}
+
+.app-summary-empty {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--c-muted);
+  background: var(--c-surface);
+  font-style: italic;
+}
+
+/* "Other extracted data" — single list of deduped label/value pairs. */
+.app-summary-other {
+  margin-top: 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  background: var(--c-surface-2);
+  padding: 6px 10px;
+}
+.app-summary-other > summary {
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  padding: 4px 0;
+  list-style: none;
+}
+.app-summary-other > summary::-webkit-details-marker { display: none; }
+.app-summary-other > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-inline-end: 6px;
+  transition: transform 0.15s var(--ease);
+}
+.app-summary-other[open] > summary::before { transform: rotate(90deg); }
+
+/* ================================================================
+   Additional-PDFs section — one collapsible card per uploaded file.
+   Card states: pending (dashed, no content), running (spinner),
+   done (filled with extracted fields), error (red-tinted body).
+   ================================================================ */
+.extras-section { border-inline-start: 3px solid #3b82f6; }
+.extras-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 2px;
+}
+.extra-card {
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--c-surface);
+}
+.extra-card.is-pending { border-style: dashed; }
+.extra-card.is-running { border-color: #3b82f6; }
+.extra-card.is-done    { border-color: var(--c-border); }
+.extra-card.is-error   { border-color: #fca5a5; background: #fff5f5; }
+.extra-card > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--c-surface-2);
+  user-select: none;
+  font-size: 13px;
+}
+.extra-card > summary::-webkit-details-marker { display: none; }
+.extra-card-title {
+  flex: 1 1 auto;
+  font-weight: 600;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.extra-status {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.extra-status.is-running { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+.extra-status.is-done    { background: #f0fdfa; color: #0d9488; border: 1px solid #5eead4; }
+.extra-status.is-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.extra-card-body { padding: 10px 12px; }
+.extra-pending {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 2px;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+.extra-pending .spinner { width: 14px; height: 14px; }
+.extra-summary { margin: 0 0 8px 0; }
+.extra-other summary { font-size: 11px; }
+.extra-error-body {
+  border: 1px solid #fca5a5;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+/* Small amber badge used in row flag cells, per-floor summary, and the
+ * building-total card when printed and Claude-computed disagree. */
+.floor-mismatch-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fef3c7;
+  color: #92400e;
+  white-space: nowrap;
+  margin-inline-start: 6px;
+}
+
+/* tfoot rows for Total Printed / Total Claude Computed m². */
+.floor-table tfoot tr.floor-total-row td {
+  font-weight: 600;
+  background: var(--c-surface);
+  border-top: 2px solid var(--c-border);
+}
+.floor-table tfoot tr.floor-total-row.is-mismatch td { background: #fef3c7; color: #92400e; }
+.floor-table td.floor-total-label { text-align: end; color: var(--c-muted); text-transform: none; letter-spacing: normal; }
+
+.floor-row-fix {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  margin-inline-start: 6px;
+  cursor: help;
+}
+.floor-table tr.is-autofix td { background: #eff6ff; }
+
+/* Claude's one-sentence explanation of why a floor's subtotal doesn't match,
+ * rendered between the summary row and the detail table on mismatched floors. */
+/* Floor-level qty badge — shown next to a floor's name when one breakdown
+ * covers N identical floors (e.g. "floor A and B" with qty = 2). */
+.floor-floor-qty {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: #dbeafe;
+  color: #1e40af;
+  margin-inline-start: 8px;
+  cursor: help;
+  letter-spacing: 0.02em;
+}
+
+
+/* Simplified per-floor list — just name + area (no per-row tables). */
+.floor-list {
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--c-surface);
+}
+.floor-list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 12px;
+  border-top: 1px solid var(--c-border);
+  gap: 12px;
+}
+.floor-list-row:first-child { border-top: none; }
+.floor-list-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--c-text);
+}
+.floor-list-area {
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  color: var(--c-text-2);
+  white-space: nowrap;
+}
+
+/* =================================================================
+   History panel — slides in from the right, lists past analyses
+   ================================================================= */
+.history-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  font-family: var(--ff-sans);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.history-toggle:hover { border-color: var(--c-brand); color: var(--c-brand); }
+.history-toggle svg { width: 14px; height: 14px; }
+.history-toggle .history-count {
+  display: inline-block;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--c-brand);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.history-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 90;
+  animation: history-fade-in 0.18s var(--ease);
+}
+@keyframes history-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.history-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 90vw);
+  background: var(--c-surface);
+  border-left: 1px solid var(--c-border);
+  box-shadow: -10px 0 30px rgba(15, 23, 42, 0.08);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  animation: history-slide-in 0.22s var(--ease);
+}
+body.rtl .history-panel {
+  right: auto;
+  left: 0;
+  border-left: none;
+  border-right: 1px solid var(--c-border);
+  box-shadow: 10px 0 30px rgba(15, 23, 42, 0.08);
+  animation: history-slide-in-rtl 0.22s var(--ease);
+}
+@keyframes history-slide-in    { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes history-slide-in-rtl { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+
+.history-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--c-border);
+}
+.history-head-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.history-head-titles h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-text);
+}
+.history-head-sub {
+  font-size: 11px;
+  color: var(--c-muted);
+}
+.history-close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  background: var(--c-surface);
+  color: var(--c-muted);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.history-close:hover { border-color: var(--c-error); color: var(--c-error); }
+.history-close svg { width: 14px; height: 14px; }
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.history-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--c-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  background: var(--c-surface-2);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.history-item:hover {
+  border-color: var(--c-brand);
+  background: var(--c-brand-soft);
+}
+.history-item-main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.history-item-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--c-muted);
+}
+.history-item-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.history-item-badge.done  { background: var(--c-success-soft); color: var(--c-success); border: 1px solid var(--c-success-bd); }
+.history-item-badge.error { background: var(--c-error-soft);   color: var(--c-error);   border: 1px solid var(--c-error-bd); }
+.history-item-badge.pdf,
+.history-item-badge.floor {
+  background: var(--c-brand-soft);
+  color: var(--c-brand);
+  border: 1px solid var(--c-brand-soft);
+}
+.history-item-delete {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--c-muted);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.history-item-delete:hover {
+  border-color: var(--c-error-bd);
+  color: var(--c-error);
+  background: var(--c-error-soft);
+}
+.history-item-delete svg { width: 14px; height: 14px; }
+
+/* Subtle "loaded from history" banner */
+.replay-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin: 8px 0;
+  border: 1px solid var(--c-brand-soft);
+  border-radius: 6px;
+  background: var(--c-brand-soft);
+  color: var(--c-brand);
+  font-size: 11px;
+  font-weight: 600;
+}
+.replay-banner svg { width: 13px; height: 13px; }
+
+@media (max-width: 720px) {
+  .history-panel { width: 100vw; }
+  .history-toggle span:not(.history-count) { display: none; }
+}
+
+/* =========================================================
+   Image lightbox — click the inline drawing PNG to open it
+   in a viewport-filling overlay (~2× the inline view, capped
+   to 95vw/95vh to leave a comfortable border). The overlay's
+   backdrop is dismissive (zoom-out cursor); the × button and
+   Escape key both also close it.
+   ========================================================= */
+
+#drawing-img {
+  cursor: zoom-in;
+  transition: transform 0.18s var(--ease);
+}
+#drawing-img:hover { transform: scale(1.005); }
+
+.img-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 32px;
+  cursor: zoom-out;
+  /* Smooth fade-in */
+  animation: lbFadeIn 0.18s var(--ease);
+}
+.img-lightbox[hidden] { display: none; }
+
+.img-lightbox img {
+  /* Use min() so we get the smaller of: 2× a typical inline render (~1080
+   * native px), the viewport, or the natural pixel size. This gives the
+   * "open at 2×" feel without ever upscaling beyond what matplotlib drew. */
+  max-width: min(95vw, 2160px);
+  max-height: 95vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: #fff;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  cursor: default;  /* image itself isn't a close target */
+}
+
+.img-lightbox-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  border: none;
+  color: #1f2937;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: background 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.img-lightbox-close:hover {
+  background: #fff;
+  transform: scale(1.05);
+}
+.img-lightbox-close svg { width: 18px; height: 18px; }
+
+@keyframes lbFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ============================================================
+   Draft + submitter pre-submit preview styles
+   Brand palette: blue (#2563eb / #1d4ed8) on white, with amber for
+   the "submitted with known issues" warning so it stands out without
+   competing with the action bar's primary blue.
+   ============================================================ */
+
+/* "Draft — pre-submission preview" status chip on the reviewer banner.
+   Distinct from pending so the engineer sees they're still in preview. */
+.rb-status--draft {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.rb-status--draft .rb-status-dot { background: #2563eb; }
+
+/* Dashboard table: small "مع ملاحظات" warning chip next to the status
+   badge, so the reviewer sees the flag at a glance from the queue. */
+.app-badge-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.app-badge--known-issues {
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.app-badge--known-issues svg { width: 12px; height: 12px; }
+
+/* Draft status chip on the dashboard table. Treated as informational
+   blue (not warning) — drafts are normal during submitter preview. */
+.app-badge--status-draft {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.app-badge--status-draft .app-badge-dot { background: #2563eb; }
+
+/* Timeline entry kinds for the new draft + known-issues states. */
+.rp-te--draft .rp-te-icon,
+.ma-te--draft .ma-timeline-icon {
+  color: #2563eb;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+.rp-te--known-issues .rp-te-icon,
+.ma-te--known-issues .ma-timeline-icon {
+  color: #d97706;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+/* Inline partial-resubmit form on the draft preview screen.
+   Replaces the action-button states when "تعديل الملفات" is clicked. */
+.rp-submitter-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rp-submitter-edit-head { line-height: 1.4; }
+.rp-submitter-edit-title {
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+.rp-submitter-edit-sub {
+  margin: 0;
+  font-size: 12.5px;
+  color: #475569;
+  line-height: 1.55;
+}
+.rp-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.rp-edit-grid .drop-zone {
+  min-height: 130px;
+}
+.rp-edit-current {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.4;
+  text-align: right;
+}
+.rp-edit-current-label { color: #94a3b8; }
+.rp-edit-current-name {
+  color: #334155;
+  font-weight: 500;
+  word-break: break-all;
+}
+.rp-submitter-edit-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.rp-edit-msg {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.rp-edit-msg--err {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+.rp-edit-msg--ok {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+/* (Removed: .ma-* known-issues-banner styles previously consumed only
+   by /my-app.html, which is no longer served.) */
+
+
+/* ============================================================
+   Rounds panel — round-centric consolidation that replaces the
+   legacy sibling-trio of #rp-timeline + #documents-panel +
+   #issues-panel. Each round is one .rc card. The active round
+   docks the existing #issues-panel as its bottom slot so the
+   action footer and live SSE rendering keep working unchanged.
+   ============================================================ */
+.rounds-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rounds-panel[hidden] { display: none; }
+
+/* When the rounds panel is live, hide the legacy timeline and
+   documents panel. The DOM nodes are kept so any stray callers
+   (timeline detail attachers, etc.) don't NPE. */
+#review-panel.review-panel--rounds-active .rp-legacy { display: none !important; }
+
+/* Inside a rounds-active panel, reparent the issues-panel into
+   the active round card visually: drop its top border-radius,
+   tighten the gap so it reads as one card. */
+#review-panel.review-panel--rounds-active .rc--active {
+  padding-bottom: 0;
+}
+#review-panel.review-panel--rounds-active .rc--active .ip {
+  border: none;
+  border-radius: 0 0 11px 11px;
+  margin: 0 -16px -16px -16px;  /* extend into the card edges */
+  background: transparent;
+}
+
+/* ---- Round card base ----------------------------------------- */
+.rc {
+  background: var(--c-surface, #fff);
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rc--active {
+  border-color: rgba(37, 99, 235, 0.35);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04), 0 4px 14px rgba(37, 99, 235, 0.06);
+}
+.rc--past {
+  background: var(--c-surface-2, #f8fafc);
+}
+/* <details> mechanics for past-round cards */
+.rc--past[open] > .rc-head .rc-chev { transform: rotate(90deg); }
+.rc--past .rc-body { padding-top: 12px; border-top: 1px dashed var(--c-border, #e2e8f0); margin-top: 4px; }
+.rc--past summary.rc-head { cursor: pointer; list-style: none; }
+.rc--past summary.rc-head::-webkit-details-marker { display: none; }
+
+/* ---- Round card header --------------------------------------- */
+.rc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rc-chev {
+  width: 12px; height: 12px;
+  flex: 0 0 auto;
+  color: var(--c-muted, #64748b);
+  transition: transform 120ms ease;
+  /* In RTL the chevron points left when collapsed; rotate on open. */
+  transform: rotate(180deg);
+}
+.rc-num {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-text);
+}
+.rc-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+}
+.rc-status--draft          { background: #f1f5f9; color: #475569; }
+.rc-status--pending        { background: rgba(37, 99, 235, 0.10); color: #1d4ed8; }
+.rc-status--needs_revision { background: rgba(234, 88, 12, 0.10); color: #c2410c; }
+.rc-status--approved       { background: rgba(16, 185, 129, 0.10); color: #047857; }
+.rc-status--rejected       { background: rgba(220, 38, 38, 0.10); color: #b91c1c; }
+
+.rc-date {
+  font-size: 11.5px;
+  color: var(--c-muted, #64748b);
+}
+.rc-actors {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 14px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.rc-actor {
+  font-size: 11.5px;
+  color: var(--c-muted, #64748b);
+}
+.rc-actor strong { color: var(--c-text); font-weight: 600; }
+
+/* Inline AI/reviewer-count chip on the past-round summary */
+.rc-summary-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--c-muted, #64748b);
+}
+.rc-summary-chip--ai       { background: rgba(124, 58, 237, 0.08); color: #6d28d9; }
+.rc-summary-chip--reviewer { background: rgba(37, 99, 235, 0.10); color: #1d4ed8; }
+
+/* ---- Round body ---------------------------------------------- */
+.rc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rc-section-head {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-muted, #64748b);
+  letter-spacing: 0.01em;
+}
+
+/* ---- Files row inside a round (reuses dp-file visual language) */
+.rc-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px;
+}
+/* AI/reviewer note count badges attached to a file row */
+.rc-file-badges {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 6px;
+}
+.rc-file-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1.3;
+}
+.rc-file-badge--ai       { background: rgba(124, 58, 237, 0.10); color: #6d28d9; }
+.rc-file-badge--reviewer { background: rgba(37, 99, 235, 0.10); color: #1d4ed8; }
+
+/* ---- Past round: AI notes block (collapsed by default) -------- */
+.rc-ai-block {
+  background: rgba(124, 58, 237, 0.04);
+  border: 1px solid rgba(124, 58, 237, 0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.rc-ai-block[open] { padding-bottom: 12px; }
+.rc-ai-block summary {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6d28d9;
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rc-ai-block summary::-webkit-details-marker { display: none; }
+.rc-ai-list {
+  list-style: none;
+  margin: 8px 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rc-ai-item {
+  font-size: 12px;
+  color: var(--c-text);
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  line-height: 1.45;
+}
+.rc-ai-item-doc {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6d28d9;
+  margin-inline-end: 4px;
+}
+.rc-ai-item-action {
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--c-muted, #64748b);
+}
+
+/* ---- Past round: reviewer's freeform note ------------------- */
+.rc-reviewer-note {
+  background: rgba(37, 99, 235, 0.04);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rc-reviewer-note-head {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 11.5px;
+  color: var(--c-muted, #64748b);
+}
+.rc-reviewer-note-actor { font-weight: 600; color: #1d4ed8; }
+.rc-reviewer-note-body {
+  font-size: 12.5px;
+  color: var(--c-text);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+/* ---- Empty / loading / error states -------------------------- */
+.rc-empty {
+  text-align: center;
+  padding: 18px;
+  color: var(--c-muted, #94a3b8);
+  font-size: 12.5px;
+}
+
+
+/* ============================================================
+   Phase 2 — Push (endorse) feature.
+   Reviewer "pushes" an AI suggestion to promote it from advisory
+   to mandatory. Pushed rows render as full ip-cards with a
+   demote button + brain origin chip. Un-pushed AI rows render as
+   lightweight items inside a collapsible suggestions block.
+   ============================================================ */
+
+/* ---- Origin chip on a pushed (endorsed) card ---------------- */
+.ip-card-origin {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.10);
+  color: #6d28d9;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* ---- Demote (un-push) button in card head ------------------- */
+.ip-card-demote {
+  margin-inline-start: auto;       /* pin to trailing edge in RTL */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted, #64748b);
+  background: transparent;
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms, background 120ms;
+}
+.ip-card-demote:hover {
+  color: #b91c1c;
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.04);
+}
+.ip-card-demote svg { width: 12px; height: 12px; flex: 0 0 auto; }
+
+/* ---- Suggestions block (collapsed advisory AI list) ---------- */
+.ip-suggestions {
+  margin-top: 4px;
+  background: rgba(37, 99, 235, 0.04);
+  border: 1px dashed rgba(37, 99, 235, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.ip-suggestions[hidden] { display: none; }
+.ip-suggestions-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-brand-hover);
+  list-style: none;
+  user-select: none;
+}
+.ip-suggestions-summary::-webkit-details-marker { display: none; }
+.ip-suggestions-chev {
+  width: 12px; height: 12px;
+  color: var(--c-brand-hover);
+  transition: transform 120ms ease;
+  transform: rotate(180deg);   /* RTL: collapsed points left */
+}
+.ip-suggestions[open] > .ip-suggestions-summary .ip-suggestions-chev {
+  transform: rotate(90deg);
+}
+.ip-suggestions-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: var(--c-brand-hover);
+}
+
+/* Shared base for every <svg class="brain-icon"> rendered by _brainSVG —
+   keeps the icon vertically centred inside flex chips/badges and prevents
+   the parent's flex sizing rules from squishing it. Color/size come from
+   the immediate context (inherited via currentColor + width/height attrs
+   or per-context CSS overrides). */
+.brain-icon {
+  flex: 0 0 auto;
+}
+
+/* List of un-pushed suggestions */
+.ip-suggestions-list {
+  list-style: none;
+  margin: 10px 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ip-sugg {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--c-surface, #fff);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  border-radius: 8px;
+}
+.ip-sugg-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ip-sugg-issue {
+  font-size: 12.5px;
+  color: var(--c-text);
+  line-height: 1.45;
+  word-break: break-word;
+}
+.ip-sugg-action {
+  font-size: 11.5px;
+  color: var(--c-muted, #64748b);
+  line-height: 1.4;
+}
+.ip-sugg-push {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--c-brand-hover);
+  background: #fff;
+  border: 1px solid rgba(37, 99, 235, 0.30);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.ip-sugg-push:hover {
+  background: rgba(37, 99, 235, 0.06);
+  border-color: rgba(37, 99, 235, 0.55);
+}
+.ip-sugg-push svg { width: 12px; height: 12px; flex: 0 0 auto; }
+
+
+/* ============================================================
+   Phase 3 — Pre-analysis block (fail-fast gate).
+   When agent.py halts because of a missing CAD layer or a
+   deed↔site-plan identity mismatch, we hide the heavy analysis
+   panes (no useful chart/KPIs to show) and elevate the issues
+   panel as the only forward action. The body class is toggled
+   by renderIssuesPanel based on meta.blocking_issues_present.
+   ============================================================ */
+
+/* Hide the chart + KPIs row when blocked — the analysis didn't
+   actually run, so showing pending placeholders is misleading. */
+body.analysis-blocked .rb-main-analysis { display: none !important; }
+/* Identity grid stays visible so the user can confirm which
+   application is being shown. The reviewer-banner head + status
+   pill also stay so the page still reads as a proper application
+   summary, just without analysis output. */
+
+/* Suggestions block also collapses out — when there's a hard
+   block, AI suggestions for setbacks/coverage etc. are not
+   relevant; the only thing that matters is the blocking rows. */
+body.analysis-blocked #ip-suggestions { display: none !important; }
+
+/* The streaming "live thinking" pane is also pointless when the
+   agent never ran. Hide it so the page doesn't look stalled. */
+body.analysis-blocked #live-thinking,
+body.analysis-blocked .live-thinking { display: none !important; }
+
+/* ---- Blocked banner (inside #issues-panel) ----------------- */
+.ip-blocked-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.06), rgba(234, 88, 12, 0.05));
+  border: 1px solid rgba(220, 38, 38, 0.30);
+  border-radius: 10px;
+  color: var(--c-text);
+}
+.ip-blocked-banner[hidden] { display: none; }
+.ip-blocked-banner-icon {
+  width: 22px; height: 22px;
+  flex: 0 0 auto;
+  color: #b91c1c;
+  margin-top: 1px;
+}
+.ip-blocked-banner-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ip-blocked-banner-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #b91c1c;
+  letter-spacing: 0.01em;
+}
+.ip-blocked-banner-sub {
+  font-size: 12.5px;
+  color: var(--c-text);
+  line-height: 1.5;
+}
+
+/* Pin the blocked banner to the very top of the issues-panel even
+   when the panel is re-parented into the active round card by the
+   rounds renderer. The inline banner stays as the visible block
+   indicator for reviewers (who don't get bounced to upload — they
+   stay on the work view to audit the blocked analysis). For the
+   submitter, the upload-view banner takes over and the work view
+   is hidden, so this inline banner just doesn't render visibly. */
+#issues-panel .ip-blocked-banner { order: -1; margin-bottom: 4px; }
+
+/* ---- Upload-view blocking banner --------------------------------- */
+/* Shown above the upload form when an analysis is halted by a
+   pre-agent gate. The submitter sees what to fix and re-uploads
+   from the same familiar form. */
+.upload-blocked-banner {
+  margin: 0 0 22px 0;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.06), rgba(234, 88, 12, 0.05));
+  border: 1px solid rgba(220, 38, 38, 0.30);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-family: "Noto Kufi Arabic", var(--ff-sans);
+  /* .upload-shell sets text-align: center; the banner needs natural
+     start-alignment (RTL → right, LTR → left) so the title, subtitle,
+     and every card body line read flush against the start edge instead
+     of floating in the middle. Same trick as .submission-guide. */
+  text-align: start;
+}
+.upload-blocked-banner * { text-align: inherit; }
+.upload-blocked-banner[hidden] { display: none; }
+.ubb-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.ubb-icon {
+  width: 26px; height: 26px;
+  flex: 0 0 auto;
+  color: #b91c1c;
+  margin-top: 1px;
+}
+.ubb-titles {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.ubb-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #b91c1c;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+.ubb-sub {
+  font-size: 13px;
+  color: var(--c-text);
+  line-height: 1.55;
+}
+.ubb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ubb-item {
+  background: var(--c-surface, #fff);
+  border: 1px solid rgba(220, 38, 38, 0.20);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ubb-item-doc {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
+  white-space: nowrap;
+}
+.ubb-item-issue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: 1.5;
+  word-break: break-word;
+}
+.ubb-item-action {
+  font-size: 12.5px;
+  color: var(--c-muted, #64748b);
+  line-height: 1.5;
+}
+
+/* Grouped blocker item — multiple mismatches share one document chip
+   (e.g. "السند مقابل مخطط موقع تنظيمي" with parcel #, basin, village
+   listed underneath). Chip at top, observations stacked below with a
+   dashed red separator. */
+.ubb-item--grouped { gap: 8px; }
+.ubb-obs-list {
+  list-style: none;
+  margin: 4px 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ubb-obs {
+  padding-top: 8px;
+  border-top: 1px dashed rgba(220, 38, 38, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ubb-obs:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+/* When blocked AND the rounds-panel is also active (the new round-
+   centric view), tighten the active card's padding so the banner
+   reads as the headline of the round, not a floating element. */
+#review-panel.review-panel--rounds-active body.analysis-blocked .rc--active {
+  border-color: rgba(220, 38, 38, 0.35);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04), 0 4px 14px rgba(220, 38, 38, 0.06);
+}
+
+/* Card-level highlight for blocking rows — sharper border + a
+   thin red rail so the consultant immediately distinguishes them
+   from regular endorsed rows when both happen to coexist. */
+body.analysis-blocked .ip-card {
+  border-color: rgba(220, 38, 38, 0.35);
+  box-shadow: inset 3px 0 0 rgba(220, 38, 38, 0.65);
+}
+.ip-card-origin--blocking {
+  background: rgba(220, 38, 38, 0.10);
+  color: #b91c1c;
+}
+
+/* =========================================================
+   Measurement uploader (5th drop-zone) + reviewer-banner
+   launcher button + the in-browser PDF.js viewer modal.
+   ========================================================= */
+
+/* Optional drop-zone styling — a softer outline so the eye
+   reads the 5th tile as "extra" rather than a 5th required. */
+.drop-zone-optional {
+  border-style: dashed;
+  border-color: var(--c-border, #cbd5e1);
+  background: rgba(99, 102, 241, 0.02);
+}
+.drop-zone-optional .drop-zone-eyebrow {
+  color: #6366f1;
+}
+.drop-zone-optional:hover,
+.drop-zone-optional.dragover {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: #6366f1;
+}
+.drop-zone-optional.has-file {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+}
+
+/* Right-anchored slot in the reviewer banner head — currently
+   only holds the measurement-viewer launcher. */
+.rb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.rb-head-right { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
+.rb-measure-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), transform 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.rb-measure-btn:hover {
+  background: #e0e7ff;
+  border-color: #818cf8;
+  transform: translateY(-1px);
+}
+.rb-measure-btn[hidden] { display: none; }
+.rb-measure-btn svg { width: 16px; height: 16px; }
+
+/* ── Measurement viewer modal ───────────────────────────── */
+/* Full-page route-style viewer: slides in from the trailing edge so it
+   feels like a forward navigation rather than a popup. The closed state
+   stays in the DOM (visibility:hidden + transform off-screen) so the
+   slide-out can play; pointer-events are nulled out when closed so
+   clicks under the closed viewer still hit the page. */
+.mv-modal {
+  position: fixed;
+  inset: 0;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  z-index: 9999;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s linear 0.32s;
+}
+.mv-modal.is-open {
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s;
+}
+
+.mv-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  background: #f8fafc;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  cursor: default;
+}
+
+.mv-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  flex: 0 0 auto;
+}
+.mv-toolbar-left { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.mv-title { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0; }
+.mv-filename { font-size: 12px; color: #64748b; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mv-toolbar-mid { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.mv-toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+.mv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.12s var(--ease), border-color 0.12s var(--ease),
+              color 0.12s var(--ease), transform 0.06s var(--ease),
+              box-shadow 0.12s var(--ease);
+}
+.mv-btn:hover { background: #f1f5f9; border-color: #cbd5e1; box-shadow: 0 1px 2px rgba(15,23,42,0.06); }
+.mv-btn:active { transform: translateY(1px); }
+.mv-btn:focus-visible {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.18);
+}
+.mv-btn:disabled,
+.mv-btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: none;
+  transform: none;
+}
+.mv-btn svg { width: 16px; height: 16px; }
+.mv-btn.is-active {
+  background: #2563eb;
+  border-color: #1d4ed8;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(37,99,235,0.35);
+}
+.mv-btn.is-active:hover { background: #1d4ed8; border-color: #1e40af; }
+
+.mv-divider { width: 1px; height: 22px; background: #e2e8f0; margin: 0 4px; }
+.mv-page, .mv-zoom {
+  font-size: 12px;
+  color: #475569;
+  min-width: 56px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.mv-zoom {
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.12s var(--ease);
+}
+.mv-zoom:hover { background: #f1f5f9; }
+
+.mv-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.mv-close:hover { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+.mv-close svg { width: 18px; height: 18px; }
+
+.mv-statusbar {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 12.5px;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mv-status-msg { color: #334155; }
+.mv-status-scale { color: #1e293b; }
+.mv-status-scale b { color: #1d4ed8; }
+
+.mv-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: #1f2937;
+  position: relative;
+  display: flex;
+  /* `safe` keeps centering when content fits but falls back to start when
+     content overflows the container — without it, the canvas-wrap can
+     anchor itself in a way that makes one of the scroll directions
+     unreachable (the "can only scroll left" bug). */
+  align-items: safe flex-start;
+  justify-content: safe center;
+  padding: 16px;
+}
+.mv-stage.is-grabbing { cursor: grabbing; }
+
+.mv-canvas-wrap {
+  position: relative;
+  /* No `margin: auto` — let the parent flex handle centering. The auto
+     margin combined with safe centering produced asymmetric scrollLeft
+     ranges in some browsers. */
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  /* The two canvases stack via absolute positioning of the overlay. */
+}
+.mv-canvas { display: block; }
+.mv-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+}
+.mv-overlay.mode-pan       { cursor: grab; }
+.mv-overlay.mode-measure   { cursor: crosshair; }
+.mv-overlay.mode-area      { cursor: crosshair; }
+.mv-overlay.mode-calibrate { cursor: crosshair; }
+.mv-overlay.mode-slope     { cursor: crosshair; }
+/* Hovering over an existing measurement → pointer (clickable × badge). */
+.mv-overlay.is-hover-measurement { cursor: pointer !important; }
+/* Cursor over an existing endpoint → "move" so the user knows it's
+   draggable. Wins over `is-hover-measurement` because it appears later
+   in the cascade. */
+.mv-overlay.is-on-endpoint { cursor: move !important; }
+/* Active drag — closed-fist cursor everywhere on the overlay. */
+.mv-overlay.is-dragging    { cursor: grabbing !important; }
+.mv-stage.is-grabbing,
+.mv-stage.is-grabbing .mv-overlay { cursor: grabbing !important; }
+
+.mv-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+.mv-empty[hidden] { display: none; }
+
+/* Inline calibrate prompt — takes over the .mv-statusbar strip rather
+   than spawning a centered modal with a dim backdrop. Sits as a flex
+   row inside the statusbar so the existing strip just swaps content. */
+.mv-cal-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+.mv-cal-inline[hidden] { display: none; }
+.mv-cal-inline-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.mv-cal-picked-inline {
+  font-size: 11.5px;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+.mv-cal-input {
+  width: 140px;
+  padding: 5px 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #ffffff;
+  transition: border-color 0.12s var(--ease), box-shadow 0.12s var(--ease);
+}
+.mv-cal-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.16);
+}
+.mv-cal-input.is-invalid {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220,38,38,0.16);
+}
+.mv-cal-unit {
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-family: inherit;
+  background: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+}
+.mv-cal-unit:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.16);
+}
+.mv-cal-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s var(--ease), border-color 0.12s var(--ease), color 0.12s var(--ease);
+}
+.mv-cal-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+.mv-cal-btn-primary {
+  background: #2563eb;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+.mv-cal-btn-primary:hover { background: #1d4ed8; border-color: #1e40af; }
+
+@media (max-width: 900px) {
+  .mv-filename { max-width: 140px; }
+  .mv-toolbar { flex-wrap: wrap; }
+  .mv-cal-input { width: 100px; }
+  .mv-cal-inline-label { font-size: 12px; }
+}
+

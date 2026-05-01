@@ -1,0 +1,816 @@
+/* =================================================================
+   Reviewer additions on top of the existing app.css
+   - Top-bar nav additions (Dashboard link, user chip, logout)
+   - Upload-view intake card (type, submitter)
+   - Work-view reviewer banner (identity strip + KPIs + setbacks)
+   ================================================================= */
+
+/* ---- Top-bar additions ---- */
+.topbar-nav {
+  display: flex;
+  gap: 4px;
+  margin-inline-start: 10px;
+}
+.topbar-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--c-muted);
+  background: var(--c-bg-soft);
+  border: 1px solid var(--c-border);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color .14s var(--ease), background .14s var(--ease), border-color .14s var(--ease);
+}
+.topbar-nav-link:hover {
+  color: var(--c-brand);
+  border-color: rgba(37, 99, 235,.3);
+  background: var(--c-brand-soft);
+}
+.topbar-nav-link svg { width: 13px; height: 13px; }
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  background: var(--c-bg-soft);
+  border-radius: 999px;
+  border: 1px solid var(--c-border);
+}
+.topbar-user-avatar {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #60a5fa, #2563eb);
+  color: #fff;
+  font-weight: 700;
+  font-size: 11.5px;
+  display: grid; place-items: center;
+  text-transform: uppercase;
+}
+.topbar-user-name {
+  font-size: 12px;
+  color: var(--c-text-2);
+  font-weight: 500;
+}
+
+/* ---- Intake card in upload view ---- */
+.intake-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 14px 18px;
+  margin: 18px 0 22px;
+  box-shadow: var(--sh-1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: start;
+}
+.intake-head { display: flex; flex-direction: column; gap: 2px; }
+.intake-eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-brand);
+}
+.intake-sub {
+  font-size: 12.5px;
+  color: var(--c-muted);
+}
+.intake-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) { .intake-row { grid-template-columns: 1fr; } }
+
+.intake-field { display: flex; flex-direction: column; gap: 5px; }
+.intake-label {
+  font-size: 11.5px;
+  color: var(--c-muted);
+  font-weight: 500;
+}
+.intake-select, .intake-input {
+  font-family: var(--ff-sans);
+  font-size: 13px;
+  color: var(--c-text);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color .14s var(--ease), box-shadow .14s var(--ease);
+}
+.intake-select:focus, .intake-input:focus {
+  border-color: var(--c-brand);
+  box-shadow: 0 0 0 3px var(--c-brand-ring);
+}
+
+/* ================================================================
+   Reviewer banner — full-width row above the live-thinking + results
+   split. Four stacked zones: head (title + actions), identity cards,
+   KPI cards, and per-side setbacks. Every cell has its own boundary.
+   ================================================================ */
+.reviewer-banner {
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  padding: 20px 24px 22px;
+  margin-bottom: 10px;
+  box-shadow: var(--sh-2);
+  position: relative;
+  width: 100%;
+  flex: 0 0 auto;
+}
+/* Subtle indigo accent rail down the leading edge — ties the banner
+ * visually to the "application data" brand. */
+.reviewer-banner::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #2563eb, #3b82f6 40%, #60a5fa 100%);
+  border-start-start-radius: var(--r-xl);
+  border-end-start-radius: var(--r-xl);
+}
+
+.rb-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--c-border-2);
+}
+.rb-head-left { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+/* Pill row inside rb-head-left — the type pill (eyebrow) and the
+ * application-status pill sit side by side on a single baseline. Wraps
+ * to a new line on narrow screens so the title below stays readable. */
+.rb-head-pills {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* Horizontal row: status pill · Approve · Reject — all on the same baseline
+ * so the top-right corner reads as a single action cluster. Wraps to a new
+ * line on narrow screens. */
+.rb-head-right {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Small muted header that labels each zone inside the banner.
+   Flex row so a small spinner can sit next to the text. The container
+   is forced to RTL + right-aligned regardless of UI language so the
+   Arabic label always sits at the right edge, with the spinner just
+   to its left. */
+.rb-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--c-muted);
+  margin: 14px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  direction: rtl;
+  justify-content: flex-start;
+  text-align: right;
+}
+.rb-section-label:first-of-type { margin-top: 2px; }
+.rb-section-label > span {
+  text-align: right;
+}
+.rb-section-spinner {
+  width: 11px;
+  height: 11px;
+  border-width: 1.8px;
+}
+.rb-section-spinner[hidden] { display: none; }
+
+.rb-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--c-brand-soft);
+  color: var(--c-brand);
+  border: 1px solid rgba(37, 99, 235,.2);
+  width: fit-content;
+}
+.rb-eyebrow-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--c-brand);
+}
+.rb-eyebrow.rb-type--extension   { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+.rb-eyebrow.rb-type--extension .rb-eyebrow-dot { background: #ea580c; }
+.rb-eyebrow.rb-type--renovation  { background: #ccfbf1; color: #115e59; border-color: #99f6e4; }
+.rb-eyebrow.rb-type--renovation .rb-eyebrow-dot { background: #14b8a6; }
+.rb-eyebrow.rb-type--demolition  { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.rb-eyebrow.rb-type--demolition .rb-eyebrow-dot { background: #dc2626; }
+.rb-eyebrow.rb-type--other       { background: #e2e8f0; color: #475569; border-color: #cbd5e1; }
+.rb-eyebrow.rb-type--other .rb-eyebrow-dot       { background: #64748b; }
+
+/* Plain variant — neutral surface, no brand color, no dot. Used when
+   the type tag sits inline next to the title as a quiet sub-label.
+   Color overrides cascade past the rb-type--* modifiers because of the
+   higher specificity selector chain. */
+.rb-eyebrow--plain,
+.rb-eyebrow.rb-eyebrow--plain {
+  background: transparent;
+  color: var(--c-text);
+  border-color: var(--c-border);
+}
+.rb-eyebrow--plain .rb-eyebrow-dot { display: none; }
+
+/* Title row — keeps the H2 application name and the type tag on the
+   same baseline, with the tag wrapping below the title only when the
+   row is too narrow. */
+.rb-title-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rb-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--c-text);
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+.rb-sub {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--c-muted);
+}
+
+.rb-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.rb-status-dot { width: 7px; height: 7px; border-radius: 50%; }
+.rb-status--pending  { background: var(--c-warn-soft); color: var(--c-warn); border-color: var(--c-warn-bd); }
+.rb-status--pending .rb-status-dot  { background: #b45309; }
+.rb-status--approved { background: var(--c-success-soft); color: var(--c-success); border-color: var(--c-success-bd); }
+.rb-status--approved .rb-status-dot { background: var(--c-success); }
+.rb-status--rejected { background: var(--c-error-soft); color: var(--c-error); border-color: var(--c-error-bd); }
+.rb-status--rejected .rb-status-dot { background: var(--c-error); }
+.rb-status--needs_revision { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+.rb-status--needs_revision .rb-status-dot { background: #c2410c; }
+
+.rb-actions {
+  display: flex;
+  gap: 6px;
+}
+.rb-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ff-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--r);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform .12s var(--ease), box-shadow .12s var(--ease), background .12s var(--ease);
+}
+.rb-action svg { width: 13px; height: 13px; }
+.rb-action:hover { transform: translateY(-1px); box-shadow: var(--sh-1); }
+
+.rb-action--approve {
+  background: var(--c-success);
+  color: #fff;
+}
+.rb-action--approve:hover { background: #047857; }
+.rb-action--reject {
+  background: var(--c-surface);
+  color: var(--c-error);
+  border-color: var(--c-error-bd);
+}
+.rb-action--reject:hover { background: var(--c-error-soft); }
+
+/* ---- Identity / Building strips — each cell is its own bordered card.
+ *      Same grid is reused by both `#rb-identity-grid` (7 Identity tiles)
+ *      and `#rb-building-grid` (6 Building tiles). Cells with [hidden]
+ *      collapse out of the grid so only populated fields display. ---- */
+/* All 11 details tiles in a single row at desktop widths. minmax(0, 1fr)
+   lets each cell shrink past its natural width — long owner / village
+   names truncate with the ellipsis defined on .rb-id-value. Stepped
+   breakpoints keep the layout sensible on narrower screens. */
+.rb-identity {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 4px;
+}
+@media (max-width: 1500px) { .rb-identity { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (max-width: 1200px) { .rb-identity { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 900px)  { .rb-identity { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px)  { .rb-identity { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px)  { .rb-identity { grid-template-columns: 1fr; } }
+
+.rb-id-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  box-shadow: var(--sh-1);
+  transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+.rb-id-item:hover {
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+/* Single right-aligned label row — Arabic-first UI, with i18n handling
+ * translation when the UI is in English. */
+.rb-id-label-row {
+  text-align: right;
+}
+.rb-id-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #2563eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+.rb-id-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.005em;
+  display: block;
+  width: 100%;
+  text-align: right;
+}
+
+/* ---- KPI grid — wider row thanks to the full-width banner ---- */
+.rb-kpis {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 4px;
+}
+@media (max-width: 1500px) { .rb-kpis { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 1280px) { .rb-kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 680px)  { .rb-kpis { grid-template-columns: repeat(2, 1fr); } }
+
+.rb-kpi {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--sh-1);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+.rb-kpi:hover {
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.rb-kpi-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-muted);
+  letter-spacing: 0.02em;
+}
+.rb-kpi-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-text);
+  letter-spacing: -0.015em;
+  font-feature-settings: "tnum" 1;
+  line-height: 1.15;
+}
+.rb-kpi-hint {
+  font-size: 10.5px;
+  color: var(--c-subtle);
+  letter-spacing: 0.01em;
+}
+.rb-kpi--mismatch .rb-kpi-hint { color: var(--c-warn); font-weight: 500; }
+
+/* ---- Compare KPI tile (single card, two values inside) ---------------
+   Used for any KPI where we display BOTH a calculated value and the
+   rulebook value it should be compared against (lot area, coverage,
+   floor coverage, floor count). The card itself is a normal .rb-kpi —
+   it just spans wider and arranges the two values side-by-side with a
+   thin divider, plus a status strip at the bottom that summarizes the
+   comparison ("matches" / "exceeds by X" / "waiting for values"). */
+.rb-kpi--compare {
+  grid-column: span 2;
+}
+.rb-kpi-compare-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 0 2px;
+}
+.rb-kpi-compare-side {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rb-kpi-compare-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  color: var(--c-text);
+  font-feature-settings: "tnum" 1;
+}
+.rb-kpi-compare-source {
+  font-size: 10.5px;
+  color: var(--c-subtle);
+  letter-spacing: 0.01em;
+}
+.rb-kpi-compare-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--c-border);
+  margin: 4px 0;
+  flex: 0 0 auto;
+}
+.rb-kpi-compare-status {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 999px;
+  text-align: center;
+  margin-top: 8px;
+  background: var(--c-bg-soft, #f8fafc);
+  color: var(--c-muted);
+  border: 1px solid var(--c-border);
+  letter-spacing: 0.01em;
+}
+.rb-kpi-compare-status[data-state="ok"] {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+.rb-kpi-compare-status[data-state="warning"] {
+  background: #fff7ed;
+  color: #9a3412;
+  border-color: #fed7aa;
+}
+.rb-kpi-compare-status[data-state="violation"] {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+.rb-kpi-compare-status[data-state="pending"] {
+  background: var(--c-bg-soft, #f8fafc);
+  color: var(--c-muted);
+}
+/* Subtle border tint on the card itself when in error/warning states. */
+.rb-kpi--compare[data-state="warning"]   { border-color: #fdba74; }
+.rb-kpi--compare[data-state="violation"] { border-color: #fca5a5; }
+.rb-kpi--compare[data-state="ok"]        { border-color: #a7f3d0; }
+
+/* State-driven coloring of the "actual" value on every compare tile so
+   the verdict reads at a glance without parsing the status strip below.
+   The "actual" side is always the FIRST .rb-kpi-compare-side in the
+   DOM (works in RTL too — flex-direction reverses the visual order but
+   :first-child still selects the actual measurement). The "allowed"
+   side stays neutral because it's a regulatory ceiling, not a result. */
+.rb-kpi--compare[data-state="ok"] .rb-kpi-compare-side:first-child .rb-kpi-compare-value {
+  color: #047857;  /* emerald-700 */
+}
+.rb-kpi--compare[data-state="warning"] .rb-kpi-compare-side:first-child .rb-kpi-compare-value {
+  color: #b45309;  /* amber-700 */
+}
+.rb-kpi--compare[data-state="violation"] .rb-kpi-compare-side:first-child .rb-kpi-compare-value {
+  color: #b91c1c;  /* red-700 */
+}
+
+/* Deed value is an extracted fact from the source document, not a
+   verdict — keep it neutral. Only the CAD side (first-child, handled
+   by the generic rule above) takes the compare color. */
+
+@media (max-width: 680px) {
+  .rb-kpi--compare { grid-column: 1 / -1; }
+}
+
+/* Generic violation styling — applied whenever a KPI tile is in a violation
+ * state (compliance fine over zero, coverage actual > PDF max, etc.). The
+ * compliance + serious overrides below add darker treatments on top. */
+.rb-kpi--violated {
+  background: var(--c-error-soft);
+  border-color: var(--c-error-bd);
+}
+.rb-kpi--violated:hover { border-color: var(--c-error); }
+.rb-kpi--violated .rb-kpi-value { color: var(--c-error); }
+.rb-kpi--violated .rb-kpi-hint  { color: var(--c-error); font-weight: 600; }
+
+/* Compliance tiles (مخطط موقع تنظيمي flow) — purple accent for the
+ * required-setbacks tile, red-on-violation for the compliance fine. The
+ * SERIOUS modifier overrides the fine tile when the building exits the lot. */
+.rb-kpi--required { border-color: rgba(124,58,237,.2); }
+.rb-kpi--required:hover { border-color: rgba(124,58,237,.45); }
+.rb-kpi-value--small { font-size: 13px; line-height: 1.35; font-weight: 600; }
+.rb-kpi--compliance { border-color: rgba(124,58,237,.2); }
+.rb-kpi--compliance.rb-kpi--violated {
+  background: var(--c-error-soft);
+  border-color: var(--c-error-bd);
+}
+.rb-kpi--compliance.rb-kpi--violated .rb-kpi-value { color: var(--c-error); }
+.rb-kpi--compliance.rb-kpi--serious {
+  background: #7f1d1d;
+  border-color: #450a0a;
+}
+.rb-kpi--compliance.rb-kpi--serious .rb-kpi-label,
+.rb-kpi--compliance.rb-kpi--serious .rb-kpi-value,
+.rb-kpi--compliance.rb-kpi--serious .rb-kpi-hint { color: #fff; }
+
+.rb-scroll-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--c-border-2);
+  font-size: 11px;
+  color: var(--c-muted);
+  letter-spacing: 0.02em;
+}
+.rb-scroll-hint svg { width: 12px; height: 12px; opacity: 0.6; }
+
+/* ---- Main analysis: setback chart (left) + KPIs & per-side setbacks (right).
+   Chart was relocated from the results pane into the banner; this is its
+   only location now. The right column stacks the KPI grid on top of the
+   per-side setback list so they read as one block. ---- */
+.rb-main-analysis {
+  display: grid;
+  /* Chart column shrunk to ~75% of its former size (3fr of 8fr = 37.5%);
+     KPIs column picks up the extra space so the tiles don't stretch. */
+  grid-template-columns: minmax(0, 3fr) minmax(0, 5fr);
+  gap: 18px;
+  margin-top: 14px;
+  align-items: start;
+  /* Animatable in modern browsers; older browsers just snap. */
+  transition: grid-template-columns 0.32s ease, gap 0.32s ease;
+}
+/* Expanded state — the chart toggle ("rb-chart-expand-toggle") flips
+   the analysis section's column ratio from 3:5 (chart small, KPIs
+   large) to 2:1 (chart ~2/3 of the row, KPIs visible at ~1/3). The
+   KPIs stay readable; the chart just gets a lot more room. Toggle
+   via the pill handle on the chart's panel-facing edge. */
+.rb-main-analysis.is-chart-expanded {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+.rb-analysis-chart {
+  min-width: 0;
+}
+.rb-analysis-chart .drawing-panel {
+  max-width: 100%;
+  margin: 0;
+  min-height: 360px;
+  position: relative;
+}
+
+/* Vertical pill handle stuck to the panel-facing edge of the drawing.
+   In RTL the chart sits on the visual right and the KPIs on the left —
+   `inset-inline-end: -1px` parks the handle on the chart's left edge
+   so clicking it visibly "pushes" the chart leftward into the KPI
+   space. The chevron rotates 180° on aria-pressed="true" so the same
+   element reads as both expand AND collapse depending on state. */
+.rb-chart-expand-toggle {
+  position: absolute;
+  inset-inline-end: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  /* Rounded only on the OUTER side so it reads as a tab/handle.
+     Logical *-end-* properties = the visual LEFT side in RTL. */
+  border-start-end-radius: 8px;
+  border-end-end-radius: 8px;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  cursor: pointer;
+  color: #475569;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  z-index: 5;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.rb-chart-expand-toggle:hover {
+  background: #f8fafc;
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.45);
+}
+.rb-chart-expand-toggle:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+.rb-chart-expand-toggle svg {
+  transition: transform 0.22s ease;
+}
+.rb-chart-expand-toggle[aria-pressed="true"] svg {
+  /* Flip the chevron so the same icon reads as collapse-back. */
+  transform: rotate(180deg);
+}
+/* On narrow viewports the analysis collapses to a single column already
+   (see media query below) — the expand toggle is meaningless there, so
+   hide it. */
+@media (max-width: 900px) {
+  .rb-chart-expand-toggle { display: none; }
+}
+/* Loading placeholder fills the reserved chart area until the PNG arrives. */
+.drawing-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  color: var(--c-muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+.spinner.spinner--large {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+/* Hide the empty img element (no src yet) so only the spinner shows. */
+#drawing-img:not([src]),
+#drawing-img[src=""] {
+  display: none;
+}
+.rb-analysis-right {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* 4 columns at desktop widths so two compare tiles (each spans 2 cols)
+   sit next to each other on one row. Drops to 2 cols on tablet (one
+   compare tile per row) and 1 col on mobile. */
+.rb-analysis-right .rb-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 1280px) {
+  .rb-analysis-right .rb-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .rb-main-analysis { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .rb-analysis-right .rb-kpis { grid-template-columns: 1fr; }
+}
+
+/* "Other extracted data" collapsible inside the banner — consolidates the
+ * other_fields lists from the deed + every additional PDF, de-duplicated
+ * by (label, value). Hidden when empty. */
+.rb-other {
+  margin-top: 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  background: var(--c-surface);
+  padding: 6px 14px;
+}
+.rb-other > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  padding: 6px 0;
+}
+.rb-other > summary::-webkit-details-marker { display: none; }
+.rb-other > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-inline-end: 6px;
+  transition: transform 0.15s var(--ease);
+}
+.rb-other[open] > summary::before { transform: rotate(90deg); }
+.rb-other .pdf-other-list,
+.rb-other .rb-other-grid {
+  padding: 8px 0 6px;
+  border-top: 1px solid var(--c-border-2);
+  margin-top: 4px;
+}
+/* The grid wrapper inside the accordion already inherits the .rb-identity
+   layout (10-col grid). No further overrides needed — items render with
+   the same tile style as the top "تفاصيل الطلب" section. */
+/* ---- Scroll hint ---- */
+.rb-scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--c-subtle);
+  border-top: 1px dashed var(--c-border);
+  padding-top: 12px;
+  justify-content: center;
+}
+.rb-scroll-hint svg {
+  width: 12px; height: 12px;
+  animation: rbBounce 1.8s var(--ease) infinite;
+}
+@keyframes rbBounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(3px); }
+}
+
+/* RTL: keep the banner direction logical */
+body.rtl .rb-head-right { align-items: flex-start; }
+
+/* ---- Submitter inline-resubmit notes (in /app draft preview) ---- */
+.rp-edit-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+.rp-edit-notes-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text, #111);
+}
+.rp-edit-notes-optional {
+  font-weight: 400;
+  color: var(--c-muted, #6b7280);
+  font-size: 12px;
+  margin-inline-start: 4px;
+}
+.rp-edit-notes-input {
+  width: 100%;
+  min-height: 70px;
+  padding: 10px 12px;
+  border: 1px solid var(--c-border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--c-surface, #fff);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--c-text, #111);
+  resize: vertical;
+}
+.rp-edit-notes-input:focus {
+  outline: none;
+  border-color: var(--c-brand, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.rp-edit-notes-hint {
+  font-size: 11.5px;
+  color: var(--c-muted, #6b7280);
+  text-align: end;
+}
