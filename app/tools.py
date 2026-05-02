@@ -18,6 +18,7 @@ from typing import Any
 from shapely.geometry import LineString, Point, Polygon
 
 from app.jobs import Job
+from app.special_provisions import apply_special_provisions
 from dwf_convert import normalize_to_dwg
 from geometry import (
     ComplianceResult,
@@ -331,16 +332,47 @@ class ToolExecutor:
             pdf_is_corner_lot=bool(is_corner_lot),
             street_edge_tolerance_m=tolerance,
         )
+
+        # ---- Special provisions (الاحكام الخاصة) — applied on top of the
+        # default classification using rules + street list captured by the
+        # site-plan extractor. Skipped silently if the PDF didn't carry any
+        # rules, or if the site-plan pipeline hasn't populated job.site_plan_result
+        # yet (it normally has, since the agent waits on it before calling this
+        # tool — but the extractor failure paths leave it unset).
+        sp_payload: dict = self.job.site_plan_result or {}
+        rules = sp_payload.get("special_provisions") or []
+        pdf_streets = sp_payload.get("streets") or []
+        side_to_required: dict[str, float] = {
+            "front": float(front_setback_m),
+            "side": float(side_setback_m),
+        }
+        if rear_setback_m is not None:
+            side_to_required["rear"] = float(rear_setback_m)
+        sp_result = apply_special_provisions(
+            classifications=cls_report.classifications,
+            rules=rules,
+            pdf_streets=pdf_streets,
+            lot=lot,
+            side_to_required=side_to_required,
+        )
+
         compliance = compute_violations(
             building=building,
             lot=lot,
-            edge_classifications=cls_report.classifications,
+            edge_classifications=sp_result.classifications,
             fine_per_sqm_jd=fine_rate,
             is_corner_lot=bool(is_corner_lot),
         )
-        # Hoist classifier notes into the compliance result so the consumer
-        # only has to look in one place.
-        compliance.notes = list(cls_report.notes) + list(compliance.notes)
+        # Hoist classifier + special-provisions notes into the compliance
+        # result so the consumer only has to look in one place.
+        compliance.notes = (
+            list(cls_report.notes)
+            + list(sp_result.notes)
+            + list(compliance.notes)
+        )
+        compliance.applied_special_provisions = [
+            r.to_dict() for r in sp_result.applied_rules
+        ]
 
         handle = self.job.store("compliance", compliance)
         return {
@@ -361,6 +393,7 @@ class ToolExecutor:
                 for k, v in compliance.per_side.items()
             },
             "pdf_corner_mismatch": cls_report.pdf_corner_mismatch,
+            "applied_special_provisions": list(compliance.applied_special_provisions),
             "notes": list(compliance.notes),
         }
 
@@ -442,6 +475,7 @@ class ToolExecutor:
                 "lot_crossing_area_m2": compliance.lot_crossing_area_m2,
                 "per_side": {k: v.to_dict() for k, v in compliance.per_side.items()},
                 "edge_classifications": [c.to_dict() for c in compliance.edge_classifications],
+                "applied_special_provisions": list(compliance.applied_special_provisions),
                 "notes": list(compliance.notes),
             }
 
