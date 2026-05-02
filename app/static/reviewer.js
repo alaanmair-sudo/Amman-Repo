@@ -35,6 +35,11 @@
     // applications so the link stays hidden for them.
     const newLink = document.getElementById("dash-new-link");
     if (newLink) newLink.hidden = !IS_SUBMITTER;
+    // "نظرة عامة" (manager dashboard) is reviewer-only — gives the
+    // reviewer a one-click escape from the per-application view back
+    // to the cross-portfolio dashboard.
+    const overviewLink = document.getElementById("dash-overview-link");
+    if (overviewLink) overviewLink.hidden = IS_SUBMITTER;
   })();
 
   // Role-aware footer visibility on the issues panel. The panel itself
