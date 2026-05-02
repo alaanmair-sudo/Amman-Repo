@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>الخرائط · النظام الذكي لامانة عمان الكبرى</title>
+<link rel="icon" type="image/png" href="/static/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="/static/app.css?v=37" />
+<link rel="stylesheet" href="/static/dashboard.css?v=12" />
+<link rel="stylesheet" href="/static/overview.css?v=2" />
+<link rel="stylesheet" href="/static/maps.css?v=1" />
+<script src="/static/auth.js?v=9"></script>
+</head>
+<body class="dash-body rtl ov-body">
+
+  <header class="dash-topbar">
+    <div class="dash-topbar-brand">
+      <a href="/dashboard" class="logo logo--img" aria-label="أمانة عمان الكبرى"><img src="/static/logo.png" alt="" /></a>
+      <div class="dash-topbar-titles">
+        <div class="dash-topbar-title">النظام الذكي لامانة عمان الكبرى</div>
+        <div class="dash-topbar-sub">واجهة مراجعة الرخص بالذكاء الاصطناعي</div>
+      </div>
+    </div>
+    <nav class="dash-topbar-nav">
+      <a href="/dashboard" class="dash-nav-link">لوحة التحكم</a>
+      <a href="/overview" class="dash-nav-link">نظرة عامة</a>
+    </nav>
+    <div class="dash-topbar-meta">
+      <span class="chip chip-muted" id="dash-role-chip" hidden></span>
+      <div class="dash-user"><span class="dash-user-avatar" id="user-avatar">R</span><span class="dash-user-name" id="user-name">reviewer</span></div>
+      <button id="logout-btn" class="ghost-btn" type="button" title="تسجيل الخروج">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
+        <span>تسجيل الخروج</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="ov-layout">
+    <aside class="ov-sidebar" id="ov-sidebar" aria-label="التنقل">
+      <div class="ov-sidebar-head">
+        <span class="ov-sidebar-head-title">القائمة الرئيسية</span>
+        <button class="ov-side-toggle" id="ov-side-toggle" type="button" aria-label="طي القائمة الجانبية" title="طي / توسيع">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-5 5 5 5M14 5l-5 5 5 5"/></svg>
+        </button>
+      </div>
+      <div class="ov-sidebar-scroll">
+        <div class="ov-sidebar-section">
+          <div class="ov-sidebar-label">لوحات التحكم</div>
+          <a href="/dashboard" class="ov-side-link" title="الطلبات"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.2"/><rect x="11" y="3" width="6" height="6" rx="1.2"/><rect x="3" y="11" width="6" height="6" rx="1.2"/><rect x="11" y="11" width="6" height="6" rx="1.2"/></svg><span>الطلبات</span></a>
+          <a href="/overview" class="ov-side-link" title="نظرة عامة"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V8M8 17V4M13 17v-7M17 17v-4M2.5 17h15"/></svg><span>نظرة عامة</span></a>
+        </div>
+        <div class="ov-sidebar-section">
+          <div class="ov-sidebar-label">التحليلات</div>
+          <a href="/reports" class="ov-side-link" title="التقارير"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l8 4-8 4-8-4 8-4zM2 10l8 4 8-4M2 14l8 4 8-4"/></svg><span>التقارير</span></a>
+          <a href="/timeline" class="ov-side-link" title="الجدول الزمني"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg><span>الجدول الزمني</span></a>
+          <a href="/maps" class="ov-side-link ov-side-link--active" title="الخرائط"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l5-2 6 2 5-2v12l-5 2-6-2-5 2V5z"/><path d="M7 3v14M13 5v14"/></svg><span>الخرائط</span></a>
+        </div>
+        <div class="ov-sidebar-section">
+          <div class="ov-sidebar-label">الإدارة</div>
+          <a href="/users" class="ov-side-link" title="المستخدمون"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M3 17c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg><span>المستخدمون</span></a>
+          <a href="/settings" class="ov-side-link" title="الإعدادات"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M5 15l1.4-1.4M13.6 6.4L15 5"/></svg><span>الإعدادات</span></a>
+        </div>
+      </div>
+      <div class="ov-sidebar-footer">
+        <div class="ov-build-pill"><span class="ov-build-dot"></span><span>بيانات تجريبية للعرض</span></div>
+      </div>
+    </aside>
+
+    <main class="ov-main">
+      <section class="ov-heading">
+        <div>
+          <h1 class="dash-h1">الخرائط الذكية</h1>
+          <p class="dash-sub">عرض جغرافي تفاعلي للطلبات والمخالفات والغرامات على مستوى أحياء أمانة عمان.</p>
+        </div>
+        <span class="ov-card-pill ov-card-pill--ai">عرض تجريبي للنموذج</span>
+      </section>
+
+      <section class="map-layout">
+        <div class="map-canvas-wrap">
+          <div class="map-controls">
+            <div class="map-search">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="5.5"/><path d="M13.5 13.5L17 17"/></svg>
+              <input type="search" placeholder="ابحث عن حي أو حوض…" />
+            </div>
+            <div class="map-layers" id="map-layers">
+              <button class="map-layer-btn map-layer-btn--active" data-layer="density">
+                <span class="map-layer-dot" style="background:#2563eb"></span>
+                <span>كثافة الطلبات</span>
+              </button>
+              <button class="map-layer-btn" data-layer="violations">
+                <span class="map-layer-dot" style="background:#b91c1c"></span>
+                <span>المخالفات</span>
+              </button>
+              <button class="map-layer-btn" data-layer="fines">
+                <span class="map-layer-dot" style="background:#f59e0b"></span>
+                <span>الغرامات</span>
+              </button>
+              <button class="map-layer-btn" data-layer="zoning">
+                <span class="map-layer-dot" style="background:#059669"></span>
+                <span>التنظيم</span>
+              </button>
+            </div>
+          </div>
+
+          <svg class="map-svg" viewBox="0 0 600 480" id="map-svg" preserveAspectRatio="xMidYMid meet"></svg>
+
+          <div class="map-time">
+            <span class="map-time-label">الفترة الزمنية</span>
+            <input type="range" min="0" max="11" value="11" class="map-time-slider" id="map-time" />
+            <span class="map-time-value" id="map-time-val">أيار ٢٠٢٦</span>
+          </div>
+
+          <div class="map-legend">
+            <span class="map-legend-title" id="map-legend-title">كثافة الطلبات</span>
+            <div class="map-legend-scale">
+              <span style="background:#dbeafe"></span>
+              <span style="background:#93c5fd"></span>
+              <span style="background:#60a5fa"></span>
+              <span style="background:#2563eb"></span>
+              <span style="background:#1e3a8a"></span>
+            </div>
+            <span class="map-legend-end">من ٥٠ إلى ٤٨٠ طلبًا</span>
+          </div>
+        </div>
+
+        <aside class="map-side">
+          <article class="ov-card map-side-card">
+            <header class="ov-card-head">
+              <div>
+                <h2 class="ov-card-title" id="map-detail-title">اضغط على حي لعرض التفاصيل</h2>
+                <p class="ov-card-sub" id="map-detail-sub">١٢ حيًا متاحًا للاستكشاف.</p>
+              </div>
+            </header>
+            <div class="map-detail" id="map-detail">
+              <div class="map-detail-empty">
+                <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="20" r="14"/><path d="M20 14v6l4 4"/></svg>
+                <span>اختر منطقة من الخريطة لعرض إحصائياتها التفصيلية.</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="ov-card">
+            <header class="ov-card-head">
+              <div>
+                <h2 class="ov-card-title">أعلى ٥ مناطق</h2>
+                <p class="ov-card-sub">ترتيب حسب الطبقة المختارة</p>
+              </div>
+            </header>
+            <ol class="map-rank" id="map-rank"></ol>
+          </article>
+        </aside>
+      </section>
+
+      <footer class="ov-footer"><span>عرض تجريبي — البيانات افتراضية لأغراض العرض فقط</span></footer>
+    </main>
+  </div>
+
+  <script src="/static/shell.js?v=1"></script>
+  <script src="/static/maps.js?v=1"></script>
+</body>
+</html>

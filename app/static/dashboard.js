@@ -82,6 +82,10 @@
     if (newBtn)  newBtn.hidden  = !IS_SUBMITTER;
     if (newLink) newLink.hidden = !IS_SUBMITTER;
 
+    // "Overview" (manager dashboard) link — reviewer-only
+    const overviewLink = $("dash-overview-link");
+    if (overviewLink) overviewLink.hidden = !IS_REVIEWER;
+
     // Page title + subtitle
     const titleEl = $("dash-heading-title");
     const subEl = $("dash-heading-sub");
