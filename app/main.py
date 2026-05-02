@@ -1480,6 +1480,43 @@ async def dashboard_page():
     return _versioned_html(STATIC_DIR / "dashboard.html")
 
 
+@app.get("/overview")
+async def overview_page():
+    # Reviewer-only manager dashboard. Auth + role gating happen client-side
+    # in shell.js (it bounces non-reviewers to /dashboard) — same shape as
+    # /dashboard, which serves to both roles and renders role-aware UI.
+    return _versioned_html(STATIC_DIR / "overview.html")
+
+
+# ── Reviewer-only mock pages — UI demo only, dummy data lives in each
+# ── corresponding *.js file. Auth/role gating happens client-side in
+# ── shell.js. Backend has no /api endpoints for these yet; they're pure
+# ── frontend until the actual project starts.
+@app.get("/reports")
+async def reports_page():
+    return _versioned_html(STATIC_DIR / "reports.html")
+
+
+@app.get("/timeline")
+async def timeline_page():
+    return _versioned_html(STATIC_DIR / "timeline.html")
+
+
+@app.get("/maps")
+async def maps_page():
+    return _versioned_html(STATIC_DIR / "maps.html")
+
+
+@app.get("/users")
+async def users_page():
+    return _versioned_html(STATIC_DIR / "users.html")
+
+
+@app.get("/settings")
+async def settings_page():
+    return _versioned_html(STATIC_DIR / "settings.html")
+
+
 @app.get("/app")
 async def app_page():
     # The analysis view (live thinking + per-application dashboard).

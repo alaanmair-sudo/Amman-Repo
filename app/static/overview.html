@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>نظرة عامة · النظام الذكي لامانة عمان الكبرى</title>
+<link rel="icon" type="image/png" href="/static/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="/static/app.css?v=37" />
+<link rel="stylesheet" href="/static/dashboard.css?v=12" />
+<link rel="stylesheet" href="/static/overview.css?v=1" />
+<script src="/static/auth.js?v=9"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="dash-body rtl ov-body">
+
+  <!-- ========== Topbar (matches dashboard.html) ========== -->
+  <header class="dash-topbar">
+    <div class="dash-topbar-brand">
+      <a href="/dashboard" class="logo logo--img" aria-label="أمانة عمان الكبرى">
+        <img src="/static/logo.png" alt="أمانة عمان الكبرى" />
+      </a>
+      <div class="dash-topbar-titles">
+        <div class="dash-topbar-title">النظام الذكي لامانة عمان الكبرى</div>
+        <div class="dash-topbar-sub">واجهة مراجعة الرخص بالذكاء الاصطناعي</div>
+      </div>
+    </div>
+    <nav class="dash-topbar-nav">
+      <a href="/dashboard" class="dash-nav-link">لوحة التحكم</a>
+      <a href="/overview" class="dash-nav-link dash-nav-link--active">نظرة عامة</a>
+      <a href="/app" class="dash-nav-link" id="dash-new-link" hidden>طلب جديد</a>
+    </nav>
+    <div class="dash-topbar-meta">
+      <span class="chip chip-muted" id="dash-role-chip" hidden></span>
+      <div class="dash-user">
+        <span class="dash-user-avatar" id="user-avatar">R</span>
+        <span class="dash-user-name" id="user-name">reviewer</span>
+      </div>
+      <button id="logout-btn" class="ghost-btn" type="button" title="تسجيل الخروج">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
+        <span>تسجيل الخروج</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="ov-layout">
+
+    <!-- ========== Left side nav (collapsible, shared shape across pages) ========== -->
+    <aside class="ov-sidebar" id="ov-sidebar" aria-label="التنقل بين أقسام النظام">
+      <div class="ov-sidebar-head">
+        <span class="ov-sidebar-head-title">القائمة الرئيسية</span>
+        <button class="ov-side-toggle" id="ov-side-toggle" type="button" aria-label="طي القائمة الجانبية" title="طي / توسيع">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-5 5 5 5M14 5l-5 5 5 5"/></svg>
+        </button>
+      </div>
+
+      <div class="ov-sidebar-scroll">
+        <div class="ov-sidebar-section">
+          <div class="ov-sidebar-label">لوحات التحكم</div>
+          <a href="/dashboard" class="ov-side-link" title="الطلبات">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.2"/><rect x="11" y="3" width="6" height="6" rx="1.2"/><rect x="3" y="11" width="6" height="6" rx="1.2"/><rect x="11" y="11" width="6" height="6" rx="1.2"/></svg>
+            <span>الطلبات</span>
+          </a>
+          <a href="/overview" class="ov-side-link ov-side-link--active" title="نظرة عامة">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V8M8 17V4M13 17v-7M17 17v-4M2.5 17h15"/></svg>
+            <span>نظرة عامة</span>
+          </a>
+        </div>
+
+        <div class="ov-sidebar-section">
+          <div class="ov-sidebar-label">التحليلات</div>
+          <a href="/reports" class="ov-side-link" title="التقارير">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l8 4-8 4-8-4 8-4zM2 10l8 4 8-4M2 14l8 4 8-4"/></svg>
+            <span>التقارير</span>
+          </a>
+          <a href="/timeline" class="ov-side-link" title="الجدول الزمني">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg>
+            <span>الجدول الزمني</span>
+          </a>
+          <a href="/maps" class="ov-side-link" title="الخرائط">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l5-2 6 2 5-2v12l-5 2-6-2-5 2V5z"/><path d="M7 3v14M13 5v14"/></svg>
+            <span>الخرائط</span>
+          </a>
+        </div>
+
+        <div class="ov-sidebar-section">
+          <div class="ov-sidebar-label">الإدارة</div>
+          <a href="/users" class="ov-side-link" title="المستخدمون">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M3 17c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg>
+            <span>المستخدمون</span>
+          </a>
+          <a href="/settings" class="ov-side-link" title="الإعدادات">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M5 15l1.4-1.4M13.6 6.4L15 5"/></svg>
+            <span>الإعدادات</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="ov-sidebar-footer">
+        <div class="ov-build-pill">
+          <span class="ov-build-dot"></span>
+          <span>بيانات تجريبية للعرض</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ========== Main overview content ========== -->
+    <main class="ov-main">
+
+      <!-- Heading + filter bar -->
+      <section class="ov-heading">
+        <div>
+          <h1 class="dash-h1">نظرة عامة على النظام</h1>
+          <p class="dash-sub">مؤشرات الأداء الرئيسية وأرقام التراخيص والمخالفات والغرامات عبر أحياء وقرى أمانة عمان الكبرى.</p>
+        </div>
+        <div class="ov-period-pills" role="tablist" aria-label="الفترة الزمنية">
+          <button class="ov-period-pill" data-period="30">آخر ٣٠ يومًا</button>
+          <button class="ov-period-pill" data-period="90">آخر ٣ أشهر</button>
+          <button class="ov-period-pill ov-period-pill--active" data-period="365">آخر ١٢ شهرًا</button>
+          <button class="ov-period-pill" data-period="all">منذ البداية</button>
+        </div>
+      </section>
+
+      <!-- Filter bar -->
+      <section class="ov-filterbar">
+        <label class="ov-filter">
+          <span class="ov-filter-label">المنطقة</span>
+          <select class="ov-filter-select" id="ov-filter-area">
+            <option value="all">كل المناطق</option>
+            <option>الجبيهة</option>
+            <option>الصويفية</option>
+            <option>تلاع العلي</option>
+            <option>العبدلي</option>
+            <option>الأندلس</option>
+            <option>دابوق</option>
+            <option>خلدا</option>
+            <option>مرج الحمام</option>
+            <option>طبربور</option>
+            <option>ضاحية الرشيد</option>
+            <option>الياسمين</option>
+            <option>جبل عمان</option>
+          </select>
+        </label>
+        <label class="ov-filter">
+          <span class="ov-filter-label">القرية / الحوض</span>
+          <select class="ov-filter-select" id="ov-filter-basin">
+            <option value="all">الكل</option>
+            <option>اليادودة</option>
+            <option>الحنو</option>
+            <option>مرج الاجرب</option>
+            <option>ناعور</option>
+            <option>القنيطرة</option>
+            <option>أم البساتين</option>
+            <option>الموقر</option>
+          </select>
+        </label>
+        <label class="ov-filter">
+          <span class="ov-filter-label">نوع الطلب</span>
+          <select class="ov-filter-select" id="ov-filter-type">
+            <option value="all">كل الأنواع</option>
+            <option>الاستشارة (موافقة مبدئية)</option>
+            <option>استشارة فنية</option>
+            <option>ترخيص مقترح على أرض خالية</option>
+            <option>ترخيص مقترح فوق قائم</option>
+            <option>ترخيص مخطط تعديلي</option>
+            <option>إذن إشغال</option>
+            <option>تجديد إذن إشغال</option>
+            <option>ترخيص زيادات</option>
+          </select>
+        </label>
+        <label class="ov-filter">
+          <span class="ov-filter-label">الحالة</span>
+          <select class="ov-filter-select" id="ov-filter-status">
+            <option value="all">كل الحالات</option>
+            <option>قيد المراجعة</option>
+            <option>بحاجة تعديل</option>
+            <option>موافق عليها</option>
+            <option>مرفوضة</option>
+          </select>
+        </label>
+        <button class="ov-filter-reset ghost-btn" type="button" id="ov-filter-reset">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10a6 6 0 1010-4M4 10V5M4 10h5"/></svg>
+          <span>إعادة تعيين</span>
+        </button>
+      </section>
+
+      <!-- ========== KPI strip ========== -->
+      <section class="ov-kpi-grid">
+        <article class="ov-kpi ov-kpi--brand">
+          <div class="ov-kpi-top">
+            <span class="ov-kpi-label">إجمالي الطلبات</span>
+            <span class="ov-kpi-icon">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M7 8h6M7 11h6M7 14h4"/></svg>
+            </span>
+          </div>
+          <div class="ov-kpi-value" id="kpi-total">—</div>
+          <div class="ov-kpi-meta">
+            <span class="ov-delta ov-delta--up" id="kpi-total-delta">▲ —%</span>
+            <span class="ov-kpi-sub">مقارنة بالفترة السابقة</span>
+          </div>
+          <canvas class="ov-kpi-spark" id="spark-total" height="36"></canvas>
+        </article>
+
+        <article class="ov-kpi ov-kpi--warn">
+          <div class="ov-kpi-top">
+            <span class="ov-kpi-label">قيد المراجعة</span>
+            <span class="ov-kpi-icon">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg>
+            </span>
+          </div>
+          <div class="ov-kpi-value" id="kpi-pending">—</div>
+          <div class="ov-kpi-meta">
+            <span class="ov-pill ov-pill--warn" id="kpi-pending-wait">— أيام</span>
+            <span class="ov-kpi-sub">متوسط زمن الانتظار</span>
+          </div>
+          <canvas class="ov-kpi-spark" id="spark-pending" height="36"></canvas>
+        </article>
+
+        <article class="ov-kpi ov-kpi--ok">
+          <div class="ov-kpi-top">
+            <span class="ov-kpi-label">نسبة الموافقة</span>
+            <span class="ov-kpi-icon">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l4 4 8-9"/></svg>
+            </span>
+          </div>
+          <div class="ov-kpi-value" id="kpi-approval">—%</div>
+          <div class="ov-kpi-meta">
+            <span class="ov-delta ov-delta--up" id="kpi-approval-delta">▲ —%</span>
+            <span class="ov-kpi-sub">من إجمالي القرارات</span>
+          </div>
+          <canvas class="ov-kpi-spark" id="spark-approval" height="36"></canvas>
+        </article>
+
+        <article class="ov-kpi ov-kpi--err">
+          <div class="ov-kpi-top">
+            <span class="ov-kpi-label">إجمالي الغرامات</span>
+            <span class="ov-kpi-icon">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v8M7.5 7.5h4a1.5 1.5 0 010 3H8.5a1.5 1.5 0 000 3H12.5"/></svg>
+            </span>
+          </div>
+          <div class="ov-kpi-value" id="kpi-fines">—</div>
+          <div class="ov-kpi-meta">
+            <span class="ov-delta ov-delta--up" id="kpi-fines-delta">▲ —%</span>
+            <span class="ov-kpi-sub">دينار أردني</span>
+          </div>
+          <canvas class="ov-kpi-spark" id="spark-fines" height="36"></canvas>
+        </article>
+
+        <article class="ov-kpi">
+          <div class="ov-kpi-top">
+            <span class="ov-kpi-label">متوسط مدة المراجعة</span>
+            <span class="ov-kpi-icon">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10M5 17h10M7 3v3a3 3 0 003 3 3 3 0 003-3V3M7 17v-3a3 3 0 013-3 3 3 0 013 3v3"/></svg>
+            </span>
+          </div>
+          <div class="ov-kpi-value" id="kpi-review-days">—</div>
+          <div class="ov-kpi-meta">
+            <span class="ov-delta ov-delta--down" id="kpi-review-delta">▼ —%</span>
+            <span class="ov-kpi-sub">يوم/طلب · أسرع بـ ٤١٪ من الهدف</span>
+          </div>
+          <canvas class="ov-kpi-spark" id="spark-review" height="36"></canvas>
+        </article>
+
+        <article class="ov-kpi ov-kpi--ai">
+          <div class="ov-kpi-top">
+            <span class="ov-kpi-label">دقة الكشف الذكي</span>
+            <span class="ov-kpi-icon">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="3"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M5 15l1.4-1.4M13.6 6.4L15 5"/></svg>
+            </span>
+          </div>
+          <div class="ov-kpi-value" id="kpi-ai">—%</div>
+          <div class="ov-kpi-meta">
+            <span class="ov-pill ov-pill--ai">الذكاء الاصطناعي</span>
+            <span class="ov-kpi-sub">من قرارات المراجع تطابق الكشف</span>
+          </div>
+          <canvas class="ov-kpi-spark" id="spark-ai" height="36"></canvas>
+        </article>
+      </section>
+
+      <!-- ========== Trends + status ========== -->
+      <section class="ov-row ov-row--trends">
+        <article class="ov-card ov-card--volume">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">حجم الطلبات عبر الزمن</h2>
+              <p class="ov-card-sub">تفصيل شهري لكل ١٢ شهرًا حسب الحالة النهائية</p>
+            </div>
+            <div class="ov-toggle" role="tablist" aria-label="الوحدة الزمنية">
+              <button class="ov-toggle-btn ov-toggle-btn--active" data-grain="month">شهري</button>
+              <button class="ov-toggle-btn" data-grain="week">أسبوعي</button>
+              <button class="ov-toggle-btn" data-grain="day">يومي</button>
+            </div>
+          </header>
+          <div class="ov-chart-wrap">
+            <canvas id="chart-volume"></canvas>
+          </div>
+        </article>
+
+        <article class="ov-card ov-card--status">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">توزيع الحالات</h2>
+              <p class="ov-card-sub">حالة كل طلب في الفترة المختارة</p>
+            </div>
+          </header>
+          <div class="ov-donut-wrap">
+            <canvas id="chart-status"></canvas>
+            <div class="ov-donut-center">
+              <div class="ov-donut-num" id="donut-num">—</div>
+              <div class="ov-donut-lbl">طلب</div>
+            </div>
+          </div>
+          <ul class="ov-legend" id="legend-status"></ul>
+        </article>
+      </section>
+
+      <!-- ========== Application types ========== -->
+      <section class="ov-row ov-row--types">
+        <article class="ov-card ov-card--wide">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">تصنيف الطلبات حسب النوع</h2>
+              <p class="ov-card-sub">١٧ نوعًا من المعاملات — مرتبة من الأعلى للأدنى تكرارًا</p>
+            </div>
+            <span class="ov-card-pill">إجمالي ١٧ نوعًا</span>
+          </header>
+          <div class="ov-chart-wrap ov-chart-wrap--types">
+            <canvas id="chart-types"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <!-- ========== Geography ========== -->
+      <section class="ov-row ov-row--geo">
+        <article class="ov-card">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">أعلى الأحياء طلبًا</h2>
+              <p class="ov-card-sub">عدد الطلبات والغرامات لكل حي</p>
+            </div>
+          </header>
+          <div class="ov-table-wrap">
+            <table class="ov-table" id="table-neighborhoods">
+              <thead>
+                <tr><th>الحي</th><th>الطلبات</th><th>الغرامات</th><th>نسبة المخالفات</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="ov-card">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">أعلى الأحواض طلبًا</h2>
+              <p class="ov-card-sub">حسب رقم القطعة والقرية</p>
+            </div>
+          </header>
+          <div class="ov-table-wrap">
+            <table class="ov-table" id="table-basins">
+              <thead>
+                <tr><th>الحوض</th><th>القرية</th><th>الطلبات</th><th>متوسط مساحة القطعة</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="ov-card ov-card--map">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">الكثافة الجغرافية</h2>
+              <p class="ov-card-sub">عرض تخطيطي لتوزيع الطلبات على مناطق الأمانة</p>
+            </div>
+            <span class="ov-card-pill ov-card-pill--ai">عرض تجريبي</span>
+          </header>
+          <div class="ov-map" id="ov-map">
+            <!-- JS will populate the dots -->
+          </div>
+        </article>
+      </section>
+
+      <!-- ========== Compliance ========== -->
+      <section class="ov-row ov-row--compliance">
+        <article class="ov-card">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">طبيعة المخالفات</h2>
+              <p class="ov-card-sub">توزيع المخالفات المُكتشفة</p>
+            </div>
+          </header>
+          <div class="ov-donut-wrap">
+            <canvas id="chart-violations"></canvas>
+            <div class="ov-donut-center">
+              <div class="ov-donut-num" id="violation-num">—٪</div>
+              <div class="ov-donut-lbl">طلبات تحتوي مخالفة</div>
+            </div>
+          </div>
+          <ul class="ov-legend" id="legend-violations"></ul>
+        </article>
+
+        <article class="ov-card">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">توزيع قيم الغرامات</h2>
+              <p class="ov-card-sub">عدد الطلبات في كل شريحة قيمة</p>
+            </div>
+            <span class="ov-card-pill">دينار أردني</span>
+          </header>
+          <div class="ov-chart-wrap">
+            <canvas id="chart-fines-hist"></canvas>
+          </div>
+        </article>
+
+        <article class="ov-card ov-card--wide">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">أعلى الطلبات غرامةً</h2>
+              <p class="ov-card-sub">أكبر ٥ غرامات تم تقديرها في الفترة</p>
+            </div>
+          </header>
+          <div class="ov-table-wrap">
+            <table class="ov-table" id="table-top-fines">
+              <thead>
+                <tr><th>المالك</th><th>الحي</th><th>نوع الطلب</th><th>المخالفة</th><th>الغرامة</th><th>الحالة</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <!-- ========== Reviewers + AI ========== -->
+      <section class="ov-row ov-row--ops">
+        <article class="ov-card">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">أداء المراجعين</h2>
+              <p class="ov-card-sub">عدد المراجعات ومتوسط الوقت لكل مراجع</p>
+            </div>
+          </header>
+          <div class="ov-leaderboard" id="reviewer-board"></div>
+        </article>
+
+        <article class="ov-card ov-card--ai">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">رؤى الذكاء الاصطناعي</h2>
+              <p class="ov-card-sub">القيمة المضافة من الكشف الذكي</p>
+            </div>
+            <span class="ov-card-pill ov-card-pill--ai">AI</span>
+          </header>
+          <div class="ov-ai-grid" id="ai-grid"></div>
+        </article>
+
+        <article class="ov-card">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">عمر الطلبات قيد المراجعة</h2>
+              <p class="ov-card-sub">شريحة عمرية لكل طلب لم يُحسم بعد</p>
+            </div>
+            <span class="ov-card-pill ov-card-pill--warn" id="sla-pill">— تجاوزت الـSLA</span>
+          </header>
+          <div class="ov-chart-wrap">
+            <canvas id="chart-backlog"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <!-- ========== Trends + predictions ========== -->
+      <section class="ov-row ov-row--predict">
+        <article class="ov-card ov-card--wide">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">المقارنة السنوية والتوقعات</h2>
+              <p class="ov-card-sub">٢٠٢٤ مقابل ٢٠٢٥ + توقع الـ٣٠ يومًا القادمة باستخدام نموذج تعلّم آلي</p>
+            </div>
+            <span class="ov-card-pill ov-card-pill--ai">توقع ذكي</span>
+          </header>
+          <div class="ov-chart-wrap">
+            <canvas id="chart-yoy"></canvas>
+          </div>
+        </article>
+
+        <article class="ov-card ov-card--alerts">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">تنبيهات تشغيلية</h2>
+              <p class="ov-card-sub">أحداث غير اعتيادية اكتشفها النظام</p>
+            </div>
+          </header>
+          <div class="ov-alerts" id="alerts-list"></div>
+        </article>
+      </section>
+
+      <footer class="ov-footer">
+        <span>عرض تجريبي — البيانات افتراضية لأغراض العرض فقط · أمانة عمان الكبرى ٢٠٢٦</span>
+      </footer>
+
+    </main>
+  </div>
+
+  <script src="/static/shell.js?v=1"></script>
+  <script src="/static/overview.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+/* Users page */
+.us-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .us-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.us-filters { display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.us-filters .ov-filter-select { padding: 7px 10px; font-size: 12.5px; min-width: 130px; }
+.us-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  background: var(--c-bg-soft);
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  min-width: 200px;
+}
+.us-search svg { width: 14px; height: 14px; color: var(--c-subtle); }
+.us-search input { flex: 1; border: 0; background: transparent; outline: none; font-family: inherit; font-size: 12.5px; }
+
+/* User table cells */
+.us-table .us-user {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.us-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--ff-sans);
+  font-weight: 700;
+  font-size: 12px;
+  color: #fff;
+}
+.us-name { font-size: 13px; font-weight: 600; color: var(--c-text); }
+.us-email { font-size: 11px; color: var(--c-muted); }
+
+.us-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.us-role-reviewer { background: var(--c-brand-soft); color: var(--c-brand); }
+.us-role-supervisor { background: rgba(139,92,246,.12); color: #6d28d9; }
+.us-role-admin { background: var(--c-error-soft); color: var(--c-error); }
+.us-role-consultant { background: var(--c-warn-soft); color: var(--c-warn); }
+.us-role-submitter { background: var(--c-bg-soft); color: var(--c-text-2); }
+
+.us-action-btn {
+  border: 0;
+  background: transparent;
+  color: var(--c-subtle);
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: background .14s var(--ease), color .14s var(--ease);
+}
+.us-action-btn:hover { background: var(--c-bg-soft); color: var(--c-text); }
+.us-action-btn svg { width: 16px; height: 16px; }
+
+/* Permissions matrix */
+.us-perm th, .us-perm td { text-align: center; }
+.us-perm td:first-child, .us-perm th:first-child { text-align: start; }
+.us-yes { color: var(--c-success); font-weight: 700; font-size: 16px; }
+.us-no  { color: var(--c-subtle); font-size: 14px; }
+.us-partial {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 8px;
+  background: var(--c-warn-soft);
+  color: var(--c-warn);
+  border-radius: 999px;
+}
+
+/* Recent activity */
+.us-recent { display: flex; flex-direction: column; gap: 8px; }
+.us-recent-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--c-border-2);
+  border-radius: var(--r);
+}
+.us-recent-row .us-avatar { width: 28px; height: 28px; font-size: 11px; }
+.us-recent-text { font-size: 12.5px; color: var(--c-text); line-height: 1.4; }
+.us-recent-text strong { font-weight: 700; }
+.us-recent-time { font-size: 11px; color: var(--c-subtle); white-space: nowrap; }
