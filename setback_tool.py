@@ -22,6 +22,7 @@ from pathlib import Path
 import yaml
 
 from app.site_plan_extractor import extract_site_plan_data
+from app.special_provisions import apply_special_provisions
 from dwf_convert import DWFConversionError, normalize_to_dwg
 from geometry import (
     ComplianceResult,
@@ -251,16 +252,43 @@ async def run(args: argparse.Namespace) -> int:
                     pdf_is_corner_lot=bool(site_plan_data.get("is_corner_lot")),
                     street_edge_tolerance_m=tolerance,
                 )
+
+                # ---- Special provisions (الاحكام الخاصة) — overrides on top
+                # of the default classification. Skipped silently if the PDF
+                # didn't carry any rules; ambiguous rules become reviewer
+                # notes rather than auto-applied guesses (option 1).
+                side_to_required = {
+                    "front": float(site_plan_data["front_setback_m"]),
+                    "side": float(site_plan_data["side_setback_m"]),
+                }
+                if site_plan_data.get("rear_setback_m") is not None:
+                    side_to_required["rear"] = float(site_plan_data["rear_setback_m"])
+                sp_result = apply_special_provisions(
+                    classifications=cls_report.classifications,
+                    rules=site_plan_data.get("special_provisions") or [],
+                    pdf_streets=site_plan_data.get("streets") or [],
+                    lot=lot,
+                    side_to_required=side_to_required,
+                )
+
                 compliance = compute_violations(
                     building=building,
                     lot=lot,
-                    edge_classifications=cls_report.classifications,
+                    edge_classifications=sp_result.classifications,
                     fine_per_sqm_jd=fine_rate,
                     is_corner_lot=bool(site_plan_data.get("is_corner_lot")),
                 )
-                # Hoist classifier notes into the compliance result so the
-                # markdown/JSON report shows them all in one place.
-                compliance.notes = list(cls_report.notes) + list(compliance.notes)
+                # Hoist classifier + special-provisions notes into the
+                # compliance result so the markdown/JSON report shows them
+                # all in one place.
+                compliance.notes = (
+                    list(cls_report.notes)
+                    + list(sp_result.notes)
+                    + list(compliance.notes)
+                )
+                compliance.applied_special_provisions = [
+                    r.to_dict() for r in sp_result.applied_rules
+                ]
 
             json_text = render_json(
                 input_path, source_format, pairs,

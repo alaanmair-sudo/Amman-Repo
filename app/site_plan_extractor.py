@@ -105,6 +105,90 @@ Address fields (extract when printed on the site plan; null otherwise):
   • رقم البناية            → building_number (string)
 
 ════════════════════════════════════════════════════
+STREETS — list every street that touches the highlighted lot
+════════════════════════════════════════════════════
+
+The site plan typically shows a small GIS-style map with the lot highlighted, and surrounding streets either labelled inside that map (like a road map) or named in nearby text (e.g. "الواجهة على شارع X"). List EVERY street that touches the highlighted lot — even if it has no visible name.
+
+For each street return:
+  • name     — verbatim Arabic name, OR null if the street is drawn but unlabelled
+  • position — where the street sits relative to the highlighted lot in the GIS view, expressed as a cardinal direction. The GIS view in this document is ALWAYS drawn with NORTH at the TOP of the page. One of:
+                  "north" | "south" | "east" | "west" | "northeast" | "northwest" | "southeast" | "southwest"
+  • raw_source — short phrase saying where you read the name (e.g. "GIS view label", "explicit text near the table", "unlabeled road outline")
+
+Returns an array. Empty array if you genuinely cannot identify any streets.
+
+════════════════════════════════════════════════════
+احكام خاصة (special provisions) — overrides to the table values
+════════════════════════════════════════════════════
+
+After the main احكام table, the document may carry one or more additional rules under a heading like "الاحكام الخاصة" (also written "أحكام خاصة" / "ملاحظات"). These OVERRIDE the default table values when their condition matches the lot. A rule whose condition does not match (e.g. it references a street not on this lot) is silently ignored at apply time.
+
+Classify each rule into ONE of these three types — pick the BEST FIT and use the matching condition + effect shape. If no shape fits, use type="unrecognized" and dump the raw Arabic so a reviewer can read it.
+
+────────────────────────────────────────
+TYPE A — "setback_override"
+   The rule sets a specific setback value on the side facing a particular named street.
+────────────────────────────────────────
+
+   condition: {"kind": "street_name", "street_name": "<verbatim Arabic name>"}
+
+   effect: {"target_side": "front" | "side" | "rear", "value_m": <number>}
+
+   Example rule text: "إذا كانت الواجهة على شارع عبدالله غوشة فيكون الارتداد الامامي 8 متر"
+   Structured as:
+   {
+     "type": "setback_override",
+     "condition": {"kind": "street_name", "street_name": "شارع عبدالله غوشة"},
+     "effect": {"target_side": "front", "value_m": 8},
+     "raw_text": "إذا كانت الواجهة على شارع عبدالله غوشة فيكون الارتداد الامامي 8 متر"
+   }
+
+────────────────────────────────────────
+TYPE B — "side_reclassification"
+   The rule changes which lot edges count as front / side / rear based on a condition like the number of streets the lot fronts. It does NOT change the setback values themselves; it changes which side category each edge belongs to.
+────────────────────────────────────────
+
+   condition: {"kind": "street_count", "operator": "==" | ">=" | "<=", "value": <integer>}
+
+   effect: {"reclassify": [
+       {"target": "<descriptor>", "new_side": "front" | "side" | "rear"},
+       ...
+   ]}
+
+   target descriptors supported:
+     • "non_front_edge"               — the single lot edge that does NOT face a street
+     • "edge_opposite_to_non_front"   — the lot edge directly opposite the non-front edge
+     • "all_front_edges"              — every street-facing edge
+     • "all_side_edges"               — every edge currently classified as side
+     • "all_rear_edges"               — every edge currently classified as rear
+
+   Example rule text: "إذا كانت القطعة على ثلاثة شوارع، فإن الجهة غير المطلة على شارع تعتبر جانبية والجهة المقابلة لها تعتبر جانبية ايضا"
+   Structured as:
+   {
+     "type": "side_reclassification",
+     "condition": {"kind": "street_count", "operator": "==", "value": 3},
+     "effect": {"reclassify": [
+         {"target": "non_front_edge",             "new_side": "side"},
+         {"target": "edge_opposite_to_non_front", "new_side": "side"}
+     ]},
+     "raw_text": "..."
+   }
+
+────────────────────────────────────────
+TYPE C — "unrecognized"
+   The rule says something that doesn't fit either of the shapes above (e.g. it changes height, coverage, or asks for a calculation we can't automate). Return only the raw text and a one-line English description.
+────────────────────────────────────────
+
+   {
+     "type": "unrecognized",
+     "raw_text": "<verbatim Arabic>",
+     "reason": "<short English description of what the rule is about>"
+   }
+
+If the الاحكام الخاصة block is absent, return an empty array. ALSO return the entire raw block verbatim as `special_provisions_raw_text` so a reviewer can verify nothing was missed; empty string if no block.
+
+════════════════════════════════════════════════════
 OUTPUT
 ════════════════════════════════════════════════════
 
@@ -130,6 +214,19 @@ Successful extraction:
   "min_parcel_area_m2": 1500,
   "street_name": "...",
   "building_number": "...",
+  "streets": [
+    {"name": "شارع عبدالله غوشة", "position": "north", "raw_source": "GIS view label"},
+    {"name": null,                "position": "east",  "raw_source": "unlabeled road outline"}
+  ],
+  "special_provisions": [
+    {
+      "type": "setback_override",
+      "condition": {"kind": "street_name", "street_name": "شارع عبدالله غوشة"},
+      "effect": {"target_side": "front", "value_m": 8},
+      "raw_text": "إذا كانت الواجهة على شارع عبدالله غوشة فيكون الارتداد الامامي 8 متر"
+    }
+  ],
+  "special_provisions_raw_text": "<full verbatim block, or empty string if absent>",
   "summary": "<2-3 sentence English summary of the site plan>"
 }
 
@@ -169,6 +266,126 @@ def _coerce_float(v: Any) -> float | None:
 def _coerce_int(v: Any) -> int | None:
     f = _coerce_float(v)
     return int(round(f)) if f is not None else None
+
+
+_VALID_CARDINAL_POSITIONS = frozenset({
+    "north", "south", "east", "west",
+    "northeast", "northwest", "southeast", "southwest",
+})
+
+_VALID_SIDES = frozenset({"front", "side", "rear"})
+
+_VALID_RECLASS_TARGETS = frozenset({
+    "non_front_edge",
+    "edge_opposite_to_non_front",
+    "all_front_edges",
+    "all_side_edges",
+    "all_rear_edges",
+})
+
+_VALID_COUNT_OPERATORS = frozenset({"==", ">=", "<="})
+
+
+def _normalize_street(raw: Any) -> dict | None:
+    """Coerce one street entry. Returns None if the input isn't usable."""
+    if not isinstance(raw, dict):
+        return None
+    name_raw = raw.get("name")
+    name = name_raw.strip() if isinstance(name_raw, str) and name_raw.strip() else None
+    pos_raw = raw.get("position")
+    pos = (str(pos_raw).strip().lower() if pos_raw else None)
+    if pos not in _VALID_CARDINAL_POSITIONS:
+        pos = None
+    return {
+        "name": name,
+        "position": pos,
+        "raw_source": str(raw.get("raw_source") or "").strip(),
+    }
+
+
+def _normalize_special_provision(raw: Any) -> dict:
+    """Coerce one special-provision rule into a known shape.
+
+    Returns one of:
+      - setback_override   — condition.kind=street_name, effect carries target_side+value_m
+      - side_reclassification — condition.kind=street_count, effect carries reclassify list
+      - unrecognized       — fallback for malformed/unknown rules; raw_text + reason
+
+    Always returns a dict (never None) — the caller stores the full list so
+    nothing extracted by Claude is silently dropped.
+    """
+    if not isinstance(raw, dict):
+        return {
+            "type": "unrecognized",
+            "raw_text": str(raw or ""),
+            "reason": "rule was not a JSON object",
+        }
+
+    rule_type = str(raw.get("type") or "").strip().lower()
+    raw_text = str(raw.get("raw_text") or "").strip()
+
+    if rule_type == "setback_override":
+        cond = raw.get("condition") or {}
+        eff = raw.get("effect") or {}
+        kind = str(cond.get("kind") or "").lower()
+        target_side = str(eff.get("target_side") or "").lower()
+        value_m = _coerce_float(eff.get("value_m"))
+        street_name = str(cond.get("street_name") or "").strip()
+        if (
+            kind == "street_name"
+            and target_side in _VALID_SIDES
+            and value_m is not None
+            and street_name
+        ):
+            return {
+                "type": "setback_override",
+                "condition": {"kind": "street_name", "street_name": street_name},
+                "effect": {"target_side": target_side, "value_m": value_m},
+                "raw_text": raw_text,
+            }
+        return {
+            "type": "unrecognized",
+            "raw_text": raw_text,
+            "reason": "setback_override rule is missing or malformed required fields",
+        }
+
+    if rule_type == "side_reclassification":
+        cond = raw.get("condition") or {}
+        eff = raw.get("effect") or {}
+        kind = str(cond.get("kind") or "").lower()
+        operator = str(cond.get("operator") or "==").strip()
+        if operator not in _VALID_COUNT_OPERATORS:
+            operator = "=="
+        value = _coerce_int(cond.get("value"))
+        reclassify_in = eff.get("reclassify")
+        norm_reclass: list[dict] = []
+        if isinstance(reclassify_in, list):
+            for r in reclassify_in:
+                if not isinstance(r, dict):
+                    continue
+                target = str(r.get("target") or "").lower()
+                new_side = str(r.get("new_side") or "").lower()
+                if target in _VALID_RECLASS_TARGETS and new_side in _VALID_SIDES:
+                    norm_reclass.append({"target": target, "new_side": new_side})
+        if kind == "street_count" and value is not None and norm_reclass:
+            return {
+                "type": "side_reclassification",
+                "condition": {"kind": "street_count", "operator": operator, "value": value},
+                "effect": {"reclassify": norm_reclass},
+                "raw_text": raw_text,
+            }
+        return {
+            "type": "unrecognized",
+            "raw_text": raw_text,
+            "reason": "side_reclassification rule is missing or malformed required fields",
+        }
+
+    # Explicit unrecognized OR unknown type — preserve raw_text + reason.
+    return {
+        "type": "unrecognized",
+        "raw_text": raw_text,
+        "reason": str(raw.get("reason") or "rule shape not recognized").strip(),
+    }
 
 
 def _parse_json(text: str) -> dict[str, Any]:
@@ -250,6 +467,26 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
         "building_number": (raw.get("building_number") or None),
         "summary": str(raw.get("summary") or ""),
     }
+
+    # ---- Streets surrounding the lot (for special-provisions matching) ----
+    streets_in = raw.get("streets")
+    streets_out: list[dict] = []
+    if isinstance(streets_in, list):
+        for s in streets_in:
+            entry = _normalize_street(s)
+            if entry is not None:
+                streets_out.append(entry)
+    out["streets"] = streets_out
+
+    # ---- Special provisions (الاحكام الخاصة) ----
+    sp_in = raw.get("special_provisions")
+    sp_out: list[dict] = []
+    if isinstance(sp_in, list):
+        for r in sp_in:
+            sp_out.append(_normalize_special_provision(r))
+    out["special_provisions"] = sp_out
+    out["special_provisions_raw_text"] = str(raw.get("special_provisions_raw_text") or "").strip()
+
     return out
 
 

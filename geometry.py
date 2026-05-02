@@ -235,6 +235,13 @@ class ComplianceResult:
     # Optional human-readable warning when envelope is empty / clipped.
     notes: list[str] = field(default_factory=list)
 
+    # Audit log of الاحكام الخاصة rules that were considered for this run.
+    # One entry per input rule, in input order. Each entry is a plain dict
+    # (shape: AppliedRule.to_dict() in app.special_provisions) so this module
+    # stays free of any app-layer dependency. Empty when no rules were
+    # supplied or when the site plan didn't carry an الاحكام الخاصة block.
+    applied_special_provisions: list[dict] = field(default_factory=list)
+
     def to_dict(self) -> dict:
         return {
             "edge_classifications": [c.to_dict() for c in self.edge_classifications],
@@ -256,6 +263,7 @@ class ComplianceResult:
             "fine_per_sqm_jd": self.fine_per_sqm_jd,
             "fine_jd": self.fine_jd,
             "notes": list(self.notes),
+            "applied_special_provisions": list(self.applied_special_provisions),
         }
 
 

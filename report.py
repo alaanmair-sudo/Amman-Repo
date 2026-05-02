@@ -55,6 +55,7 @@ def _compliance_to_json_dict(compliance: ComplianceResult | None) -> dict | None
         "lot_crossing_area_m2": compliance.lot_crossing_area_m2,
         "per_side": {k: v.to_dict() for k, v in compliance.per_side.items()},
         "edge_classifications": [c.to_dict() for c in compliance.edge_classifications],
+        "applied_special_provisions": list(compliance.applied_special_provisions),
         "notes": list(compliance.notes),
     }
 
@@ -169,7 +170,66 @@ def _render_compliance_section(
     # ---- Calculation breakdown — show every step that produced the fine ----
     lines.extend(_render_calculation_breakdown(compliance))
 
+    # ---- الاحكام الخاصة (special provisions audit) ----------------
+    lines.extend(_render_special_provisions_subsection(compliance, site_plan))
+
     return lines + [""]
+
+
+# Status → human label + optional severity marker.
+_STATUS_LABELS: dict[str, tuple[str, str]] = {
+    "applied":                    ("applied",                ""),
+    "skipped_condition_false":    ("skipped (condition false)", ""),
+    "no_match":                   ("not applicable",         ""),
+    "ambiguous_needs_review":     ("needs reviewer",         "⚠ "),
+    "unrecognized":               ("unrecognised",           "⚠ "),
+}
+
+
+def _render_special_provisions_subsection(
+    compliance: ComplianceResult, site_plan: dict | None
+) -> list[str]:
+    """Per-rule audit log for الاحكام الخاصة. Empty when no rules were
+    extracted from the site plan."""
+    rules = list(compliance.applied_special_provisions or [])
+    raw_block = ""
+    if site_plan:
+        raw_block = str(site_plan.get("special_provisions_raw_text") or "").strip()
+    if not rules and not raw_block:
+        return []
+
+    out: list[str] = ["", "### الاحكام الخاصة (special provisions)", ""]
+
+    if rules:
+        out.append(
+            f"{len(rules)} rule(s) read from the site plan. Applied rules "
+            "modify the per-edge required setback or side classification; "
+            "ambiguous or unrecognised rules require reviewer attention."
+        )
+        out.append("")
+        for r in rules:
+            idx = r.get("rule_index", "?")
+            rtype = r.get("rule_type", "?")
+            status_key = str(r.get("status") or "")
+            label, marker = _STATUS_LABELS.get(status_key, (status_key, ""))
+            detail = str(r.get("detail") or "").strip()
+            raw_text = str(r.get("raw_text") or "").strip()
+            out.append(f"{int(idx) + 1 if isinstance(idx, int) else idx}. "
+                       f"{marker}**{label}** ({rtype}) — {detail}")
+            if raw_text:
+                # Indent the raw Arabic so it stays attached to its rule.
+                out.append(f"   _Raw:_ {raw_text}")
+
+    if raw_block:
+        out.append("")
+        out.append("**Full raw block from the PDF:**")
+        out.append("")
+        # Quote-block the raw Arabic so it renders as a contiguous chunk
+        # even if it has internal line breaks.
+        for line in raw_block.splitlines() or [raw_block]:
+            out.append(f"> {line}")
+
+    return out
 
 
 def _render_calculation_breakdown(compliance: ComplianceResult) -> list[str]:
