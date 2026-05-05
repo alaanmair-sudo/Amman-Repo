@@ -54,21 +54,69 @@ def _normalize_zoning(s: str | None) -> str:
     return s
 
 
+# Map every alef variant to the canonical "أ" so a deed extracted as
+# "سكن ا" (bare alef) still resolves to "سكن أ".
+_RESIDENTIAL_LETTERS = {
+    "أ": "أ", "إ": "أ", "ا": "أ", "آ": "أ",
+    "ب": "ب", "ج": "ج", "د": "د",
+}
+
+
+def _residential_category_from_tokens(tokens: list[str]) -> str | None:
+    """If a token list looks like a residential zone with a category
+    letter (أ/ب/ج/د) somewhere — even when surrounded by descriptors
+    like "اخضر" or "باحكام خاصة" — return the canonical "سكن X" key.
+    Returns None when no letter token is present.
+    """
+    if "سكن" not in tokens:
+        return None
+    for tok in tokens:
+        if tok in _RESIDENTIAL_LETTERS:
+            return f"سكن {_RESIDENTIAL_LETTERS[tok]}"
+    return None
+
+
 def resolve_fine_rates(zoning: str | None, fines_table: dict | None) -> dict | None:
     """Return {'setback','building','floor'} JOD/m² rates for the given
-    zoning string, or None if unmatched / missing inputs."""
+    zoning string, or None if unmatched / missing inputs.
+
+    Lookup is two-stage:
+      1. Direct normalized match (parens stripped, "ال" stripped, ws collapsed).
+      2. Residential letter-priority: when stage 1 misses and the input
+         looks like a سكن X with extra descriptors (e.g. "سكن اخضر ب
+         باحكام خاصة"), the category letter (أ/ب/ج/د) wins and the input
+         is treated as the bare "سكن X" row. Reflects how the Amman zoning
+         vocabulary uses "اخضر / باحكام خاصة" as decorations on top of
+         the four-letter residential ladder.
+    """
     if not fines_table or not zoning:
         return None
     norm_input = _normalize_zoning(zoning)
     if not norm_input:
         return None
-    for key, rates in fines_table.items():
-        if _normalize_zoning(key) == norm_input:
-            return {
-                "setback":  float(rates.get("setback",  0)),
-                "building": float(rates.get("building", 0)),
-                "floor":    float(rates.get("floor",    0)),
-            }
+
+    def _row_for(key_form: str) -> dict | None:
+        target = _normalize_zoning(key_form)
+        for key, rates in fines_table.items():
+            if _normalize_zoning(key) == target:
+                return {
+                    "setback":  float(rates.get("setback",  0)),
+                    "building": float(rates.get("building", 0)),
+                    "floor":    float(rates.get("floor",    0)),
+                }
+        return None
+
+    # Stage 1 — direct.
+    hit = _row_for(norm_input)
+    if hit is not None:
+        return hit
+
+    # Stage 2 — residential letter wins over descriptors.
+    letter_key = _residential_category_from_tokens(norm_input.split())
+    if letter_key:
+        hit = _row_for(letter_key)
+        if hit is not None:
+            return hit
     return None
 
 
