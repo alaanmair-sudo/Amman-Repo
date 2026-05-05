@@ -10,38 +10,22 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
 <link rel="stylesheet" href="/static/app.css?v=37" />
 <link rel="stylesheet" href="/static/dashboard.css?v=12" />
-<link rel="stylesheet" href="/static/overview.css?v=2" />
+<link rel="stylesheet" href="/static/overview.css?v=9" />
 <link rel="stylesheet" href="/static/users.css?v=1" />
 <script src="/static/auth.js?v=9"></script>
 </head>
 <body class="dash-body rtl ov-body">
 
-  <header class="dash-topbar">
-    <div class="dash-topbar-brand">
-      <a href="/dashboard" class="logo logo--img" aria-label="أمانة عمان الكبرى"><img src="/static/logo.png" alt="" /></a>
-      <div class="dash-topbar-titles">
-        <div class="dash-topbar-title">النظام الذكي لامانة عمان الكبرى</div>
-        <div class="dash-topbar-sub">واجهة مراجعة الرخص بالذكاء الاصطناعي</div>
-      </div>
-    </div>
-    <nav class="dash-topbar-nav">
-      <a href="/dashboard" class="dash-nav-link">لوحة التحكم</a>
-      <a href="/overview" class="dash-nav-link">نظرة عامة</a>
-    </nav>
-    <div class="dash-topbar-meta">
-      <span class="chip chip-muted" id="dash-role-chip" hidden></span>
-      <div class="dash-user"><span class="dash-user-avatar" id="user-avatar">R</span><span class="dash-user-name" id="user-name">reviewer</span></div>
-      <button id="logout-btn" class="ghost-btn" type="button" title="تسجيل الخروج">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
-        <span>تسجيل الخروج</span>
-      </button>
-    </div>
-  </header>
-
   <div class="ov-layout">
     <aside class="ov-sidebar" id="ov-sidebar" aria-label="التنقل">
-      <div class="ov-sidebar-head">
-        <span class="ov-sidebar-head-title">القائمة الرئيسية</span>
+      <div class="ov-sidebar-brand">
+        <a href="/dashboard" class="ov-brand-link" aria-label="أمانة عمان الكبرى" title="الرئيسية">
+          <img src="/static/logo.png" alt="أمانة عمان الكبرى" class="ov-brand-img" />
+          <div class="ov-brand-text">
+            <div class="ov-brand-title">أمانة عمان الكبرى</div>
+            <div class="ov-brand-sub">المراجعة الذكية</div>
+          </div>
+        </a>
         <button class="ov-side-toggle" id="ov-side-toggle" type="button" aria-label="طي القائمة الجانبية" title="طي / توسيع">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-5 5 5 5M14 5l-5 5 5 5"/></svg>
         </button>
@@ -65,6 +49,17 @@
         </div>
       </div>
       <div class="ov-sidebar-footer">
+        <div class="ov-user">
+          <span class="ov-user-avatar" id="user-avatar">R</span>
+          <div class="ov-user-meta">
+            <span class="ov-user-name" id="user-name">reviewer</span>
+            <span class="ov-user-role" id="dash-role-chip" hidden></span>
+          </div>
+        </div>
+        <button id="logout-btn" class="ov-logout-btn" type="button" title="تسجيل الخروج" aria-label="تسجيل الخروج">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
+          <span>تسجيل الخروج</span>
+        </button>
         <div class="ov-build-pill"><span class="ov-build-dot"></span><span>بيانات تجريبية للعرض</span></div>
       </div>
     </aside>

@@ -8,50 +8,100 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
-<link rel="stylesheet" href="/static/app.css?v=65" />
-<!-- dashboard.css is loaded here too so the per-application page can
-     reuse the same .dash-topbar* styles as /dashboard. The body class
-     stays "rtl" (not "dash-body"), so the body-scoped rule in
-     dashboard.css doesn't fire — only the topbar selectors apply. -->
-<link rel="stylesheet" href="/static/dashboard.css?v=12" />
-<link rel="stylesheet" href="/static/reviewer.css?v=29" />
+<link rel="stylesheet" href="/static/app.css?v=67" />
+<!-- dashboard.css and overview.css are loaded so the per-application
+     page can reuse the same sidebar styles as /dashboard, /overview etc.
+     The body uses both .rtl (existing) and .dash-body + .ov-body (so the
+     ov-layout grid + ov-body background + dash-body flex column all
+     kick in). -->
+<link rel="stylesheet" href="/static/dashboard.css?v=13" />
+<link rel="stylesheet" href="/static/overview.css?v=9" />
+<link rel="stylesheet" href="/static/reviewer.css?v=30" />
 <script src="/static/auth.js?v=9"></script>
 </head>
-<body class="rtl">
+<body class="rtl dash-body ov-body">
 <div class="app">
 
-  <!-- Topbar — uses the SAME .dash-topbar* classes as the dashboard so
-       both pages render an identical header. JS-bound IDs are kept
-       (topbar-user-avatar / topbar-user-name / topbar-logout); only the
-       wrapper class names change. The lang/history toggles that used to
-       live here are stashed in #legacy-topbar-stash below so app.js
-       still finds them by ID without them painting in the visible bar. -->
-  <header class="dash-topbar">
-    <div class="dash-topbar-brand">
-      <a href="/dashboard" class="logo logo--img" aria-label="أمانة عمان الكبرى">
-        <img src="/static/logo.png" alt="أمانة عمان الكبرى" />
-      </a>
-      <div class="dash-topbar-titles">
-        <div class="dash-topbar-title" data-i18n="app.title">النظام الذكي لامانة عمان الكبرى</div>
-        <div class="dash-topbar-sub" data-i18n="app.subtitle">واجهة مراجعة الرخص بالذكاء الاصطناعي</div>
+  <div class="ov-layout">
+    <!-- Side nav — same shell as the dashboard / overview / reports
+         pages so navigation is one consistent surface across the whole
+         app, no topbar redundancy. The user-name / user-avatar / logout
+         IDs are kept on the topbar* prefix so existing app.js wiring in
+         the per-application page keeps working without any JS edits. -->
+    <aside class="ov-sidebar" id="ov-sidebar" aria-label="التنقل بين أقسام النظام">
+      <div class="ov-sidebar-brand">
+        <a href="/dashboard" class="ov-brand-link" aria-label="أمانة عمان الكبرى" title="الرئيسية">
+          <img src="/static/logo.png" alt="أمانة عمان الكبرى" class="ov-brand-img" />
+          <div class="ov-brand-text">
+            <div class="ov-brand-title">أمانة عمان الكبرى</div>
+            <div class="ov-brand-sub">المراجعة الذكية</div>
+          </div>
+        </a>
+        <button class="ov-side-toggle" id="ov-side-toggle" type="button" aria-label="طي القائمة الجانبية" title="طي / توسيع">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-5 5 5 5M14 5l-5 5 5 5"/></svg>
+        </button>
       </div>
-    </div>
-    <nav class="dash-topbar-nav">
-      <a href="/dashboard" class="dash-nav-link">لوحة التحكم</a>
-      <a href="/overview" class="dash-nav-link" id="dash-overview-link" hidden>نظرة عامة</a>
-      <a href="/app" class="dash-nav-link dash-nav-link--active" id="dash-new-link" hidden>طلب جديد</a>
-    </nav>
-    <div class="dash-topbar-meta">
-      <div class="dash-user" id="topbar-user">
-        <span class="dash-user-avatar" id="topbar-user-avatar">R</span>
-        <span class="dash-user-name" id="topbar-user-name">reviewer</span>
+
+      <div class="ov-sidebar-scroll">
+        <div class="ov-sidebar-section">
+          <div class="ov-sidebar-label">لوحات التحكم</div>
+          <a href="/dashboard" class="ov-side-link" title="الطلبات">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.2"/><rect x="11" y="3" width="6" height="6" rx="1.2"/><rect x="3" y="11" width="6" height="6" rx="1.2"/><rect x="11" y="11" width="6" height="6" rx="1.2"/></svg>
+            <span>الطلبات</span>
+          </a>
+          <a href="/app" id="dash-new-link" class="ov-side-link ov-side-link--active" title="طلب جديد" hidden>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12M4 10h12"/></svg>
+            <span>طلب جديد</span>
+          </a>
+          <a href="/overview" id="dash-overview-link" class="ov-side-link" title="نظرة عامة" hidden>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V8M8 17V4M13 17v-7M17 17v-4M2.5 17h15"/></svg>
+            <span>نظرة عامة</span>
+          </a>
+        </div>
+
+        <div class="ov-sidebar-section" data-reviewer-only hidden>
+          <div class="ov-sidebar-label">التحليلات</div>
+          <a href="/reports" class="ov-side-link" title="التقارير">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l8 4-8 4-8-4 8-4zM2 10l8 4 8-4M2 14l8 4 8-4"/></svg>
+            <span>التقارير</span>
+          </a>
+          <a href="/timeline" class="ov-side-link" title="الجدول الزمني">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg>
+            <span>الجدول الزمني</span>
+          </a>
+          <a href="/maps" class="ov-side-link" title="الخرائط">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l5-2 6 2 5-2v12l-5 2-6-2-5 2V5z"/><path d="M7 3v14M13 5v14"/></svg>
+            <span>الخرائط</span>
+          </a>
+        </div>
+
+        <div class="ov-sidebar-section" data-reviewer-only hidden>
+          <div class="ov-sidebar-label">الإدارة</div>
+          <a href="/users" class="ov-side-link" title="المستخدمون">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M3 17c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg>
+            <span>المستخدمون</span>
+          </a>
+          <a href="/settings" class="ov-side-link" title="الإعدادات">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M5 15l1.4-1.4M13.6 6.4L15 5"/></svg>
+            <span>الإعدادات</span>
+          </a>
+        </div>
       </div>
-      <button id="topbar-logout" class="ghost-btn" type="button" title="تسجيل الخروج">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
-        <span>تسجيل الخروج</span>
-      </button>
-    </div>
-  </header>
+
+      <div class="ov-sidebar-footer">
+        <div class="ov-user" id="topbar-user">
+          <span class="ov-user-avatar" id="topbar-user-avatar">R</span>
+          <div class="ov-user-meta">
+            <span class="ov-user-name" id="topbar-user-name">reviewer</span>
+            <span class="ov-user-role" id="topbar-role-chip" hidden></span>
+          </div>
+        </div>
+        <button id="topbar-logout" class="ov-logout-btn" type="button" title="تسجيل الخروج" aria-label="تسجيل الخروج">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
+          <span>تسجيل الخروج</span>
+        </button>
+      </div>
+    </aside>
 
   <!-- Hidden stash for JS-bound widgets that used to sit in the topbar
        (history toggle + count, language toggle). Kept in the DOM with
@@ -1527,6 +1577,8 @@
 
   </main>
 
+  </div><!-- /.ov-layout -->
+
   <!-- Image lightbox: clicking #drawing-img opens this overlay with the same
        image scaled up (~2× the inline view, capped to viewport). Click the
        backdrop, the × button, or press Escape to close. -->
@@ -1646,7 +1698,7 @@
   }
 </script>
 <script src="/static/app.js?v=76"></script>
-<script src="/static/reviewer.js?v=35"></script>
+<script src="/static/reviewer.js?v=36"></script>
 <script src="/static/measurement_viewer.js?v=14"></script>
 </body>
 </html>

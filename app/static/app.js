@@ -2901,23 +2901,8 @@ function _rcBuildPastCard(round, ordinal, events) {
   const body = document.createElement("div");
   body.className = "rc-body";
 
-  // Files
-  const files = round.files || [];
-  if (files.length > 0) {
-    const aiCounts = _rcAiCountsByFile(round.missing_data);
-    const fhead = document.createElement("div");
-    fhead.className = "rc-section-head";
-    fhead.textContent = files.length === 1
-      ? "وثيقة الجولة"
-      : `وثائق الجولة (${files.length})`;
-    body.appendChild(fhead);
-    const list = document.createElement("ul");
-    list.className = "rc-files";
-    for (const f of files) list.appendChild(_rcBuildFileItem(f, aiCounts, null));
-    body.appendChild(list);
-  }
-
-  // AI notes — collapsed by default
+  // AI notes — collapsed by default. Rendered first so the engineer / reviewer
+  // sees the system's findings before the document grid.
   const missing = round.missing_data || [];
   if (missing.length > 0) {
     const ai = document.createElement("details");
@@ -2941,6 +2926,26 @@ function _rcBuildPastCard(round, ordinal, events) {
     }
     ai.appendChild(ul);
     body.appendChild(ai);
+  }
+
+  // Files — collapsible <details> so the round card stays compact.
+  const files = round.files || [];
+  if (files.length > 0) {
+    const aiCounts = _rcAiCountsByFile(round.missing_data);
+    const filesBlock = document.createElement("details");
+    filesBlock.className = "rc-files-block";
+    const fsum = document.createElement("summary");
+    fsum.className = "rc-files-summary";
+    const label = files.length === 1
+      ? "وثيقة الجولة"
+      : `وثائق الجولة (${files.length})`;
+    fsum.innerHTML = `${_rcChevSVG()}<span>${_escapeHtml(label)}</span>`;
+    filesBlock.appendChild(fsum);
+    const list = document.createElement("ul");
+    list.className = "rc-files";
+    for (const f of files) list.appendChild(_rcBuildFileItem(f, aiCounts, null));
+    filesBlock.appendChild(list);
+    body.appendChild(filesBlock);
   }
 
   // Reviewer's freeform decision note (if any)
@@ -2994,27 +2999,32 @@ function _rcBuildActiveCard(round, ordinal, events) {
   const body = document.createElement("div");
   body.className = "rc-body";
 
-  // Files (with AI badges)
-  const files = round.files || [];
-  if (files.length > 0) {
-    const aiCounts = _rcAiCountsByFile(round.missing_data);
-    const fhead = document.createElement("div");
-    fhead.className = "rc-section-head";
-    fhead.textContent = files.length === 1
-      ? "وثيقة الجولة"
-      : `وثائق الجولة (${files.length})`;
-    body.appendChild(fhead);
-    const list = document.createElement("ul");
-    list.className = "rc-files";
-    for (const f of files) list.appendChild(_rcBuildFileItem(f, aiCounts, null));
-    body.appendChild(list);
-  }
-
-  // Slot for the issues panel — caller moves #issues-panel here.
+  // Slot for the issues panel — caller moves #issues-panel here. Rendered
+  // first so the AI suggestions / decision banner sit above the file grid.
   const slot = document.createElement("div");
   slot.className = "rc-issues-slot";
   slot.id = "rc-issues-slot";
   body.appendChild(slot);
+
+  // Files — collapsible <details> so the round card stays compact.
+  const files = round.files || [];
+  if (files.length > 0) {
+    const aiCounts = _rcAiCountsByFile(round.missing_data);
+    const filesBlock = document.createElement("details");
+    filesBlock.className = "rc-files-block";
+    const fsum = document.createElement("summary");
+    fsum.className = "rc-files-summary";
+    const label = files.length === 1
+      ? "وثيقة الجولة"
+      : `وثائق الجولة (${files.length})`;
+    fsum.innerHTML = `${_rcChevSVG()}<span>${_escapeHtml(label)}</span>`;
+    filesBlock.appendChild(fsum);
+    const list = document.createElement("ul");
+    list.className = "rc-files";
+    for (const f of files) list.appendChild(_rcBuildFileItem(f, aiCounts, null));
+    filesBlock.appendChild(list);
+    body.appendChild(filesBlock);
+  }
 
   card.appendChild(body);
   return card;

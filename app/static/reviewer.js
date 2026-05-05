@@ -16,13 +16,21 @@
   const ROLE = session.role || "reviewer";
   const IS_SUBMITTER = ROLE === "submitter";
 
-  // Fill user chip + logout wiring in the top bar
-  (function initTopbarUser() {
+  // Fill user chip + logout wiring in the side nav. The IDs are
+  // historically `topbar-*` because this used to live in the topbar; now
+  // the same widgets sit in the sidebar footer but the IDs are kept so
+  // the JS doesn't have to fork.
+  (function initShellChrome() {
     const name = (session.display_name || session.username || "reviewer").trim();
     const nameEl = document.getElementById("topbar-user-name");
     const avatarEl = document.getElementById("topbar-user-avatar");
     if (nameEl) nameEl.textContent = name;
     if (avatarEl) avatarEl.textContent = (name[0] || "R").toUpperCase();
+    const roleChip = document.getElementById("topbar-role-chip");
+    if (roleChip) {
+      roleChip.hidden = false;
+      roleChip.textContent = IS_SUBMITTER ? "مقدّم طلب" : "مراجع";
+    }
     const logoutBtn = document.getElementById("topbar-logout");
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
@@ -30,7 +38,7 @@
         window.location.assign("/login");
       });
     }
-    // "طلب جديد" pill in the header nav is submitter-only, mirroring
+    // "طلب جديد" pill in the side nav is submitter-only, mirroring
     // the same rule in dashboard.js. Reviewers don't create new
     // applications so the link stays hidden for them.
     const newLink = document.getElementById("dash-new-link");
@@ -40,6 +48,37 @@
     // to the cross-portfolio dashboard.
     const overviewLink = document.getElementById("dash-overview-link");
     if (overviewLink) overviewLink.hidden = IS_SUBMITTER;
+    // Whole sidebar sections that are reviewer-only (analytics, admin).
+    // Submitters never see these.
+    document.querySelectorAll("[data-reviewer-only]").forEach((el) => {
+      el.hidden = IS_SUBMITTER;
+    });
+  })();
+
+  // Sidebar collapse toggle — same shape and same localStorage key as
+  // shell.js / dashboard.js so the collapsed state persists across all
+  // pages of the app.
+  (function initSidebarToggle() {
+    const KEY = "ov_sidebar_collapsed";
+    const sidebar = document.getElementById("ov-sidebar");
+    const layout  = document.querySelector(".ov-layout");
+    const toggle  = document.getElementById("ov-side-toggle");
+    if (!sidebar || !layout || !toggle) return;
+
+    function apply(collapsed) {
+      sidebar.classList.toggle("ov-sidebar--collapsed", collapsed);
+      layout.classList.toggle("ov-layout--collapsed",   collapsed);
+      toggle.setAttribute("aria-label", collapsed ? "توسيع القائمة الجانبية" : "طي القائمة الجانبية");
+      toggle.title = collapsed ? "توسيع" : "طي";
+    }
+
+    apply(localStorage.getItem(KEY) === "true");
+
+    toggle.addEventListener("click", () => {
+      const next = !sidebar.classList.contains("ov-sidebar--collapsed");
+      apply(next);
+      try { localStorage.setItem(KEY, String(next)); } catch {}
+    });
   })();
 
   // Role-aware footer visibility on the issues panel. The panel itself

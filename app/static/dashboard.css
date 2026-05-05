@@ -114,16 +114,25 @@ body.dash-body {
   font-weight: 500;
 }
 
-/* ---- Main region ---- */
+/* ---- Main region ----
+   Sits in the second column of `.ov-layout` so it doesn't need to
+   reserve sidebar space — the grid already does. Padding matches
+   `.ov-main` so /dashboard, /overview, /reports, /timeline, /maps,
+   /users and /settings all share the same gutter (24px top, 32px both
+   sides, 48px bottom) and the same content cap (1480px). */
 .dash-main {
-  max-width: 1280px;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 28px;
+  padding: 24px 32px 48px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   width: 100%;
   flex: 1;
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .dash-main { padding: 16px; }
 }
 
 .dash-heading {

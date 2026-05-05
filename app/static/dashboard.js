@@ -86,6 +86,13 @@
     const overviewLink = $("dash-overview-link");
     if (overviewLink) overviewLink.hidden = !IS_REVIEWER;
 
+    // Whole sidebar sections that are reviewer-only (analytics, admin).
+    // Submitters never see these — keeps their sidebar focused on their
+    // own application list + the new-application CTA.
+    document.querySelectorAll("[data-reviewer-only]").forEach((el) => {
+      el.hidden = !IS_REVIEWER;
+    });
+
     // Page title + subtitle
     const titleEl = $("dash-heading-title");
     const subEl = $("dash-heading-sub");
@@ -101,6 +108,32 @@
         window.location.assign("/login");
       });
     }
+  })();
+
+  // ---- Sidebar collapse toggle (mirrors shell.js so the dashboard's
+  // sidebar behaves exactly like the manager pages — same key, same
+  // class names, same persisted state across all reviewer pages).
+  (function initSidebarToggle() {
+    const KEY = "ov_sidebar_collapsed";
+    const sidebar = document.getElementById("ov-sidebar");
+    const layout  = document.querySelector(".ov-layout");
+    const toggle  = document.getElementById("ov-side-toggle");
+    if (!sidebar || !layout || !toggle) return;
+
+    function apply(collapsed) {
+      sidebar.classList.toggle("ov-sidebar--collapsed", collapsed);
+      layout.classList.toggle("ov-layout--collapsed",   collapsed);
+      toggle.setAttribute("aria-label", collapsed ? "توسيع القائمة الجانبية" : "طي القائمة الجانبية");
+      toggle.title = collapsed ? "توسيع" : "طي";
+    }
+
+    apply(localStorage.getItem(KEY) === "true");
+
+    toggle.addEventListener("click", () => {
+      const next = !sidebar.classList.contains("ov-sidebar--collapsed");
+      apply(next);
+      try { localStorage.setItem(KEY, String(next)); } catch {}
+    });
   })();
 
   // ---- Filter controls

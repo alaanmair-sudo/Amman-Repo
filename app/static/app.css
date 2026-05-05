@@ -84,15 +84,11 @@ body.rtl pre { font-family: var(--ff-mono); }
 /* Sides grid: keep geographic layout (N/W/E/S) regardless of text direction */
 .sides-grid { direction: ltr; }
 
-/* Logical border for the summary-brand accent so RTL mirrors it correctly */
+/* Inline-start brand rails were removed — multiple stacked sections
+   were creating one continuous blue line on the right edge in RTL,
+   which read as a page-spanning rail instead of per-card accents. */
 .summary-details, .pdf-section {
   border-left-width: 1px;
-}
-.summary-details { border-inline-start: 3px solid var(--c-brand); }
-.pdf-section     { border-inline-start: 3px solid #ea580c; }
-body.rtl .summary-details,
-body.rtl .pdf-section {
-  border-left: 1px solid rgba(37, 99, 235,0.14); /* neutralize original left */
 }
 
 
@@ -1270,7 +1266,6 @@ body.is-archive .pane-pulse-label { color: var(--c-muted); }
 .summary-details {
   background: linear-gradient(140deg, rgba(37, 99, 235,0.045), rgba(37, 99, 235,0.015));
   border: 1px solid rgba(37, 99, 235,0.14);
-  border-left: 3px solid var(--c-brand);
   border-radius: 8px;
   padding: 6px 11px;
 }
@@ -4129,7 +4124,6 @@ body.rtl .floor-section { border-left: 1px solid rgba(37, 99, 235,0.14); }
   background: var(--c-surface);
   padding: 14px 16px 12px;
   margin-bottom: 12px;
-  border-inline-start: 3px solid #2563eb;
 }
 .app-summary-head {
   display: flex;
@@ -4256,7 +4250,7 @@ body.rtl .floor-section { border-left: 1px solid rgba(37, 99, 235,0.14); }
    Card states: pending (dashed, no content), running (spinner),
    done (filled with extracted fields), error (red-tinted body).
    ================================================================ */
-.extras-section { border-inline-start: 3px solid #3b82f6; }
+.extras-section { /* blue inline-start rail removed — visual line through page section was distracting */ }
 .extras-list {
   display: flex;
   flex-direction: column;
@@ -4954,6 +4948,30 @@ body.rtl .history-panel {
 }
 
 /* ---- Files row inside a round (reuses dp-file visual language) */
+.rc-files-block {
+  background: var(--c-surface, #fff);
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.rc-files-block[open] { padding-bottom: 12px; }
+.rc-files-summary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-muted, #64748b);
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rc-files-summary::-webkit-details-marker { display: none; }
+.rc-files-summary .rc-chev { transition: transform 120ms ease; transform: rotate(180deg); }
+.rc-files-block[open] > .rc-files-summary .rc-chev { transform: rotate(90deg); }
+.rc-files-block .rc-files {
+  margin-top: 8px;
+}
 .rc-files {
   list-style: none;
   margin: 0;

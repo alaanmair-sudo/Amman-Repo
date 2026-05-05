@@ -9,38 +9,93 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
 <link rel="stylesheet" href="/static/app.css?v=37" />
-<link rel="stylesheet" href="/static/dashboard.css?v=12" />
+<link rel="stylesheet" href="/static/dashboard.css?v=13" />
+<link rel="stylesheet" href="/static/overview.css?v=9" />
 <script src="/static/auth.js?v=9"></script>
 </head>
-<body class="dash-body rtl">
+<body class="dash-body rtl ov-body">
 
-  <header class="dash-topbar">
-    <div class="dash-topbar-brand">
-      <a href="/dashboard" class="logo logo--img" aria-label="أمانة عمان الكبرى">
-        <img src="/static/logo.png" alt="أمانة عمان الكبرى" />
-      </a>
-      <div class="dash-topbar-titles">
-        <div class="dash-topbar-title">النظام الذكي لامانة عمان الكبرى</div>
-        <div class="dash-topbar-sub">واجهة مراجعة الرخص بالذكاء الاصطناعي</div>
+  <div class="ov-layout">
+
+    <!-- Side nav — same shell as the manager pages so the user sees one
+         consistent navigation, not a topbar here and a sidebar elsewhere.
+         Items that don't apply to a given role are hidden by dashboard.js
+         (submitters get only "الطلبات" + "طلب جديد"; reviewers get the
+         full set: dashboards, analytics, admin). -->
+    <aside class="ov-sidebar" id="ov-sidebar" aria-label="التنقل بين أقسام النظام">
+      <div class="ov-sidebar-brand">
+        <a href="/dashboard" class="ov-brand-link" aria-label="أمانة عمان الكبرى" title="الرئيسية">
+          <img src="/static/logo.png" alt="أمانة عمان الكبرى" class="ov-brand-img" />
+          <div class="ov-brand-text">
+            <div class="ov-brand-title">أمانة عمان الكبرى</div>
+            <div class="ov-brand-sub">المراجعة الذكية</div>
+          </div>
+        </a>
+        <button class="ov-side-toggle" id="ov-side-toggle" type="button" aria-label="طي القائمة الجانبية" title="طي / توسيع">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-5 5 5 5M14 5l-5 5 5 5"/></svg>
+        </button>
       </div>
-    </div>
-    <nav class="dash-topbar-nav">
-      <a href="/dashboard" class="dash-nav-link dash-nav-link--active">لوحة التحكم</a>
-      <a href="/overview" class="dash-nav-link" id="dash-overview-link" hidden>نظرة عامة</a>
-      <a href="/app" class="dash-nav-link" id="dash-new-link" hidden>طلب جديد</a>
-    </nav>
-    <div class="dash-topbar-meta">
-      <span class="chip chip-muted" id="dash-role-chip" hidden></span>
-      <div class="dash-user">
-        <span class="dash-user-avatar" id="user-avatar">R</span>
-        <span class="dash-user-name" id="user-name">reviewer</span>
+
+      <div class="ov-sidebar-scroll">
+        <div class="ov-sidebar-section">
+          <div class="ov-sidebar-label">لوحات التحكم</div>
+          <a href="/dashboard" class="ov-side-link ov-side-link--active" title="الطلبات">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.2"/><rect x="11" y="3" width="6" height="6" rx="1.2"/><rect x="3" y="11" width="6" height="6" rx="1.2"/><rect x="11" y="11" width="6" height="6" rx="1.2"/></svg>
+            <span>الطلبات</span>
+          </a>
+          <a href="/app" id="dash-new-link" class="ov-side-link" title="طلب جديد" hidden>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12M4 10h12"/></svg>
+            <span>طلب جديد</span>
+          </a>
+          <a href="/overview" id="dash-overview-link" class="ov-side-link" title="نظرة عامة" hidden>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V8M8 17V4M13 17v-7M17 17v-4M2.5 17h15"/></svg>
+            <span>نظرة عامة</span>
+          </a>
+        </div>
+
+        <div class="ov-sidebar-section" data-reviewer-only hidden>
+          <div class="ov-sidebar-label">التحليلات</div>
+          <a href="/reports" class="ov-side-link" title="التقارير">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l8 4-8 4-8-4 8-4zM2 10l8 4 8-4M2 14l8 4 8-4"/></svg>
+            <span>التقارير</span>
+          </a>
+          <a href="/timeline" class="ov-side-link" title="الجدول الزمني">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg>
+            <span>الجدول الزمني</span>
+          </a>
+          <a href="/maps" class="ov-side-link" title="الخرائط">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l5-2 6 2 5-2v12l-5 2-6-2-5 2V5z"/><path d="M7 3v14M13 5v14"/></svg>
+            <span>الخرائط</span>
+          </a>
+        </div>
+
+        <div class="ov-sidebar-section" data-reviewer-only hidden>
+          <div class="ov-sidebar-label">الإدارة</div>
+          <a href="/users" class="ov-side-link" title="المستخدمون">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M3 17c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg>
+            <span>المستخدمون</span>
+          </a>
+          <a href="/settings" class="ov-side-link" title="الإعدادات">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M5 15l1.4-1.4M13.6 6.4L15 5"/></svg>
+            <span>الإعدادات</span>
+          </a>
+        </div>
       </div>
-      <button id="logout-btn" class="ghost-btn" type="button" title="تسجيل الخروج">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
-        <span>تسجيل الخروج</span>
-      </button>
-    </div>
-  </header>
+
+      <div class="ov-sidebar-footer">
+        <div class="ov-user">
+          <span class="ov-user-avatar" id="user-avatar">R</span>
+          <div class="ov-user-meta">
+            <span class="ov-user-name" id="user-name">reviewer</span>
+            <span class="ov-user-role" id="dash-role-chip" hidden></span>
+          </div>
+        </div>
+        <button id="logout-btn" class="ov-logout-btn" type="button" title="تسجيل الخروج" aria-label="تسجيل الخروج">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3M8 14l-4-4 4-4M4 10h9"/></svg>
+          <span>تسجيل الخروج</span>
+        </button>
+      </div>
+    </aside>
 
   <main class="dash-main">
 
@@ -184,6 +239,8 @@
     </section>
   </main>
 
-  <script src="/static/dashboard.js?v=12"></script>
+  </div><!-- /.ov-layout -->
+
+  <script src="/static/dashboard.js?v=13"></script>
 </body>
 </html>
