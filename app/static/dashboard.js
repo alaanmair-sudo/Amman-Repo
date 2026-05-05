@@ -285,7 +285,7 @@
 
     if (rows.length === 0) {
       elTbody.innerHTML = `
-        <tr><td colspan="6" class="app-cell-muted" style="text-align:center; padding:32px;">
+        <tr><td colspan="7" class="app-cell-muted" style="text-align:center; padding:32px;">
           لا توجد طلبات مطابقة للمرشحات الحالية.
         </td></tr>`;
       return;
@@ -337,6 +337,19 @@
              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 3l3 3-3 3"/></svg>
            </a>`;
 
+      // Total estimated fines = setback + building-area + floor-coverage,
+      // computed server-side in main.py:_total_estimated_fine_jd so it
+      // matches the "إجمالي الغرامات التقديرية" tile inside the application.
+      // Falls back to the older setback-only field for archived analyses
+      // saved before the aggregate landed.
+      const fine = (typeof a.total_estimated_fine_jd === "number")
+        ? a.total_estimated_fine_jd
+        : a.compliance_fine_jd;
+      const fineHtml =
+        typeof fine === "number" && fine > 0
+          ? `<span class="app-fine-value">${Math.round(fine).toLocaleString("en-US")} د.أ</span>`
+          : `<span class="app-cell-muted">—</span>`;
+
       // Subtitle slot under the application name — used to surface the
       // CAD filename when one exists, so engineers can still match a row
       // to a local file even though "filename" is no longer a column.
@@ -359,6 +372,7 @@
           <td><span dir="auto">${escapeHtml(owner)}</span></td>
           <td>${statusBadgeHtml}</td>
           <td><span class="app-cell-muted">${escapeHtml(created)}</span></td>
+          <td>${fineHtml}</td>
           <td>${openHtml}</td>
         </tr>
       `;

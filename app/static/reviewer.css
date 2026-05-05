@@ -420,6 +420,41 @@
   color: var(--c-muted);
   letter-spacing: 0.02em;
 }
+/* Header strip on unit-aware tiles — label on the natural-reading side,
+   m²/% toggle pill on the opposite side. Stays single-line; the row
+   below (compare values) flows underneath. */
+.rb-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.rb-unit-toggle {
+  display: inline-flex;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--c-surface);
+  font-feature-settings: "tnum" 1;
+}
+.rb-unit-btn {
+  padding: 2px 9px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--c-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  transition: background 0.12s var(--ease), color 0.12s var(--ease);
+}
+.rb-unit-btn:hover { color: var(--c-text); background: var(--c-bg-soft, #f8fafc); }
+.rb-unit-btn[aria-pressed="true"] {
+  background: var(--c-text);
+  color: var(--c-surface);
+}
 .rb-kpi-value {
   font-size: 22px;
   font-weight: 700;
@@ -510,6 +545,19 @@
   background: var(--c-bg-soft, #f8fafc);
   color: var(--c-muted);
 }
+/* Per-tile estimated fine — sits directly under the violation badge.
+   Only rendered when the tile is in violation state (toggled via
+   [hidden] from reviewer.js). Same red palette as the badge but
+   slightly heavier weight so the JOD figure reads as the headline. */
+.rb-kpi-compare-fine {
+  margin-top: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: #991b1b;
+  letter-spacing: 0.01em;
+}
 /* Subtle border tint on the card itself when in error/warning states. */
 .rb-kpi--compare[data-state="warning"]   { border-color: #fdba74; }
 .rb-kpi--compare[data-state="violation"] { border-color: #fca5a5; }
@@ -569,6 +617,22 @@
 .rb-kpi--compliance.rb-kpi--serious .rb-kpi-label,
 .rb-kpi--compliance.rb-kpi--serious .rb-kpi-value,
 .rb-kpi--compliance.rb-kpi--serious .rb-kpi-hint { color: #fff; }
+
+/* Total fines tile — sums setback + building-area + floor-coverage fines.
+   Spans 2 grid columns so the headline JOD figure reads at a glance, and
+   inherits the red .rb-kpi--violated treatment when the total is non-zero. */
+.rb-kpi--total-fines {
+  grid-column: span 2;
+  border-color: rgba(124,58,237,.2);
+}
+.rb-kpi--total-fines .rb-kpi-value {
+  font-size: 26px;
+}
+.rb-kpi--total-fines.rb-kpi--violated {
+  background: var(--c-error-soft);
+  border-color: var(--c-error-bd);
+}
+.rb-kpi--total-fines.rb-kpi--violated .rb-kpi-value { color: var(--c-error); }
 
 .rb-scroll-hint {
   display: flex;

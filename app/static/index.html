@@ -824,24 +824,81 @@
               <div class="spinner rb-section-spinner" id="rb-kpis-spinner" aria-hidden="true"></div>
             </div>
             <div class="rb-kpis">
-              <!-- Building area — single tile comparing CAD-actual vs the
-                   allowed maximum, derived as deed lot area × site-plan
-                   coverage ratio (i.e. the same constraint as the Coverage
-                   tile but expressed in m² for fast eyeballing). -->
-              <div class="rb-kpi rb-kpi--compare" id="rb-building-area-card" data-state="pending">
-                <div class="rb-kpi-label" data-i18n="rb.kpi.building_area">Building area</div>
+              <!-- Building area / Coverage % — one unified tile. The
+                   m²/% toggle at top flips between absolute (building
+                   footprint vs derived allowed = lot × cov%) and
+                   percentage (coverage % vs site-plan max). Same
+                   constraint, two units. Status + fine stay canonical
+                   in m². Replaces the old #rb-coverage-card. -->
+              <div class="rb-kpi rb-kpi--compare rb-kpi--unit-aware" id="rb-building-area-card" data-state="pending">
+                <div class="rb-kpi-header">
+                  <div class="rb-kpi-label" id="rb-building-area-tile-label" data-i18n="rb.kpi.building_sqm">Building area</div>
+                  <div class="rb-unit-toggle" data-tile="building" role="group">
+                    <button type="button" class="rb-unit-btn" data-unit="sqm" aria-pressed="true">م²</button>
+                    <button type="button" class="rb-unit-btn" data-unit="pct" aria-pressed="false">%</button>
+                  </div>
+                </div>
                 <div class="rb-kpi-compare-row">
                   <div class="rb-kpi-compare-side">
                     <div class="rb-kpi-compare-value" id="rb-building-area">—</div>
-                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.actual_cad">Actual (CAD)</div>
+                    <div class="rb-kpi-compare-source" id="rb-building-area-actual-src" data-i18n="rb.compare.actual_cad">Actual (CAD)</div>
                   </div>
                   <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
                   <div class="rb-kpi-compare-side">
                     <div class="rb-kpi-compare-value" id="rb-building-area-allowed">—</div>
-                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.allowed_derived">Allowed (deed × coverage %)</div>
+                    <div class="rb-kpi-compare-source" id="rb-building-area-allowed-src" data-i18n="rb.compare.allowed_derived">Allowed (deed × coverage %)</div>
                   </div>
                 </div>
                 <div class="rb-kpi-compare-status" id="rb-building-area-status" data-state="pending" dir="rtl">
+                  <span data-i18n="rb.compare.pending">Waiting for values</span>
+                </div>
+                <div class="rb-kpi-compare-fine" id="rb-building-area-fine" dir="rtl" hidden></div>
+              </div>
+              <!-- Floor coverage / Floors total — one unified tile. The
+                   m²/% toggle at top flips between absolute (computed
+                   floor sum vs allowed = lot × allowed_pct/100) and
+                   percentage (computed/lot ratio vs allowed_pct).
+                   Replaces the old #rb-floor-totals-card. -->
+              <div class="rb-kpi rb-kpi--compare rb-kpi--unit-aware" id="rb-floor-coverage-card" data-state="pending">
+                <div class="rb-kpi-header">
+                  <div class="rb-kpi-label" id="rb-floor-coverage-tile-label" data-i18n="rb.kpi.floor_sqm">Floors total</div>
+                  <div class="rb-unit-toggle" data-tile="floor" role="group">
+                    <button type="button" class="rb-unit-btn" data-unit="sqm" aria-pressed="true">م²</button>
+                    <button type="button" class="rb-unit-btn" data-unit="pct" aria-pressed="false">%</button>
+                  </div>
+                </div>
+                <div class="rb-kpi-compare-row">
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-floor-computed">—</div>
+                    <div class="rb-kpi-compare-source" id="rb-floor-coverage-actual-src" data-i18n="rb.compare.floor_computed">Computed (compliance)</div>
+                  </div>
+                  <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-floor-coverage-allowed">—</div>
+                    <div class="rb-kpi-compare-source" id="rb-floor-coverage-allowed-src" data-i18n="rb.compare.allowed_derived_floor">Allowed (lot × ratio %)</div>
+                  </div>
+                </div>
+                <div class="rb-kpi-compare-status" id="rb-floor-coverage-status" data-state="pending" dir="rtl">
+                  <span data-i18n="rb.compare.pending">Waiting for values</span>
+                </div>
+                <div class="rb-kpi-compare-fine" id="rb-floor-coverage-fine" dir="rtl" hidden></div>
+              </div>
+              <!-- Number of floors — single tile comparing the floor plan's
+                   counted floors vs the regulatory max from the site plan. -->
+              <div class="rb-kpi rb-kpi--compare" id="rb-num-floors-card" data-state="pending">
+                <div class="rb-kpi-label" data-i18n="rb.kpi.num_floors">Number of floors</div>
+                <div class="rb-kpi-compare-row">
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-num-floors-actual">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.actual_floor_plan">Actual (floor plan)</div>
+                  </div>
+                  <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
+                  <div class="rb-kpi-compare-side">
+                    <div class="rb-kpi-compare-value" id="rb-num-floors-allowed">—</div>
+                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.allowed_site_plan">Allowed (site plan)</div>
+                  </div>
+                </div>
+                <div class="rb-kpi-compare-status" id="rb-num-floors-status" data-state="pending" dir="rtl">
                   <span data-i18n="rb.compare.pending">Waiting for values</span>
                 </div>
               </div>
@@ -866,67 +923,6 @@
                   <span data-i18n="rb.lotcheck.pending">Waiting for both values</span>
                 </div>
               </div>
-              <!-- Coverage ratio — single tile comparing CAD-actual vs the
-                   max allowed by the regulatory site plan. -->
-              <div class="rb-kpi rb-kpi--compare" id="rb-coverage-card" data-state="pending">
-                <div class="rb-kpi-label" data-i18n="rb.kpi.coverage">Coverage</div>
-                <div class="rb-kpi-compare-row">
-                  <div class="rb-kpi-compare-side">
-                    <div class="rb-kpi-compare-value" id="rb-coverage">—</div>
-                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.actual_cad">Actual (CAD)</div>
-                  </div>
-                  <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
-                  <div class="rb-kpi-compare-side">
-                    <div class="rb-kpi-compare-value" id="rb-coverage-allowed">—</div>
-                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.allowed_site_plan">Allowed (site plan)</div>
-                  </div>
-                </div>
-                <div class="rb-kpi-compare-status" id="rb-coverage-status" data-state="pending" dir="rtl">
-                  <span data-i18n="rb.compare.pending">Waiting for values</span>
-                </div>
-              </div>
-              <!-- Number of floors — single tile comparing the floor plan's
-                   counted floors vs the regulatory max from the site plan. -->
-              <div class="rb-kpi rb-kpi--compare" id="rb-num-floors-card" data-state="pending">
-                <div class="rb-kpi-label" data-i18n="rb.kpi.num_floors">Number of floors</div>
-                <div class="rb-kpi-compare-row">
-                  <div class="rb-kpi-compare-side">
-                    <div class="rb-kpi-compare-value" id="rb-num-floors-actual">—</div>
-                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.actual_floor_plan">Actual (floor plan)</div>
-                  </div>
-                  <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
-                  <div class="rb-kpi-compare-side">
-                    <div class="rb-kpi-compare-value" id="rb-num-floors-allowed">—</div>
-                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.allowed_site_plan">Allowed (site plan)</div>
-                  </div>
-                </div>
-                <div class="rb-kpi-compare-status" id="rb-num-floors-status" data-state="pending" dir="rtl">
-                  <span data-i18n="rb.compare.pending">Waiting for values</span>
-                </div>
-              </div>
-              <!-- Floor coverage ratio — single tile comparing the
-                   computed ratio (Σ floor area ÷ lot area) vs the allowed
-                   floor_ratio_pct from the regulatory site plan. Placed
-                   here (before the setbacks / fine / printed-total row)
-                   so it shares a row with another compare tile rather
-                   than landing alone at the bottom of the grid. -->
-              <div class="rb-kpi rb-kpi--compare" id="rb-floor-coverage-card" data-state="pending">
-                <div class="rb-kpi-label" data-i18n="rb.kpi.floor_coverage">Floor coverage ratio</div>
-                <div class="rb-kpi-compare-row">
-                  <div class="rb-kpi-compare-side">
-                    <div class="rb-kpi-compare-value" id="rb-floor-computed">—</div>
-                    <div class="rb-kpi-compare-source" id="rb-floor-hint" data-i18n="rb.hint.floors_over_lot">Floors ÷ lot</div>
-                  </div>
-                  <div class="rb-kpi-compare-divider" aria-hidden="true"></div>
-                  <div class="rb-kpi-compare-side">
-                    <div class="rb-kpi-compare-value" id="rb-floor-coverage-allowed">—</div>
-                    <div class="rb-kpi-compare-source" data-i18n="rb.compare.allowed_site_plan">Allowed (site plan)</div>
-                  </div>
-                </div>
-                <div class="rb-kpi-compare-status" id="rb-floor-coverage-status" data-state="pending" dir="rtl">
-                  <span data-i18n="rb.compare.pending">Waiting for values</span>
-                </div>
-              </div>
               <!-- Compliance tiles: required setbacks (from site-plan PDF) +
                    actual fine computed by the geometry engine. The fine here
                    is the authoritative compliance number — distinct from the
@@ -936,17 +932,22 @@
               <div class="rb-kpi rb-kpi--required" id="rb-required-tile" hidden>
                 <div class="rb-kpi-label" data-i18n="rb.kpi.required_setbacks">Required setbacks</div>
                 <div class="rb-kpi-value rb-kpi-value--small" id="rb-required-values">—</div>
-                <div class="rb-kpi-hint" data-i18n="rb.hint.from_site_plan">From مخطط موقع تنظيمي</div>
+                <div class="rb-kpi-hint" id="rb-required-hint" data-i18n="rb.hint.from_site_plan">From مخطط موقع تنظيمي</div>
               </div>
               <div class="rb-kpi rb-kpi--compliance" id="rb-compliance-tile" hidden>
                 <div class="rb-kpi-label" data-i18n="rb.kpi.compliance_fine">Compliance fine</div>
                 <div class="rb-kpi-value" id="rb-compliance-fine">—</div>
                 <div class="rb-kpi-hint" id="rb-compliance-hint" data-i18n="rb.hint.compliance_clean">Within required setbacks</div>
               </div>
-              <div class="rb-kpi">
-                <div class="rb-kpi-label" data-i18n="rb.kpi.floor_printed">Floors total (printed)</div>
-                <div class="rb-kpi-value" id="rb-floor-printed">—</div>
-                <div class="rb-kpi-hint" data-i18n="rb.hint.from_floor_plan">From floor-area plan</div>
+              <!-- Total estimated fines — sums setback + building-area +
+                   floor-coverage fines computed on this run. Distinct from
+                   the setback-only "compliance fine" tile above; this is the
+                   reviewer's at-a-glance "what does the consultant owe in
+                   total" number. Hidden until any compute input arrives. -->
+              <div class="rb-kpi rb-kpi--total-fines" id="rb-total-fines-tile" hidden>
+                <div class="rb-kpi-label" data-i18n="rb.kpi.total_fines">Total estimated fines</div>
+                <div class="rb-kpi-value" id="rb-total-fines-value">—</div>
+                <div class="rb-kpi-hint" id="rb-total-fines-hint" data-i18n="rb.hint.total_fines_clean">No violations</div>
               </div>
             </div>
           </div>

@@ -10,9 +10,11 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
 <link rel="stylesheet" href="/static/app.css?v=37" />
 <link rel="stylesheet" href="/static/dashboard.css?v=12" />
-<link rel="stylesheet" href="/static/overview.css?v=1" />
+<link rel="stylesheet" href="/static/overview.css?v=8" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="/static/auth.js?v=9"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="dash-body rtl ov-body">
 
@@ -113,7 +115,10 @@
       <section class="ov-heading">
         <div>
           <h1 class="dash-h1">نظرة عامة على النظام</h1>
-          <p class="dash-sub">مؤشرات الأداء الرئيسية وأرقام التراخيص والمخالفات والغرامات عبر أحياء وقرى أمانة عمان الكبرى.</p>
+          <p class="dash-sub" id="ov-sub">
+            مؤشرات الأداء الرئيسية وأرقام التراخيص والمخالفات والغرامات
+            <span class="ov-live"><span class="ov-live-dot"></span><span id="ov-last-updated">محدّث الآن</span></span>
+          </p>
         </div>
         <div class="ov-period-pills" role="tablist" aria-label="الفترة الزمنية">
           <button class="ov-period-pill" data-period="30">آخر ٣٠ يومًا</button>
@@ -200,7 +205,7 @@
             <span class="ov-delta ov-delta--up" id="kpi-total-delta">▲ —%</span>
             <span class="ov-kpi-sub">مقارنة بالفترة السابقة</span>
           </div>
-          <canvas class="ov-kpi-spark" id="spark-total" height="36"></canvas>
+          <div class="ov-kpi-spark"><canvas id="spark-total"></canvas></div>
         </article>
 
         <article class="ov-kpi ov-kpi--warn">
@@ -215,7 +220,7 @@
             <span class="ov-pill ov-pill--warn" id="kpi-pending-wait">— أيام</span>
             <span class="ov-kpi-sub">متوسط زمن الانتظار</span>
           </div>
-          <canvas class="ov-kpi-spark" id="spark-pending" height="36"></canvas>
+          <div class="ov-kpi-spark"><canvas id="spark-pending"></canvas></div>
         </article>
 
         <article class="ov-kpi ov-kpi--ok">
@@ -230,7 +235,7 @@
             <span class="ov-delta ov-delta--up" id="kpi-approval-delta">▲ —%</span>
             <span class="ov-kpi-sub">من إجمالي القرارات</span>
           </div>
-          <canvas class="ov-kpi-spark" id="spark-approval" height="36"></canvas>
+          <div class="ov-kpi-spark"><canvas id="spark-approval"></canvas></div>
         </article>
 
         <article class="ov-kpi ov-kpi--err">
@@ -245,7 +250,7 @@
             <span class="ov-delta ov-delta--up" id="kpi-fines-delta">▲ —%</span>
             <span class="ov-kpi-sub">دينار أردني</span>
           </div>
-          <canvas class="ov-kpi-spark" id="spark-fines" height="36"></canvas>
+          <div class="ov-kpi-spark"><canvas id="spark-fines"></canvas></div>
         </article>
 
         <article class="ov-kpi">
@@ -260,7 +265,7 @@
             <span class="ov-delta ov-delta--down" id="kpi-review-delta">▼ —%</span>
             <span class="ov-kpi-sub">يوم/طلب · أسرع بـ ٤١٪ من الهدف</span>
           </div>
-          <canvas class="ov-kpi-spark" id="spark-review" height="36"></canvas>
+          <div class="ov-kpi-spark"><canvas id="spark-review"></canvas></div>
         </article>
 
         <article class="ov-kpi ov-kpi--ai">
@@ -275,7 +280,7 @@
             <span class="ov-pill ov-pill--ai">الذكاء الاصطناعي</span>
             <span class="ov-kpi-sub">من قرارات المراجع تطابق الكشف</span>
           </div>
-          <canvas class="ov-kpi-spark" id="spark-ai" height="36"></canvas>
+          <div class="ov-kpi-spark"><canvas id="spark-ai"></canvas></div>
         </article>
       </section>
 
@@ -298,202 +303,98 @@
           </div>
         </article>
 
-        <article class="ov-card ov-card--status">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">توزيع الحالات</h2>
-              <p class="ov-card-sub">حالة كل طلب في الفترة المختارة</p>
-            </div>
-          </header>
-          <div class="ov-donut-wrap">
-            <canvas id="chart-status"></canvas>
-            <div class="ov-donut-center">
-              <div class="ov-donut-num" id="donut-num">—</div>
-              <div class="ov-donut-lbl">طلب</div>
-            </div>
-          </div>
-          <ul class="ov-legend" id="legend-status"></ul>
-        </article>
       </section>
 
-      <!-- ========== Application types ========== -->
-      <section class="ov-row ov-row--types">
-        <article class="ov-card ov-card--wide">
+      <!-- ========== Types + Geography (side by side) ========== -->
+      <section class="ov-row ov-row--types-geo">
+
+        <!-- Types card: list / pie toggle -->
+        <article class="ov-card">
           <header class="ov-card-head">
             <div>
               <h2 class="ov-card-title">تصنيف الطلبات حسب النوع</h2>
-              <p class="ov-card-sub">١٧ نوعًا من المعاملات — مرتبة من الأعلى للأدنى تكرارًا</p>
+              <p class="ov-card-sub">١٧ نوعًا من المعاملات — مرتبة من الأعلى للأدنى</p>
             </div>
-            <span class="ov-card-pill">إجمالي ١٧ نوعًا</span>
+            <div class="ov-toggle" role="tablist" aria-label="نوع العرض">
+              <button class="ov-toggle-btn ov-toggle-btn--active" data-typespanel="list">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 3h12M1 7h12M1 11h12"/></svg>
+                قائمة
+              </button>
+              <button class="ov-toggle-btn" data-typespanel="pie">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 1.5V7l3.9 3.9"/></svg>
+                دائرة
+              </button>
+            </div>
           </header>
-          <div class="ov-chart-wrap ov-chart-wrap--types">
-            <canvas id="chart-types"></canvas>
+
+          <div id="ov-types-list-panel">
+            <div class="ov-table-wrap">
+              <table class="ov-table" id="table-types">
+                <thead><tr><th>النوع</th><th>الطلبات</th><th>النسبة</th></tr></thead>
+                <tbody id="tbody-types"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="ov-types-pie-panel" hidden>
+            <div class="ov-chart-wrap ov-chart-wrap--pie">
+              <canvas id="chart-types-pie"></canvas>
+            </div>
           </div>
         </article>
+
+        <!-- Geo card: list / pie / map toggle -->
+        <article class="ov-card">
+          <header class="ov-card-head">
+            <div>
+              <h2 class="ov-card-title">التوزيع الجغرافي</h2>
+              <p class="ov-card-sub" id="geo-table-sub">انقر للتصفية على المنطقة</p>
+            </div>
+            <div class="ov-geo-controls">
+              <div class="ov-toggle" id="ov-geo-list-sub" role="tablist" aria-label="نوع القائمة">
+                <button class="ov-toggle-btn ov-toggle-btn--active" data-geo="neighborhoods">أحياء</button>
+                <button class="ov-toggle-btn" data-geo="basins">أحواض</button>
+              </div>
+              <div class="ov-toggle" role="tablist" aria-label="نوع العرض">
+                <button class="ov-toggle-btn ov-toggle-btn--active" data-geopanel="list">
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 3h12M1 7h12M1 11h12"/></svg>
+                  قائمة
+                </button>
+                <button class="ov-toggle-btn" data-geopanel="pie">
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 1.5V7l3.9 3.9"/></svg>
+                  دائرة
+                </button>
+                <button class="ov-toggle-btn" data-geopanel="map">
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 2l4 2 4-2 4 2v9l-4-2-4 2-4-2V2z"/><path d="M5 4v9M9 2v9"/></svg>
+                  خريطة
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div id="ov-geo-list-panel">
+            <div class="ov-table-wrap">
+              <table class="ov-table" id="table-geo">
+                <thead id="thead-geo"></thead>
+                <tbody id="tbody-geo"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="ov-geo-pie-panel" hidden>
+            <div class="ov-chart-wrap ov-chart-wrap--pie">
+              <canvas id="chart-geo-pie"></canvas>
+            </div>
+          </div>
+
+          <div id="ov-geo-map-panel" hidden>
+            <div id="ov-leaflet-map"></div>
+            <div class="ov-map-hint">انقر منطقة للتصفية · اللون يعكس عدد الطلبات (فاتح → قليل / داكن → كثير)</div>
+          </div>
+        </article>
+
       </section>
 
-      <!-- ========== Geography ========== -->
-      <section class="ov-row ov-row--geo">
-        <article class="ov-card">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">أعلى الأحياء طلبًا</h2>
-              <p class="ov-card-sub">عدد الطلبات والغرامات لكل حي</p>
-            </div>
-          </header>
-          <div class="ov-table-wrap">
-            <table class="ov-table" id="table-neighborhoods">
-              <thead>
-                <tr><th>الحي</th><th>الطلبات</th><th>الغرامات</th><th>نسبة المخالفات</th></tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </article>
-
-        <article class="ov-card">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">أعلى الأحواض طلبًا</h2>
-              <p class="ov-card-sub">حسب رقم القطعة والقرية</p>
-            </div>
-          </header>
-          <div class="ov-table-wrap">
-            <table class="ov-table" id="table-basins">
-              <thead>
-                <tr><th>الحوض</th><th>القرية</th><th>الطلبات</th><th>متوسط مساحة القطعة</th></tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </article>
-
-        <article class="ov-card ov-card--map">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">الكثافة الجغرافية</h2>
-              <p class="ov-card-sub">عرض تخطيطي لتوزيع الطلبات على مناطق الأمانة</p>
-            </div>
-            <span class="ov-card-pill ov-card-pill--ai">عرض تجريبي</span>
-          </header>
-          <div class="ov-map" id="ov-map">
-            <!-- JS will populate the dots -->
-          </div>
-        </article>
-      </section>
-
-      <!-- ========== Compliance ========== -->
-      <section class="ov-row ov-row--compliance">
-        <article class="ov-card">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">طبيعة المخالفات</h2>
-              <p class="ov-card-sub">توزيع المخالفات المُكتشفة</p>
-            </div>
-          </header>
-          <div class="ov-donut-wrap">
-            <canvas id="chart-violations"></canvas>
-            <div class="ov-donut-center">
-              <div class="ov-donut-num" id="violation-num">—٪</div>
-              <div class="ov-donut-lbl">طلبات تحتوي مخالفة</div>
-            </div>
-          </div>
-          <ul class="ov-legend" id="legend-violations"></ul>
-        </article>
-
-        <article class="ov-card">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">توزيع قيم الغرامات</h2>
-              <p class="ov-card-sub">عدد الطلبات في كل شريحة قيمة</p>
-            </div>
-            <span class="ov-card-pill">دينار أردني</span>
-          </header>
-          <div class="ov-chart-wrap">
-            <canvas id="chart-fines-hist"></canvas>
-          </div>
-        </article>
-
-        <article class="ov-card ov-card--wide">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">أعلى الطلبات غرامةً</h2>
-              <p class="ov-card-sub">أكبر ٥ غرامات تم تقديرها في الفترة</p>
-            </div>
-          </header>
-          <div class="ov-table-wrap">
-            <table class="ov-table" id="table-top-fines">
-              <thead>
-                <tr><th>المالك</th><th>الحي</th><th>نوع الطلب</th><th>المخالفة</th><th>الغرامة</th><th>الحالة</th></tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </article>
-      </section>
-
-      <!-- ========== Reviewers + AI ========== -->
-      <section class="ov-row ov-row--ops">
-        <article class="ov-card">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">أداء المراجعين</h2>
-              <p class="ov-card-sub">عدد المراجعات ومتوسط الوقت لكل مراجع</p>
-            </div>
-          </header>
-          <div class="ov-leaderboard" id="reviewer-board"></div>
-        </article>
-
-        <article class="ov-card ov-card--ai">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">رؤى الذكاء الاصطناعي</h2>
-              <p class="ov-card-sub">القيمة المضافة من الكشف الذكي</p>
-            </div>
-            <span class="ov-card-pill ov-card-pill--ai">AI</span>
-          </header>
-          <div class="ov-ai-grid" id="ai-grid"></div>
-        </article>
-
-        <article class="ov-card">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">عمر الطلبات قيد المراجعة</h2>
-              <p class="ov-card-sub">شريحة عمرية لكل طلب لم يُحسم بعد</p>
-            </div>
-            <span class="ov-card-pill ov-card-pill--warn" id="sla-pill">— تجاوزت الـSLA</span>
-          </header>
-          <div class="ov-chart-wrap">
-            <canvas id="chart-backlog"></canvas>
-          </div>
-        </article>
-      </section>
-
-      <!-- ========== Trends + predictions ========== -->
-      <section class="ov-row ov-row--predict">
-        <article class="ov-card ov-card--wide">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">المقارنة السنوية والتوقعات</h2>
-              <p class="ov-card-sub">٢٠٢٤ مقابل ٢٠٢٥ + توقع الـ٣٠ يومًا القادمة باستخدام نموذج تعلّم آلي</p>
-            </div>
-            <span class="ov-card-pill ov-card-pill--ai">توقع ذكي</span>
-          </header>
-          <div class="ov-chart-wrap">
-            <canvas id="chart-yoy"></canvas>
-          </div>
-        </article>
-
-        <article class="ov-card ov-card--alerts">
-          <header class="ov-card-head">
-            <div>
-              <h2 class="ov-card-title">تنبيهات تشغيلية</h2>
-              <p class="ov-card-sub">أحداث غير اعتيادية اكتشفها النظام</p>
-            </div>
-          </header>
-          <div class="ov-alerts" id="alerts-list"></div>
-        </article>
-      </section>
 
       <footer class="ov-footer">
         <span>عرض تجريبي — البيانات افتراضية لأغراض العرض فقط · أمانة عمان الكبرى ٢٠٢٦</span>
@@ -503,6 +404,6 @@
   </div>
 
   <script src="/static/shell.js?v=1"></script>
-  <script src="/static/overview.js?v=2"></script>
+  <script src="/static/overview.js?v=11"></script>
 </body>
 </html>

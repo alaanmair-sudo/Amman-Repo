@@ -34,10 +34,42 @@ output:
   violation_hatch_scale: 1.0
 
 # Compliance: required setbacks come from the site-plan PDF. This block
-# carries the bits that aren't in the PDF — fine rate, classifier tolerance.
+# carries the bits that aren't in the PDF — fine rates, classifier tolerance.
 compliance:
+  # Legacy single-rate fine. Used only when the deed's zoning_region (or
+  # site-plan's use_type) cannot be matched against fines_by_category below.
   fine_per_sqm_jd: 200  # configure per municipal regulations
   street_edge_tolerance_m: 10.0
+  # Per-zoning-category fine rates (JOD per m²) per the official Amman
+  # fines table. Three of the five PDF-table columns are wired into
+  # compliance: setback / building % / floor coverage. Volume + parking
+  # are not yet implemented.
+  # Lookup is tolerant: parentheses and the leading "ال" definite article
+  # are stripped before matching, so "سكن (أ)" / "السكن أ" / "سكن أ" all
+  # resolve to the same row.
+  fines_by_category:
+    "سكن أ":                    { setback: 250, building: 175, floor: 60 }
+    "سكن ب":                    { setback: 200, building: 140, floor: 50 }
+    "سكن ج":                    { setback: 125, building: 90,  floor: 30 }
+    "سكن د":                    { setback: 70,  building: 50,  floor: 20 }
+    "السكن الشعبي":              { setback: 50,  building: 35,  floor: 15 }
+    "السكن الأخضر":              { setback: 325, building: 230, floor: 80 }
+    "السكن الخاص":               { setback: 325, building: 230, floor: 80 }
+    "السكن الريفي":              { setback: 150, building: 105, floor: 40 }
+    "السكن الزراعي":             { setback: 150, building: 105, floor: 40 }
+    "التجاري المركزي":           { setback: 625, building: 440, floor: 155 }
+    "التجاري العادي":            { setback: 450, building: 315, floor: 110 }
+    "التجاري المحلي":            { setback: 325, building: 230, floor: 80 }
+    "المجمعات التجارية":         { setback: 950, building: 665, floor: 235 }
+    "الصناعات الثقيلة":          { setback: 700, building: 500, floor: 180 }
+    "الصناعات المتوسطة":         { setback: 500, building: 350, floor: 120 }
+    "الصناعات الخفيفة":          { setback: 250, building: 175, floor: 60 }
+    "الصناعات التحويلية":        { setback: 200, building: 130, floor: 45 }
+    "الصناعات التقنية والأعمال":  { setback: 350, building: 250, floor: 90 }
+    "الصناعات":                  { setback: 500, building: 350, floor: 120 }
+    "المكاتب":                   { setback: 350, building: 245, floor: 85 }
+    "متعدد الاستعمال الحضري":     { setback: 350, building: 245, floor: 85 }
+    "متعدد الاستعمال المركزي":    { setback: 500, building: 350, floor: 125 }
 
 # Web agent settings (the FastAPI app). The CLI ignores these.
 agent:

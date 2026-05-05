@@ -500,6 +500,94 @@ def _flagged_docs_from(data: dict) -> dict:
     return flags
 
 
+def _coerce_float(v) -> float | None:
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if f == f else None  # filter NaN
+
+
+def _required_setbacks_from(compliance: dict, site_plan: dict) -> tuple:
+    """Return (front, side, rear) in metres, prioritising the values that the
+    fine calculation actually used (compliance.per_side[*].required_m, post
+    الاحكام الخاصة overrides) and falling back to the raw site-plan PDF
+    fields when compliance hasn't been computed yet."""
+    per_side = (compliance or {}).get("per_side") or {}
+    def pick(side_key: str, pdf_key: str) -> float | None:
+        side_obj = per_side.get(side_key) or {}
+        v = _coerce_float(side_obj.get("required_m"))
+        if v is not None:
+            return v
+        return _coerce_float((site_plan or {}).get(pdf_key))
+    return (
+        pick("front", "front_setback_m"),
+        pick("side", "side_setback_m"),
+        pick("rear", "rear_setback_m"),
+    )
+
+
+def _total_estimated_fine_jd(
+    compliance: dict, result: dict, pdf: dict, floor: dict, site_plan: dict
+) -> float | None:
+    """Sum every fine the reviewer is meant to see in one place. Mirrors the
+    client-side aggregator in reviewer.js (updateTotalFines) so the list-view
+    column matches the per-application banner number.
+
+    Components:
+      - setback fine (server-computed, lives on compliance.fine_jd)
+      - building-area fine: max(0, building − lot_deed × coverage%/100) × rate
+      - floor-coverage fine: excess(floor_sum, lot_deed × floor_ratio%/100) × rate
+
+    Per-fine rates come from compliance.fine_rates (resolved from the deed's
+    zoning_region against the fines_by_category table in config.yaml). When
+    zoning can't be resolved, fine_rates is None and the row's submission is
+    blocked upstream (compliance_zoning_unresolved validator) — we return
+    None here so the dashboard column shows "—" rather than a misleading 0.
+
+    Returns None when there are no inputs at all (so the caller can show
+    "—" rather than "0").
+    """
+    rates = (compliance or {}).get("fine_rates") or None
+    # Without per-category rates resolved, building + floor fines can't be
+    # computed. The setback fine has its own server-computed value (uses
+    # the resolved or fallback rate) but reporting only that piece would
+    # under-state the total — return None so the caller renders "—".
+    if rates is None and (compliance or {}).get("zoning_unresolved"):
+        return None
+
+    setback_fine  = _coerce_float((compliance or {}).get("fine_jd")) or 0.0
+    bldg_rate     = _coerce_float((rates or {}).get("building")) or 0.0
+    floor_rate    = _coerce_float((rates or {}).get("floor"))    or 0.0
+
+    building_fine = 0.0
+    actual_b = _coerce_float((result or {}).get("building_area"))
+    lot_deed = _coerce_float((pdf or {}).get("area_m2"))
+    cov_pct = _coerce_float((site_plan or {}).get("coverage_pct"))
+    if actual_b is not None and lot_deed and cov_pct is not None and bldg_rate:
+        allowed = lot_deed * cov_pct / 100.0
+        building_fine = max(0.0, actual_b - allowed) * bldg_rate
+
+    floor_fine = 0.0
+    floor_sum = _coerce_float((floor or {}).get("floor_area_sum"))
+    if floor_sum is None:
+        floor_sum = _coerce_float((floor or {}).get("printed_grand_total"))
+    allowed_floor_pct = _coerce_float((site_plan or {}).get("floor_ratio_pct"))
+    if floor_sum is not None and lot_deed and allowed_floor_pct is not None and floor_rate:
+        actual_pct = (floor_sum / lot_deed) * 100.0
+        if actual_pct > allowed_floor_pct:
+            floor_fine = ((actual_pct - allowed_floor_pct) / 100.0) * lot_deed * floor_rate
+
+    has_any = (
+        (compliance or {}).get("fine_jd") is not None
+        or (actual_b is not None and lot_deed and cov_pct is not None)
+        or (floor_sum is not None and lot_deed and allowed_floor_pct is not None)
+    )
+    if not has_any:
+        return None
+    return setback_fine + building_fine + floor_fine
+
+
 def _summarize_analysis(data: dict, file_id: str, size: int | None = None) -> dict:
     """Flatten a saved analysis JSON into a dashboard-friendly summary."""
     result = data.get("result") or {}
@@ -513,6 +601,8 @@ def _summarize_analysis(data: dict, file_id: str, size: int | None = None) -> di
     building_area = result.get("building_area")
     lot_area = result.get("lot_area")
     compliance = result.get("compliance") or {}
+    req_front, req_side, req_rear = _required_setbacks_from(compliance, site_plan)
+    total_fine = _total_estimated_fine_jd(compliance, result, pdf, floor, site_plan)
 
     return {
         "id": file_id,
@@ -577,12 +667,25 @@ def _summarize_analysis(data: dict, file_id: str, size: int | None = None) -> di
         "site_plan_status": site_plan.get("status") or (
             "missing" if not data.get("site_plan_expected") else "unknown"
         ),
-        "required_front_m": site_plan.get("front_setback_m"),
-        "required_side_m": site_plan.get("side_setback_m"),
-        "required_rear_m": site_plan.get("rear_setback_m"),
-        "is_corner_lot": site_plan.get("is_corner_lot"),
+        # Required setbacks — sourced from compliance.per_side[*].required_m
+        # when the CAD pipeline has finalised (so post-الاحكام-الخاصة values
+        # are reflected) and falling back to the raw site-plan PDF fields
+        # otherwise. Single source of truth with the fine column below.
+        "required_front_m": req_front,
+        "required_side_m": req_side,
+        "required_rear_m": req_rear,
+        "is_corner_lot": (
+            compliance.get("is_corner_lot")
+            if compliance.get("is_corner_lot") is not None
+            else site_plan.get("is_corner_lot")
+        ),
         "compliance_violation_area_m2": compliance.get("total_violation_area_m2"),
         "compliance_fine_jd": compliance.get("fine_jd"),
+        # Aggregate of every fine surfaced in the reviewer banner
+        # (setback + building-area excess + floor-coverage excess). The
+        # dashboard list view shows this as "إجمالي الغرامات" so it matches
+        # the per-application total in the banner.
+        "total_estimated_fine_jd": total_fine,
         "compliance_envelope_infeasible": compliance.get("envelope_infeasible"),
         "compliance_is_serious": compliance.get("is_serious"),
         "compliance_lot_crossing_area_m2": compliance.get("lot_crossing_area_m2"),

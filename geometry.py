@@ -232,6 +232,16 @@ class ComplianceResult:
     fine_per_sqm_jd: float = 200.0
     fine_jd: float = 0.0
 
+    # Per-zoning-category fine rates (JOD/m²) resolved at compute time
+    # from config.yaml's `fines_by_category` table, keyed by the deed's
+    # `zoning_region` (or site-plan's `use_type`). Drives the per-fine
+    # display on the frontend (setback / building / floor coverage).
+    # `fine_rates` is None when zoning couldn't be resolved — submission
+    # is then blocked via a missing_data row.
+    fine_rates: dict | None = None
+    zoning_category_used: str | None = None
+    zoning_unresolved: bool = False
+
     # Optional human-readable warning when envelope is empty / clipped.
     notes: list[str] = field(default_factory=list)
 
@@ -262,6 +272,9 @@ class ComplianceResult:
             "is_serious": self.is_serious,
             "fine_per_sqm_jd": self.fine_per_sqm_jd,
             "fine_jd": self.fine_jd,
+            "fine_rates": self.fine_rates,
+            "zoning_category_used": self.zoning_category_used,
+            "zoning_unresolved": self.zoning_unresolved,
             "notes": list(self.notes),
             "applied_special_provisions": list(self.applied_special_provisions),
         }

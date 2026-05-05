@@ -565,6 +565,42 @@ def cross_doc_floor_ratio_violation(
     )
 
 
+def compliance_zoning_unresolved(cad_result: dict) -> dict | None:
+    """Block submission when the deed/site-plan zoning category couldn't
+    be matched against the per-category fines table — without a category,
+    the JOD/m² rate for setback / building / floor fines is unknown.
+
+    Fires when compliance ran (we have a fine_jd or violation area) but
+    the zoning lookup produced no rates. The submitter is asked to fix
+    the deed PDF (the zoning_region field) so the rate can resolve.
+    """
+    compliance = (cad_result or {}).get("compliance") or {}
+    if not compliance:
+        return None
+    if not compliance.get("zoning_unresolved"):
+        return None
+    used = compliance.get("zoning_category_used")
+    if used:
+        issue = (
+            f"تعذّر مطابقة فئة التنظيم \"{used}\" مع جدول الغرامات الرسمي — "
+            "غرامات الارتدادات / مساحة المبنى / التغطية الطابقية غير قابلة للاحتساب"
+        )
+    else:
+        issue = (
+            "فئة التنظيم (منطقة التنظيم) غير مستخرجة من السند — "
+            "غرامات الارتدادات / مساحة المبنى / التغطية الطابقية غير قابلة للاحتساب"
+        )
+    return _row(
+        "compliance_zoning_unresolved",
+        DOC_DEED_VS_SITE_PLAN,
+        issue,
+        "تأكد من تعبئة حقل \"منطقة التنظيم\" في السند بإحدى الفئات المعتمدة "
+        "(سكن أ/ب/ج/د، السكن الأخضر/الخاص/الريفي/الزراعي/الشعبي، التجاري، "
+        "الصناعات، المكاتب، متعدد الاستعمال)",
+        blocking=True,
+    )
+
+
 def cross_document_issues(
     *,
     pdf_result: dict | None,
@@ -583,6 +619,9 @@ def cross_document_issues(
     site_plan_result = site_plan_result or {}
 
     rows: list[dict] = []
+    r = compliance_zoning_unresolved(cad_result)
+    if r:
+        rows.append(r)
     r = cross_doc_lot_area_mismatch(pdf_result, cad_result)
     if r:
         rows.append(r)

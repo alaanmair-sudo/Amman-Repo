@@ -177,6 +177,26 @@ body.ov-body {
   gap: 16px;
   flex-wrap: wrap;
 }
+.ov-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--c-success-soft);
+  color: var(--c-success);
+  font-size: 11.5px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.ov-live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--c-success);
+  box-shadow: 0 0 0 3px rgba(5,150,105,.18);
+  animation: ov-pulse 1.6s var(--ease) infinite;
+}
 .ov-period-pills {
   display: inline-flex;
   background: var(--c-surface);
@@ -202,6 +222,7 @@ body.ov-body {
 .ov-period-pill--active {
   background: var(--c-brand);
   color: #fff;
+  box-shadow: 0 1px 4px rgba(37,99,235,.32);
 }
 
 /* ───── Filter bar ───── */
@@ -244,6 +265,12 @@ body.ov-body {
   border-color: var(--c-brand);
   box-shadow: 0 0 0 3px var(--c-brand-ring);
 }
+.ov-filter-select.ov-filter-active {
+  border-color: var(--c-brand);
+  background: var(--c-brand-soft);
+  color: var(--c-brand);
+  font-weight: 600;
+}
 .ov-filter-reset {
   display: inline-flex;
   align-items: center;
@@ -257,17 +284,16 @@ body.ov-body {
 /* ───── KPI grid ───── */
 .ov-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
-@media (max-width: 1400px) { .ov-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px)  { .ov-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 .ov-kpi {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
-  padding: 14px 16px 8px;
+  padding: 14px 16px 10px;
   box-shadow: var(--sh-1);
   position: relative;
   overflow: hidden;
@@ -275,7 +301,7 @@ body.ov-body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-height: 132px;
+  min-height: 220px;
 }
 .ov-kpi:hover { transform: translateY(-1px); box-shadow: var(--sh-2); }
 .ov-kpi::before {
@@ -334,7 +360,18 @@ body.ov-body {
   flex-wrap: wrap;
 }
 .ov-kpi-sub { font-size: 11.5px; color: var(--c-muted); }
-.ov-kpi-spark { width: 100%; max-height: 36px; margin-top: auto; }
+.ov-kpi-spark {
+  position: relative;
+  width: 100%;
+  height: 110px;
+  margin-top: auto;
+}
+.ov-kpi-spark canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
 
 .ov-delta {
   font-family: var(--ff-sans);
@@ -409,19 +446,53 @@ body.ov-body {
   display: grid;
   gap: 14px;
 }
-.ov-row--trends     { grid-template-columns: 2fr 1fr; }
-.ov-row--types      { grid-template-columns: 1fr; }
-.ov-row--geo        { grid-template-columns: 1fr 1fr 1.4fr; }
-.ov-row--compliance { grid-template-columns: 1fr 1fr; }
-.ov-row--ops        { grid-template-columns: 1fr 1.2fr 1fr; }
-.ov-row--predict    { grid-template-columns: 2fr 1fr; }
-@media (max-width: 1280px) {
-  .ov-row--trends, .ov-row--geo, .ov-row--compliance,
-  .ov-row--ops, .ov-row--predict { grid-template-columns: 1fr; }
+.ov-row--trends     { grid-template-columns: 1fr; }
+.ov-row--types-geo  { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1100px) {
+  .ov-row--types-geo { grid-template-columns: 1fr; }
 }
 
-/* The compliance row's wide table card spans full width */
-.ov-row--compliance .ov-card--wide { grid-column: 1 / -1; }
+/* ───── Geo combined card controls ───── */
+.ov-geo-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ov-toggle-btn svg {
+  width: 13px;
+  height: 13px;
+  vertical-align: middle;
+  margin-inline-end: 3px;
+}
+
+/* ───── Types + Geo panels ───── */
+#ov-types-list-panel[hidden],
+#ov-types-pie-panel[hidden],
+#ov-geo-list-panel[hidden],
+#ov-geo-pie-panel[hidden],
+#ov-geo-map-panel[hidden] { display: none; }
+
+/* Cap the types list height so it doesn't tower over the geo card */
+#ov-types-list-panel .ov-table-wrap {
+  max-height: 540px;
+  overflow-y: auto;
+}
+
+#ov-leaflet-map {
+  height: 500px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ov-map-hint {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--c-muted);
+  text-align: center;
+}
+/* Leaflet popup RTL */
+.leaflet-popup-content-wrapper { direction: rtl; font-family: 'Noto Kufi Arabic', sans-serif; }
+.leaflet-container { font-family: 'Noto Kufi Arabic', sans-serif; }
 
 /* ───── Chart wraps ───── */
 .ov-chart-wrap {
@@ -429,6 +500,7 @@ body.ov-body {
   height: 280px;
 }
 .ov-chart-wrap--types { height: 460px; }
+.ov-chart-wrap--pie   { height: 540px; }
 
 /* ───── Donut ───── */
 .ov-donut-wrap {
@@ -470,6 +542,16 @@ body.ov-body {
   gap: 8px;
   font-size: 12.5px;
   color: var(--c-text-2);
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background .14s var(--ease);
+}
+.ov-legend li.ov-legend-clickable { cursor: pointer; }
+.ov-legend li.ov-legend-clickable:hover { background: var(--c-bg-soft); }
+.ov-legend li.ov-legend-active {
+  background: var(--c-brand-soft);
+  color: var(--c-brand);
+  font-weight: 600;
 }
 .ov-legend-dot {
   width: 10px; height: 10px;
@@ -518,6 +600,19 @@ body.ov-body {
 }
 .ov-table tr:last-child td { border-bottom: 0; }
 .ov-table tr:hover td { background: var(--c-bg-soft); }
+.ov-table tr.ov-row-clickable { cursor: pointer; transition: background .14s var(--ease); }
+.ov-table tr.ov-row-clickable:hover td { background: var(--c-brand-soft); }
+.ov-table tr.ov-row-active td {
+  background: var(--c-brand-soft) !important;
+  box-shadow: inset 3px 0 0 var(--c-brand);
+}
+.ov-table tr.ov-row-active td:first-child { font-weight: 700; color: var(--c-brand); }
+.ov-empty {
+  text-align: center;
+  padding: 24px 8px !important;
+  color: var(--c-muted);
+  font-style: italic;
+}
 .ov-table .ov-num { font-family: var(--ff-sans); font-weight: 600; color: var(--c-text); }
 .ov-table .ov-bar {
   display: flex;
@@ -576,31 +671,91 @@ body.ov-body {
 }
 .ov-map-dot {
   position: absolute;
+  border: 0;
+  padding: 0;
   border-radius: 50%;
   background: var(--c-brand);
   opacity: .55;
   transform: translate(-50%, -50%);
   box-shadow: 0 0 0 4px rgba(37,99,235,.12);
   cursor: pointer;
-  transition: transform .2s var(--ease), opacity .2s var(--ease);
+  transition: transform .22s var(--ease), opacity .22s var(--ease), box-shadow .22s var(--ease), background .22s var(--ease);
 }
 .ov-map-dot:hover {
-  transform: translate(-50%, -50%) scale(1.12);
-  opacity: .85;
+  transform: translate(-50%, -50%) scale(1.18);
+  opacity: .92;
+  box-shadow: 0 0 0 6px rgba(37,99,235,.18), 0 4px 14px rgba(37,99,235,.28);
+  z-index: 3;
 }
-.ov-map-dot-label {
+.ov-map-dot--focus {
+  background: var(--c-error);
+  opacity: 1;
+  box-shadow: 0 0 0 6px rgba(185,28,28,.18), 0 4px 14px rgba(185,28,28,.32);
+  z-index: 4;
+  animation: ov-dot-pulse 2s var(--ease) infinite;
+}
+.ov-map-dot--dim { opacity: .25; }
+.ov-map-dot--dim:hover { opacity: .55; }
+@keyframes ov-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 6px rgba(185,28,28,.18), 0 4px 14px rgba(185,28,28,.32); }
+  50%      { box-shadow: 0 0 0 10px rgba(185,28,28,.10), 0 4px 14px rgba(185,28,28,.32); }
+}
+
+.ov-map-tip {
   position: absolute;
-  transform: translate(-50%, calc(-50% - 18px));
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--c-text);
-  background: rgba(255,255,255,.92);
-  padding: 1px 6px;
-  border-radius: 999px;
-  border: 1px solid var(--c-border);
+  transform: translate(-50%, calc(-100% - 12px));
+  background: rgba(15,23,42,.96);
+  color: #fff;
+  padding: 7px 11px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  line-height: 1.4;
   pointer-events: none;
+  z-index: 6;
   white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(15,23,42,.22);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: center;
 }
+.ov-map-tip strong { color: #fff; font-weight: 600; }
+.ov-map-tip span   { color: #cbd5e1; font-size: 10.5px; }
+.ov-map-tip::after {
+  content: "";
+  position: absolute;
+  bottom: -5px; left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px; height: 8px;
+  background: rgba(15,23,42,.96);
+}
+
+.ov-map-legend {
+  position: absolute;
+  bottom: 10px;
+  inset-inline-start: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 10.5px;
+  color: var(--c-text-2);
+  font-weight: 500;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+}
+.ov-map-legend-dot {
+  border-radius: 50%;
+  background: var(--c-brand);
+  opacity: .55;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.12);
+}
+.ov-map-legend-dot--sm { width: 6px;  height: 6px; }
+.ov-map-legend-dot--md { width: 10px; height: 10px; }
+.ov-map-legend-dot--lg { width: 14px; height: 14px; }
 
 /* ───── Toggle (granularity) ───── */
 .ov-toggle {
@@ -639,10 +794,26 @@ body.ov-body {
   grid-template-columns: auto 1fr auto;
   gap: 12px;
   align-items: center;
-  padding: 8px 10px;
+  padding: 9px 11px;
   border-radius: var(--r);
   background: var(--c-surface-2);
   border: 1px solid var(--c-border-2);
+  transition: background .14s var(--ease), border-color .14s var(--ease);
+}
+.ov-rev:hover { background: var(--c-brand-soft); border-color: rgba(37,99,235,.22); }
+.ov-rev-info { min-width: 0; }
+.ov-rev-bar {
+  margin-top: 6px;
+  height: 4px;
+  background: var(--c-bg-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.ov-rev-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #60a5fa, var(--c-brand));
+  border-radius: 999px;
+  transition: width .5s var(--ease);
 }
 .ov-rev-avatar {
   width: 32px; height: 32px;

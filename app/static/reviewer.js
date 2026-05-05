@@ -123,17 +123,25 @@
     buildingAllowed: $("rb-building-area-allowed"),
     buildingStatus: $("rb-building-area-status"),
     buildingCard: $("rb-building-area-card"),
+    buildingFine: $("rb-building-area-fine"),
+    buildingTileLabel: $("rb-building-area-tile-label"),
+    buildingActualSrc: $("rb-building-area-actual-src"),
+    buildingAllowedSrc: $("rb-building-area-allowed-src"),
     lot: $("rb-lot-area"),
     lotDeed: $("rb-lot-area-deed"),
     lotStatus: $("rb-lot-area-status"),
     lotCard: $("rb-lot-area-card"),
-    coverage: $("rb-coverage"),
-    floorPrinted: $("rb-floor-printed"),
     floorComputed: $("rb-floor-computed"),
-    floorHint: $("rb-floor-hint"),
     floorCoverageAllowed: $("rb-floor-coverage-allowed"),
     floorCoverageStatus: $("rb-floor-coverage-status"),
     floorCoverageCard: $("rb-floor-coverage-card"),
+    floorCoverageFine: $("rb-floor-coverage-fine"),
+    floorTileLabel: $("rb-floor-coverage-tile-label"),
+    floorActualSrc: $("rb-floor-coverage-actual-src"),
+    floorAllowedSrc: $("rb-floor-coverage-allowed-src"),
+    totalFinesTile: $("rb-total-fines-tile"),
+    totalFinesValue: $("rb-total-fines-value"),
+    totalFinesHint: $("rb-total-fines-hint"),
     numFloorsActual: $("rb-num-floors-actual"),
     numFloorsAllowed: $("rb-num-floors-allowed"),
     numFloorsStatus: $("rb-num-floors-status"),
@@ -257,6 +265,156 @@
     statusEl.appendChild(span);
   }
 
+  // Per-tile estimated-fine line. Shown only when the tile is in
+  // "violation" state. Rates come from the server-side compliance
+  // result's `fine_rates` dict — different per zoning category × fine
+  // type (setback / building / floor coverage), per the official Amman
+  // fines table. When zoning isn't resolved, the rate is null and the
+  // fine line stays hidden — the missing-data row "compliance_zoning_unresolved"
+  // surfaces the issue and blocks submission.
+  function _fineRateJodPerSqm(fineType) {
+    const cad = banner.lastCad || {};
+    const compliance = cad.compliance || {};
+    // Strict mode (new analyses): zoning_unresolved=true means no rate
+    // can be produced. Caller renders "—" and submission stays blocked.
+    if (compliance.zoning_unresolved === true) return null;
+    // Per-category rates (new analyses with resolved zoning).
+    const rates = compliance.fine_rates;
+    if (rates && typeof rates === "object") {
+      const r = Number(rates[fineType]);
+      if (Number.isFinite(r) && r > 0) return r;
+    }
+    // Legacy fallback (analyses saved before per-category rates landed)
+    // — read the single flat rate the old code wrote into compliance.
+    const legacy = Number(compliance.fine_per_sqm_jd);
+    return (Number.isFinite(legacy) && legacy > 0) ? legacy : null;
+  }
+  function _writeCompareFine(fineEl, excessSqm, fineType) {
+    if (!fineEl) return;
+    if (!Number.isFinite(excessSqm) || excessSqm <= 0) {
+      fineEl.hidden = true;
+      fineEl.removeAttribute("data-i18n");
+      fineEl.removeAttribute("data-i18n-vars");
+      fineEl.textContent = "";
+      return;
+    }
+    const rate = _fineRateJodPerSqm(fineType);
+    if (rate == null) {
+      // Violation exists but rate unknown — keep the badge red, but don't
+      // show a fake JOD figure. The block-submission row spells out why.
+      fineEl.hidden = true;
+      fineEl.removeAttribute("data-i18n");
+      fineEl.removeAttribute("data-i18n-vars");
+      fineEl.textContent = "";
+      return;
+    }
+    const fine = excessSqm * rate;
+    const fineStr = Math.round(fine).toLocaleString();
+    const vars = { fine: fineStr };
+    fineEl.hidden = false;
+    fineEl.setAttribute("data-i18n", "rb.compare.fine_jd");
+    fineEl.setAttribute("data-i18n-vars", JSON.stringify(vars));
+    fineEl.textContent = tr("rb.compare.fine_jd", `Fine: ${fineStr} JOD`, vars);
+  }
+
+  // --- Total fines aggregator -----------------------------------------------
+  // Sums every fine the reviewer is meant to see in one place: setbacks
+  // (server-side, lives on cad.compliance.fine_jd) + the two new
+  // client-side fines (building area, floor coverage). Reads the same
+  // banner state that the per-tile updaters read so it can never
+  // disagree with the per-tile JOD figures. Re-runs whenever any of
+  // those four inputs change (applyCad / applyPdf / applyFloor /
+  // applySitePlan all call it).
+  function _excessSqmBuildingArea() {
+    const cad = banner.lastCad || {};
+    const pdf = banner.lastPdf || {};
+    const sp  = banner.lastSitePlan || {};
+    const actual  = Number(cad.building_area);
+    const lotDeed = Number(pdf.area_m2);
+    const covPct  = Number(sp.coverage_pct);
+    if (!Number.isFinite(actual) || !Number.isFinite(lotDeed)
+        || !Number.isFinite(covPct) || lotDeed <= 0) return 0;
+    const allowed = lotDeed * covPct / 100;
+    return Math.max(0, actual - allowed);
+  }
+  function _excessSqmFloorCoverage() {
+    const fp  = banner.lastFloor || {};
+    const pdf = banner.lastPdf || {};
+    const sp  = banner.lastSitePlan || {};
+    const floorSum = (fp.floor_area_sum != null)
+      ? Number(fp.floor_area_sum)
+      : Number(fp.printed_grand_total);
+    const lotArea  = Number(pdf.area_m2);
+    const allowedPct = Number(sp.floor_ratio_pct);
+    if (!Number.isFinite(floorSum) || !Number.isFinite(lotArea)
+        || !Number.isFinite(allowedPct) || lotArea <= 0) return 0;
+    const actualPct = (floorSum / lotArea) * 100;
+    if (actualPct <= allowedPct) return 0;
+    return ((actualPct - allowedPct) / 100) * lotArea;
+  }
+  function updateTotalFines() {
+    if (!el.totalFinesTile || !el.totalFinesValue) return;
+    // Show the tile only after at least one ingredient has arrived. Before
+    // that the "0 JOD" reading would be misleading (we genuinely don't
+    // know yet — not "we've checked and there's nothing").
+    const hasAny = !!(banner.lastCad || banner.lastPdf
+                      || banner.lastFloor || banner.lastSitePlan);
+    if (!hasAny) { el.totalFinesTile.hidden = true; return; }
+    el.totalFinesTile.hidden = false;
+    // If zoning is unresolved, building + floor rates are unknown → can't
+    // honestly produce a total. Show "—" and a hint pointing at the
+    // missing-data row that's already blocking submission.
+    const compliance = (banner.lastCad && banner.lastCad.compliance) || {};
+    if (compliance.zoning_unresolved) {
+      el.totalFinesValue.removeAttribute("data-i18n");
+      el.totalFinesValue.removeAttribute("data-i18n-vars");
+      el.totalFinesValue.textContent = "—";
+      el.totalFinesTile.classList.remove("rb-kpi--violated");
+      if (el.totalFinesHint) {
+        el.totalFinesHint.setAttribute("data-i18n", "rb.hint.total_fines_zoning_required");
+        el.totalFinesHint.removeAttribute("data-i18n-vars");
+        el.totalFinesHint.textContent = tr("rb.hint.total_fines_zoning_required", "");
+      }
+      return;
+    }
+    const bldgRate  = _fineRateJodPerSqm("building") || 0;
+    const floorRate = _fineRateJodPerSqm("floor")    || 0;
+    const setbackFine  = Number(compliance.fine_jd || 0);
+    const buildingFine = _excessSqmBuildingArea() * bldgRate;
+    const floorFine    = _excessSqmFloorCoverage() * floorRate;
+    const total = setbackFine + buildingFine + floorFine;
+    // Mirror the same sub-JOD threshold the setback tile uses (0.5 JOD)
+    // to avoid flipping the tile red on shapely's micro-intersections.
+    const violated = total >= 0.5;
+    const totalStr = Math.round(total).toLocaleString();
+    const vars = { total: totalStr };
+    el.totalFinesValue.setAttribute("data-i18n",
+      violated ? "rb.penalty.jod" : "rb.penalty.zero_jod");
+    el.totalFinesValue.setAttribute("data-i18n-vars", JSON.stringify(vars));
+    el.totalFinesValue.textContent = violated
+      ? tr("rb.penalty.jod", `${totalStr} JOD`, vars)
+      : tr("rb.penalty.zero_jod", "0 JOD");
+    el.totalFinesTile.classList.toggle("rb-kpi--violated", violated);
+    if (el.totalFinesHint) {
+      if (!violated) {
+        el.totalFinesHint.setAttribute("data-i18n", "rb.hint.total_fines_clean");
+        el.totalFinesHint.removeAttribute("data-i18n-vars");
+        el.totalFinesHint.textContent = tr("rb.hint.total_fines_clean", "");
+      } else {
+        // Build the breakdown from only the components that actually
+        // contributed (>= 0.5 JOD, same threshold the violated check uses)
+        // so the hint reads e.g. "Setbacks" alone when only setbacks fired.
+        const parts = [];
+        if (setbackFine  >= 0.5) parts.push(tr("rb.fine.component.setbacks",      "Setbacks"));
+        if (buildingFine >= 0.5) parts.push(tr("rb.fine.component.building_area", "Building area"));
+        if (floorFine    >= 0.5) parts.push(tr("rb.fine.component.floor_coverage","Floor coverage"));
+        el.totalFinesHint.removeAttribute("data-i18n");
+        el.totalFinesHint.removeAttribute("data-i18n-vars");
+        el.totalFinesHint.textContent = parts.join(" · ");
+      }
+    }
+  }
+
   // Drive the lot-area compare tile. Status states match the server-side
   // cross-doc validator (deed_cad_lot_area_mismatch): tolerance is the
   // larger of 1.0 m² absolute or 1% of the CAD value. Keeping this in
@@ -286,41 +444,105 @@
     _writeCompareStatus(el.lotCard, el.lotStatus, state, i18nKey, i18nVars);
   }
 
-  // Drive the building-area compare tile. The "allowed" side is derived,
-  // not extracted: deed lot area × site-plan coverage_pct ÷ 100. This
-  // expresses the same constraint as the Coverage tile in m² instead of
-  // %, which is the unit the consultant works in when adjusting a CAD
-  // drawing. Verdict mirrors the Coverage tile — actual > allowed is
-  // the same condition as actual_pct > allowed_pct.
+  // --- Unit toggle (m² ↔ %) -------------------------------------------------
+  // Each unified tile (building, floor) carries its own display unit so
+  // the reviewer can keep e.g. building in m² while looking at floor in %.
+  // Stored separately in localStorage so the choice survives reloads.
+  // Default = m² (matches the unit consultants design in inside CAD).
+  const UNIT_STORAGE_KEYS = { building: "rb-tile-unit-building", floor: "rb-tile-unit-floor" };
+  function _activeUnit(tile) {
+    try {
+      const v = localStorage.getItem(UNIT_STORAGE_KEYS[tile]);
+      return (v === "pct") ? "pct" : "sqm";
+    } catch { return "sqm"; }
+  }
+  function _setActiveUnit(tile, unit) {
+    const next = (unit === "pct") ? "pct" : "sqm";
+    try { localStorage.setItem(UNIT_STORAGE_KEYS[tile], next); } catch {}
+    // Sync the matching toggle's pressed state + the tile's data-unit attr
+    // (only this tile — the other one stays at whatever the reviewer set).
+    const toggle = document.querySelector(`.rb-unit-toggle[data-tile="${tile}"]`);
+    if (toggle) {
+      toggle.querySelectorAll(".rb-unit-btn").forEach((btn) => {
+        btn.setAttribute("aria-pressed", btn.dataset.unit === next ? "true" : "false");
+      });
+    }
+    const card = (tile === "building") ? el.buildingCard : el.floorCoverageCard;
+    if (card) card.dataset.unit = next;
+    if (tile === "building") updateBuildingAreaCompare();
+    else updateFloorCoverageTile();
+  }
+  function _setI18n(node, key, vars) {
+    if (!node) return;
+    node.setAttribute("data-i18n", key);
+    if (vars && Object.keys(vars).length) {
+      node.setAttribute("data-i18n-vars", JSON.stringify(vars));
+    } else {
+      node.removeAttribute("data-i18n-vars");
+    }
+    node.textContent = tr(key, "", vars || {});
+  }
+
+  // Drive the unified Building Area / Coverage tile. Same constraint
+  // (building footprint vs lot × cov%), shown either in m² (default —
+  // the CAD-design unit) or as a percentage. Status + fine are always
+  // computed in m² so the verdict is identical regardless of view.
   function updateBuildingAreaCompare() {
     if (!el.buildingCard) return;
-    const actual = (banner.lastCad && Number.isFinite(banner.lastCad.building_area))
+    const unit = _activeUnit("building");
+    const actualSqm  = (banner.lastCad && Number.isFinite(banner.lastCad.building_area))
       ? Number(banner.lastCad.building_area) : null;
-    const lotDeed = (banner.lastPdf && Number.isFinite(banner.lastPdf.area_m2))
+    const actualPct  = (banner.lastCad && Number.isFinite(banner.lastCad.coverage_pct))
+      ? Number(banner.lastCad.coverage_pct) : null;
+    const lotDeed    = (banner.lastPdf && Number.isFinite(banner.lastPdf.area_m2))
       ? Number(banner.lastPdf.area_m2) : null;
-    const coveragePct = (banner.lastSitePlan && Number.isFinite(banner.lastSitePlan.coverage_pct))
+    const allowedPct = (banner.lastSitePlan && Number.isFinite(banner.lastSitePlan.coverage_pct))
       ? Number(banner.lastSitePlan.coverage_pct) : null;
-    const allowed = (lotDeed != null && coveragePct != null && lotDeed > 0)
-      ? (lotDeed * coveragePct / 100) : null;
-    if (el.buildingAllowed) {
-      el.buildingAllowed.textContent = (allowed != null) ? fmtArea(allowed) : "—";
+    const allowedSqm = (lotDeed != null && allowedPct != null && lotDeed > 0)
+      ? (lotDeed * allowedPct / 100) : null;
+
+    // Render label + values per active unit.
+    if (unit === "pct") {
+      _setI18n(el.buildingTileLabel, "rb.kpi.building_pct");
+      if (el.building) el.building.textContent = (actualPct != null) ? actualPct.toFixed(1) + "%" : "—";
+      if (el.buildingAllowed) el.buildingAllowed.textContent = (allowedPct != null) ? allowedPct.toFixed(1) + "%" : "—";
+      _setI18n(el.buildingActualSrc,  "rb.compare.actual_cad");
+      _setI18n(el.buildingAllowedSrc, "rb.compare.allowed_site_plan");
+    } else {
+      _setI18n(el.buildingTileLabel, "rb.kpi.building_sqm");
+      if (el.building) el.building.textContent = (actualSqm != null) ? fmtArea(actualSqm) : "—";
+      if (el.buildingAllowed) el.buildingAllowed.textContent = (allowedSqm != null) ? fmtArea(allowedSqm) : "—";
+      _setI18n(el.buildingActualSrc,  "rb.compare.actual_cad");
+      _setI18n(el.buildingAllowedSrc, "rb.compare.allowed_derived");
     }
+
+    // Status + fine — canonical in m². Violation message uses the
+    // active-unit's natural phrasing (m² over for sqm, % over for pct).
     let state = "pending";
     let i18nKey = "rb.compare.pending";
     let i18nVars = {};
-    if (actual != null && allowed != null) {
-      if (actual > allowed + 0.5) {  // 0.5 m² tolerance — same shape as the coverage epsilon
+    let excessSqm = null;
+    if (actualSqm != null && allowedSqm != null) {
+      if (actualSqm > allowedSqm) {
         state = "violation";
-        i18nKey = "rb.compare.bldg_violation";
-        i18nVars = { over: (actual - allowed).toFixed(2) };
+        excessSqm = actualSqm - allowedSqm;
+        if (unit === "pct" && actualPct != null && allowedPct != null) {
+          i18nKey = "rb.compare.coverage_violation";
+          i18nVars = { over: (actualPct - allowedPct).toFixed(1) };
+        } else {
+          i18nKey = "rb.compare.bldg_violation";
+          i18nVars = { over: excessSqm.toFixed(2) };
+        }
       } else {
         state = "ok";
-        i18nKey = "rb.compare.bldg_ok";
+        i18nKey = (unit === "pct") ? "rb.compare.coverage_ok" : "rb.compare.bldg_ok";
       }
-    } else if (actual != null && allowed == null) {
+    } else if (actualSqm != null && allowedSqm == null) {
       i18nKey = "rb.compare.no_rule";
     }
     _writeCompareStatus(el.buildingCard, el.buildingStatus, state, i18nKey, i18nVars);
+    _writeCompareFine(el.buildingFine, excessSqm, "building");
+    updateTotalFines();
   }
 
   // Drive the floor-count compare tile (actual from floor plan vs the
@@ -352,45 +574,64 @@
     _writeCompareStatus(el.numFloorsCard, el.numFloorsStatus, state, i18nKey, i18nVars);
   }
 
-  // Floor-coverage KPI: floors computed grand total ÷ deed-PDF lot area.
-  // Mirrors the calculation in renderFloorComparison() (app.js) — uses the
-  // same existing banner.lastFloor / banner.lastPdf state, no new data.
+  // Drive the unified Floors total / Floor-coverage tile. m² mode shows
+  // the computed floor-area sum (compliance basis) vs the allowed
+  // absolute (lot × allowed_pct/100). % mode shows the same constraint
+  // as a ratio. Status + fine are always canonical in m².
   function updateFloorCoverageTile() {
     if (!el.floorComputed) return;
+    const unit = _activeUnit("floor");
     const fp = banner.lastFloor || {};
     const pdf = banner.lastPdf || {};
-    // Prefer the filtered floor_area_sum (ground + numbered upper + repeated
-    // upper) — computed by the Python postprocess. Fall back to the raw
-    // printed grand total for older saved analyses that pre-date this field.
-    const floorSum = (fp.floor_area_sum != null) ? fp.floor_area_sum
-      : fp.printed_grand_total;
+    const sp  = banner.lastSitePlan || {};
+    // Prefer filtered floor_area_sum (ground + numbered upper + repeated)
+    // — Python postprocess. Fall back to printed_grand_total for older
+    // saved analyses that pre-date floor_area_sum.
+    const floorSum = (fp.floor_area_sum != null) ? Number(fp.floor_area_sum)
+      : Number(fp.printed_grand_total);
     const lotArea = (typeof pdf.area_m2 === "number") ? pdf.area_m2 : null;
-    const card = el.floorCoverageCard;
-    // Compute the actual ratio from floor area sum ÷ deed lot area.
-    let actualPct = null;
-    if (floorSum != null && isFinite(floorSum) && lotArea != null && lotArea > 0) {
-      actualPct = (floorSum / lotArea) * 100;
-      const ratioX = "×" + (actualPct / 100).toFixed(3);
-      el.floorComputed.textContent = `${actualPct.toFixed(1)}% (${ratioX})`;
+    const allowedPct = (Number.isFinite(Number(sp.floor_ratio_pct)))
+      ? Number(sp.floor_ratio_pct) : null;
+    const actualPct = (Number.isFinite(floorSum) && lotArea != null && lotArea > 0)
+      ? (floorSum / lotArea) * 100 : null;
+    const allowedSqm = (lotArea != null && lotArea > 0 && allowedPct != null)
+      ? (lotArea * allowedPct / 100) : null;
+    const actualSqm = Number.isFinite(floorSum) ? floorSum : null;
+
+    // Render label + values per active unit.
+    if (unit === "pct") {
+      _setI18n(el.floorTileLabel, "rb.kpi.floor_pct");
+      el.floorComputed.textContent = (actualPct != null) ? actualPct.toFixed(1) + "%" : "—";
+      if (el.floorCoverageAllowed) el.floorCoverageAllowed.textContent = (allowedPct != null) ? allowedPct.toFixed(1) + "%" : "—";
+      _setI18n(el.floorActualSrc,  "rb.hint.floors_over_lot");
+      _setI18n(el.floorAllowedSrc, "rb.compare.allowed_site_plan");
     } else {
-      el.floorComputed.textContent = "—";
+      _setI18n(el.floorTileLabel, "rb.kpi.floor_sqm");
+      el.floorComputed.textContent = (actualSqm != null) ? fmtArea(actualSqm) : "—";
+      if (el.floorCoverageAllowed) el.floorCoverageAllowed.textContent = (allowedSqm != null) ? fmtArea(allowedSqm) : "—";
+      _setI18n(el.floorActualSrc,  "rb.compare.floor_computed");
+      _setI18n(el.floorAllowedSrc, "rb.compare.allowed_derived_floor");
     }
-    // Right side: allowed floor ratio % from the regulatory site plan.
-    const allowedPct = (banner.lastSitePlan && Number.isFinite(banner.lastSitePlan.floor_ratio_pct))
-      ? Number(banner.lastSitePlan.floor_ratio_pct) : null;
-    if (el.floorCoverageAllowed) {
-      el.floorCoverageAllowed.textContent = (allowedPct != null) ? allowedPct.toFixed(1) + "%" : "—";
-    }
-    // Status — same compliance logic as the server-side cross-doc
-    // validator (cross_doc_floor_ratio_violation: actual > allowed + 0.05 epsilon).
+
+    // Status + fine — canonical in m². Violation message uses the
+    // active-unit's natural phrasing.
     let state = "pending";
     let i18nKey = "rb.compare.pending";
     let i18nVars = {};
+    let excessSqm = null;
     if (actualPct != null && allowedPct != null) {
-      if (actualPct > allowedPct + 0.05) {
+      if (actualPct > allowedPct) {
         state = "violation";
-        i18nKey = "rb.compare.floor_cov_violation";
-        i18nVars = { over: (actualPct - allowedPct).toFixed(1) };
+        if (lotArea != null && lotArea > 0) {
+          excessSqm = ((actualPct - allowedPct) / 100) * lotArea;
+        }
+        if (unit === "pct") {
+          i18nKey = "rb.compare.floor_cov_violation";
+          i18nVars = { over: (actualPct - allowedPct).toFixed(1) };
+        } else {
+          i18nKey = "rb.compare.floor_violation_sqm";
+          i18nVars = { over: (excessSqm != null) ? excessSqm.toFixed(2) : "—" };
+        }
       } else {
         state = "ok";
         i18nKey = "rb.compare.floor_cov_ok";
@@ -398,7 +639,9 @@
     } else if (actualPct != null && allowedPct == null) {
       i18nKey = "rb.compare.no_rule";
     }
-    _writeCompareStatus(card, el.floorCoverageStatus, state, i18nKey, i18nVars);
+    _writeCompareStatus(el.floorCoverageCard, el.floorCoverageStatus, state, i18nKey, i18nVars);
+    _writeCompareFine(el.floorCoverageFine, excessSqm, "floor");
+    updateTotalFines();
   }
 
   // --- CAD result -----------------------------------------------------------
@@ -410,9 +653,9 @@
     const kpisSpinner = document.getElementById("rb-kpis-spinner");
     if (kpisSpinner) kpisSpinner.hidden = true;
 
-    if (el.building) el.building.textContent = fmtArea(cad.building_area);
+    // el.building and el.coverage values are written by updateBuildingAreaCompare
+    // (which now handles both m² and % display via the unit toggle).
     if (el.lot) el.lot.textContent = fmtArea(cad.lot_area);
-    if (el.coverage) el.coverage.textContent = fmtPct(cad.coverage_pct);
     // Number of streets — count of lot edges classified as street-facing
     // by street_classifier.py. Sourced from compliance.edge_classifications,
     // so it stays "—" until the compliance pipeline runs (i.e. site plan
@@ -430,6 +673,11 @@
     updateLotAreaStatus();
     // CAD building_area is the left side of the building-area compare.
     updateBuildingAreaCompare();
+    // CAD compliance carries the per-category fine_rates dict — the floor
+    // tile reads `floor` rate from there, so refresh it whenever a new
+    // CAD result lands. Without this, the floor tile keeps the rate it
+    // had at the last applyFloor / applySitePlan call.
+    updateFloorCoverageTile();
     showBanner();
   }
 
@@ -437,9 +685,8 @@
   function applyFloor(fp) {
     banner.lastFloor = fp || {};
     if (!fp) return;
-    if (el.floorPrinted) el.floorPrinted.textContent = fmtArea(fp.printed_grand_total);
-    // The "floor-computed" tile now renders the floor-coverage ratio
-    // (floors sum ÷ deed lot area) instead of the raw computed total.
+    // The unified floor tile (m² vs % via toggle) reads fp.floor_area_sum
+    // and fp.printed_grand_total directly — populated by updateFloorCoverageTile.
     updateFloorCoverageTile();
     // Floor-count compare tile — left side (actual) reads from this
     // pipeline's num_floors; right side (allowed) and the status come
@@ -602,7 +849,6 @@
     if (el.lot) el.lot.textContent = dash;
     if (el.lotDeed) el.lotDeed.textContent = dash;
     if (el.coverage) el.coverage.textContent = dash;
-    if (el.floorPrinted) el.floorPrinted.textContent = dash;
     if (el.floorComputed) el.floorComputed.textContent = dash;
     if (el.floorCoverageAllowed) el.floorCoverageAllowed.textContent = dash;
     if (el.numFloorsActual) el.numFloorsActual.textContent = dash;
@@ -639,6 +885,23 @@
     // data lands again, so it's safe to leave the cached lastFloor in
     // place. No need to clear floorPrinted / floorComputed / numFloors.
   }
+
+  // Wire the unit-toggle pills on the building + floor tiles. Per-tile
+  // state — clicking one toggle only flips its own tile.
+  document.addEventListener("click", (ev) => {
+    const btn = ev.target && ev.target.closest && ev.target.closest(".rb-unit-btn");
+    if (!btn) return;
+    const toggle = btn.closest(".rb-unit-toggle");
+    const tile = toggle && toggle.dataset.tile;
+    const u = btn.dataset.unit;
+    if ((tile === "building" || tile === "floor") && (u === "sqm" || u === "pct")) {
+      _setActiveUnit(tile, u);
+    }
+  });
+  // Apply each tile's persisted unit (or default) on init so the toggles
+  // and tiles reflect the right state before any data lands.
+  _setActiveUnit("building", _activeUnit("building"));
+  _setActiveUnit("floor",    _activeUnit("floor"));
 
   // Expose the banner updaters so app.js's replay path (loadSavedAnalysis
   // and EVENT_HANDLERS.final/pdf_done/floor_done/site_plan_done) can populate
@@ -1441,8 +1704,7 @@
       } catch (err) { /* non-fatal */ }
       // Site plan — same pattern as the deed + floor renderers above.
       // Populates `lastSitePlanData` (read by aggregateAppData for village /
-      // zoning / building / street fallback fields, and by updateCoverageTile
-      // for the regulatory coverage % allowed side). Without this, partial-
+      // zoning / building / street fallback fields). Without this, partial-
       // resubmit archive opens drop every site-plan-derived field on the
       // reviewer banner. Section is only revealed when there's actual data.
       try {

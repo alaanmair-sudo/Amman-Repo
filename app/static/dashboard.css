@@ -577,6 +577,7 @@ tr.app-row-locked:hover { background: transparent; }
 
 .app-cell-num  { font-family: var(--ff-mono); font-size: 12.5px; color: var(--c-text-2); }
 .app-cell-muted { color: var(--c-muted); font-size: 12.5px; }
+.app-fine-value { font-family: var(--ff-mono); font-size: 12.5px; color: #b91c1c; font-weight: 600; }
 
 .app-open-btn {
   display: inline-flex;

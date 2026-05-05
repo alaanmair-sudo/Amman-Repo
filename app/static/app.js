@@ -411,6 +411,8 @@ const I18N = {
     "rb.kpi.required_setbacks":"Required setbacks",
     "rb.kpi.compliance_fine":  "Setback violation fine",
     "rb.hint.from_site_plan":  "From مخطط موقع تنظيمي",
+    "rb.hint.from_compliance": "Used in fine calculation",
+    "rb.hint.from_compliance_overridden": "Adjusted by الاحكام الخاصة",
     "rb.hint.compliance_clean":"Within required setbacks",
     "rb.hint.compliance_serious":"SERIOUS · building exits lot",
     "rb.hint.compliance_infeasible":"Lot too small for required setbacks",
@@ -438,6 +440,22 @@ const I18N = {
     "rb.compare.floors_violation":   "⚠ Exceeds allowed by {over} floor(s)",
     "rb.compare.bldg_ok":            "✓ Within allowed building area",
     "rb.compare.bldg_violation":     "⚠ Exceeds allowed by {over} m²",
+    "rb.compare.fine_jd":            "Estimated fine: {fine} JOD",
+    "rb.kpi.floor_totals":           "Floors total",
+    "rb.kpi.building_sqm":           "Building area",
+    "rb.kpi.building_pct":           "Coverage",
+    "rb.kpi.floor_sqm":              "Floors total",
+    "rb.kpi.floor_pct":              "Floor coverage ratio",
+    "rb.compare.floor_printed":      "Printed (PDF)",
+    "rb.compare.floor_computed":     "Computed (compliance)",
+    "rb.compare.allowed_derived_floor": "Allowed (lot × ratio %)",
+    "rb.compare.floor_violation_sqm":   "⚠ Exceeds allowed floor area by {over} m²",
+    "rb.kpi.total_fines":            "Total estimated fines",
+    "rb.hint.total_fines_clean":     "No violations",
+    "rb.hint.total_fines_zoning_required": "Zoning category required to compute fines",
+    "rb.fine.component.setbacks":      "Setbacks",
+    "rb.fine.component.building_area": "Building area",
+    "rb.fine.component.floor_coverage":"Floor coverage",
     "rb.kpi.num_floors":             "Number of floors",
     "rb.hint.building_over_lot":"Building ÷ lot",
     "rb.hint.no_violations":    "No violations",
@@ -808,7 +826,7 @@ const I18N = {
     "rb.section.setbacks": "الحد الأدنى للارتداد",
     "rb.kpi.building_area": "مساحة المبنى",
     "rb.kpi.lot_area":      "مساحة القطعة",
-    "rb.kpi.coverage":      "نسبة التغطية",
+    "rb.kpi.coverage":      "نسبة المئويه",
     "rb.kpi.penalty":       "غرامات الارتداد",
     "rb.kpi.floor_printed": "إجمالي الطوابق (المطبوع)",
     "rb.kpi.floor_computed":"إجمالي الطوابق (المحسوب)",
@@ -817,6 +835,8 @@ const I18N = {
     "rb.kpi.required_setbacks":"الارتدادات المطلوبة",
     "rb.kpi.compliance_fine":  "غرامة تجاوز الارتدادات",
     "rb.hint.from_site_plan":  "من مخطط موقع تنظيمي",
+    "rb.hint.from_compliance": "المستخدمة في حساب الغرامة",
+    "rb.hint.from_compliance_overridden": "معدّلة بالاحكام الخاصة",
     "rb.hint.compliance_clean":"ضمن الارتدادات المطلوبة",
     "rb.hint.compliance_serious":"خطيرة · المبنى يتجاوز حدود القطعة",
     "rb.hint.compliance_infeasible":"القطعة لا تستوعب الارتدادات المطلوبة",
@@ -843,6 +863,22 @@ const I18N = {
     "rb.compare.floors_violation":   "⚠ تجاوز الحد الأقصى بـ {over} طابق",
     "rb.compare.bldg_ok":            "✓ ضمن مساحة المبنى المسموحة",
     "rb.compare.bldg_violation":     "⚠ تجاوز المساحة المسموحة بـ {over} م²",
+    "rb.compare.fine_jd":            "غرامة تقديرية: {fine} د.أ",
+    "rb.kpi.floor_totals":           "إجمالي الطوابق",
+    "rb.kpi.building_sqm":           "مساحة المبنى",
+    "rb.kpi.building_pct":           "نسبة المئويه",
+    "rb.kpi.floor_sqm":              "إجمالي الطوابق",
+    "rb.kpi.floor_pct":              "نسبة التغطية الطابقية",
+    "rb.compare.floor_printed":      "المطبوع (PDF)",
+    "rb.compare.floor_computed":     "المحتسب (للتغطية)",
+    "rb.compare.allowed_derived_floor": "المسموح (القطعة × النسبة)",
+    "rb.compare.floor_violation_sqm":   "⚠ تجاوز المساحة الطابقية المسموحة بـ {over} م²",
+    "rb.kpi.total_fines":            "إجمالي الغرامات التقديرية",
+    "rb.hint.total_fines_clean":     "لا توجد مخالفات",
+    "rb.hint.total_fines_zoning_required": "فئة التنظيم مطلوبة لاحتساب الغرامات",
+    "rb.fine.component.setbacks":      "الارتدادات",
+    "rb.fine.component.building_area": "مساحة المبنى",
+    "rb.fine.component.floor_coverage":"التغطية الطابقية",
     "rb.kpi.num_floors":             "عدد الطوابق",
     "rb.hint.building_over_lot":"المبنى ÷ القطعة",
     "rb.hint.no_violations":    "لا توجد مخالفات",
@@ -1136,6 +1172,7 @@ const sitePlanErrorBox  = document.getElementById("site-plan-error-box");
 // compute_compliance tool result, which itself depends on the site plan).
 const rbRequiredTile    = document.getElementById("rb-required-tile");
 const rbRequiredValues  = document.getElementById("rb-required-values");
+const rbRequiredHint    = document.getElementById("rb-required-hint");
 const rbComplianceTile  = document.getElementById("rb-compliance-tile");
 const rbComplianceFine  = document.getElementById("rb-compliance-fine");
 const rbComplianceHint  = document.getElementById("rb-compliance-hint");
@@ -5130,10 +5167,6 @@ function renderSitePlanContent(data) {
   // into the unified details grid; without this refresh they'd only show
   // up after the next deed/extras event.
   try { refreshAppSummaryFromState(); } catch {}
-  // Site plan also carries النسبة المئوية = max coverage allowed; refresh
-  // the coverage tile so the max appears in the hint as soon as the PDF is
-  // extracted (even before the CAD geometry lands).
-  updateCoverageTile();
 }
 
 function renderSitePlanError(message, kind) {
@@ -5173,11 +5206,9 @@ function resetSitePlanSection() {
     rbComplianceTile.classList.remove("rb-kpi--violated", "rb-kpi--serious");
   }
   if (rbRequiredValues) rbRequiredValues.textContent = "—";
+  if (rbRequiredHint) setI18n(rbRequiredHint, "rb.hint.from_site_plan");
   if (rbComplianceFine) rbComplianceFine.textContent = "—";
   if (rbComplianceHint) setI18n(rbComplianceHint, "rb.hint.compliance_clean");
-  // Restore coverage tile to its default (no max comparison) since the site
-  // plan that supplied the max is gone.
-  updateCoverageTile();
   // Clear the reviewer-banner's cached site-plan result too. Without this,
   // the floor-coverage / num-floors / building-area compare tiles keep
   // showing the previous round's allowed values (e.g. floor_ratio_pct=35)
@@ -5193,6 +5224,12 @@ function resetSitePlanSection() {
 
 // Reveal + populate the "Required setbacks" KPI tile in the reviewer banner.
 // Called from both the live `site_plan_done` event and from history replay.
+// This is the "preview" feed — populated as soon as the site-plan PDF is
+// extracted, before the CAD pipeline has computed the fine. Once compliance
+// arrives, applyComplianceToBanner overrides the values from
+// compliance.per_side[*].required_m so the displayed numbers always match
+// the values actually used in the fine calculation (which can differ from
+// raw PDF values when الاحكام الخاصة overrides apply).
 function applySitePlanToBanner(data) {
   if (!data || !rbRequiredTile || !rbRequiredValues) return;
   const front = data.front_setback_m;
@@ -5206,64 +5243,44 @@ function applySitePlanToBanner(data) {
     `${escapeHtml(t("site_plan.field.front"))}: <b>${front != null ? front + " m" : "—"}</b><br>`
     + `${escapeHtml(t("site_plan.field.side"))}: <b>${side != null ? side + " m" : "—"}</b><br>`
     + `${escapeHtml(t("site_plan.field.rear"))}: <b>${escapeHtml(rearStr)}</b>`;
+  if (rbRequiredHint) setI18n(rbRequiredHint, "rb.hint.from_site_plan");
   rbRequiredTile.hidden = false;
 }
 
-// Coverage tile — augments the basic actual % (set by reviewer.js applyCad)
-// with the maximum allowed coverage from the site-plan PDF (النسبة المئوية).
-// Both data sources arrive on independent SSE streams so this is called from
-// BOTH applySitePlanToBanner (when the site plan lands) and from the CAD
-// final handler (when the geometry lands). Red highlight + over-by message
-// when actual > max.
-let latestCadCoveragePct = null;
-
-function updateCoverageTile() {
-  const valueEl = document.getElementById("rb-coverage");
-  const allowedEl = document.getElementById("rb-coverage-allowed");
-  const statusEl = document.getElementById("rb-coverage-status");
-  const card = document.getElementById("rb-coverage-card");
-  if (!valueEl || !card) return;
-
-  const actual = (latestCadCoveragePct != null && isFinite(latestCadCoveragePct))
-    ? Number(latestCadCoveragePct) : null;
-  const max = (lastSitePlanData && lastSitePlanData.coverage_pct != null
-               && isFinite(lastSitePlanData.coverage_pct))
-    ? Number(lastSitePlanData.coverage_pct) : null;
-
-  // Left side: actual coverage from CAD geometry.
-  valueEl.textContent = (actual != null) ? actual.toFixed(1) + "%" : "—";
-  // Right side: max coverage allowed by the regulatory site plan.
-  if (allowedEl) {
-    allowedEl.textContent = (max != null) ? max.toFixed(1) + "%" : "—";
+// Lock the "Required setbacks" tile to the values that were actually used
+// in the compliance / fine calculation. compliance.per_side carries the
+// post-special-provisions required_m for each side, so this is the single
+// source of truth — never the raw PDF values, which can diverge when
+// setback_override or side_reclassification rules fire. Returns true when
+// it found enough data to render; the caller keeps the PDF-fed preview
+// otherwise.
+function applyComplianceRequiredToBanner(compliance) {
+  if (!compliance || !rbRequiredTile || !rbRequiredValues) return false;
+  const perSide = compliance.per_side || {};
+  const fSide = perSide.front || null;
+  const sSide = perSide.side  || null;
+  const rSide = perSide.rear  || null;
+  const front = fSide && fSide.required_m != null ? Number(fSide.required_m) : null;
+  const side  = sSide && sSide.required_m != null ? Number(sSide.required_m) : null;
+  const rear  = rSide && rSide.required_m != null ? Number(rSide.required_m) : null;
+  const isCorner = !!compliance.is_corner_lot;
+  if (front == null && side == null && rear == null) return false;
+  const fmtM = (v) => (v != null && Number.isFinite(v))
+    ? `${(Math.round(v * 100) / 100)} m` : "—";
+  const rearStr = isCorner ? t("site_plan.value.rear_corner") : fmtM(rear);
+  rbRequiredValues.innerHTML =
+    `${escapeHtml(t("site_plan.field.front"))}: <b>${escapeHtml(fmtM(front))}</b><br>`
+    + `${escapeHtml(t("site_plan.field.side"))}: <b>${escapeHtml(fmtM(side))}</b><br>`
+    + `${escapeHtml(t("site_plan.field.rear"))}: <b>${escapeHtml(rearStr)}</b>`;
+  if (rbRequiredHint) {
+    const hasOverrides = Array.isArray(compliance.applied_special_provisions)
+      && compliance.applied_special_provisions.some((r) => r && r.status === "applied");
+    setI18n(rbRequiredHint,
+      hasOverrides ? "rb.hint.from_compliance_overridden"
+                   : "rb.hint.from_compliance");
   }
-
-  // Status strip — compliance verdict between actual and allowed.
-  let state = "pending";
-  let i18nKey = "rb.compare.pending";
-  let i18nVars = {};
-  if (actual != null && max != null) {
-    if (actual > max) {
-      state = "violation";
-      i18nKey = "rb.compare.coverage_violation";
-      i18nVars = { over: (actual - max).toFixed(1) };
-    } else {
-      state = "ok";
-      i18nKey = "rb.compare.coverage_ok";
-    }
-  } else if (actual != null && max == null) {
-    state = "pending";
-    i18nKey = "rb.compare.no_rule";
-  }
-  if (statusEl) {
-    statusEl.setAttribute("data-state", state);
-    statusEl.innerHTML = "";
-    const span = document.createElement("span");
-    span.setAttribute("data-i18n", i18nKey);
-    if (Object.keys(i18nVars).length) span.setAttribute("data-i18n-vars", JSON.stringify(i18nVars));
-    span.textContent = t(i18nKey, i18nVars);
-    statusEl.appendChild(span);
-  }
-  card.setAttribute("data-state", state);
+  rbRequiredTile.hidden = false;
+  return true;
 }
 
 // Compliance fine tile — driven by the `compliance` block on the CAD final
@@ -5276,6 +5293,10 @@ function applyComplianceToBanner(compliance) {
     rbComplianceTile.classList.remove("rb-kpi--violated", "rb-kpi--serious");
     return;
   }
+  // Lock the required-setbacks tile to compliance.per_side so the displayed
+  // values match the ones the fine was actually computed from (post الاحكام
+  // الخاصة). Falls back silently to the PDF-fed preview if per_side is empty.
+  applyComplianceRequiredToBanner(compliance);
   rbComplianceTile.hidden = false;
   const fine = Number(compliance.fine_jd || 0);
   const area = Number(compliance.total_violation_area_m2 || 0);
@@ -6116,8 +6137,6 @@ function resetAll() {
   if (sitePlanInput) sitePlanInput.value = "";
   setMeasurement(null);
   if (measurementInput) measurementInput.value = "";
-  // Forget cached CAD coverage so a new run starts the comparison fresh.
-  latestCadCoveragePct = null;
   resetPdfSection();
   resetFloorSection();
   resetExtrasSection();
@@ -6751,14 +6770,6 @@ const EVENT_HANDLERS = {
     // final result. The required-setbacks tile was already populated by the
     // earlier site_plan_done event; this only hides/colors the fine tile.
     try { applyComplianceToBanner(d && d.compliance); } catch (err) { console.error("compliance banner", err); }
-    // Coverage tile — re-render now that the actual coverage_pct from the
-    // CAD geometry is in. updateCoverageTile reads the site-plan max from
-    // lastSitePlanData (set earlier by site_plan_done) and renders the
-    // comparison + red highlight if actual > max.
-    try {
-      latestCadCoveragePct = (d && typeof d.coverage_pct === "number") ? d.coverage_pct : null;
-      updateCoverageTile();
-    } catch (err) { console.error("coverage tile", err); }
   },
   // PDF pipeline (independent of CAD)
   pdf_start: () => {

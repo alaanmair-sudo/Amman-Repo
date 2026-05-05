@@ -12,6 +12,7 @@ agent turn (~3-5 s) per run and removes the matplotlib dependency.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,46 @@ from geometry import (
 from mcp_client import AutoCADMCPClient, Polyline
 from report import render_json, render_markdown
 from street_classifier import classify_edges
+
+
+# --- Zoning-category fine-rate lookup ------------------------------------
+# The official Amman fines table charges a different JOD/m² rate per
+# zoning category × fine type (setback / building / floor coverage).
+# Zoning is extracted from the deed PDF (`zoning_region`) or the site
+# plan PDF (`use_type`) — both are short Arabic strings. Lookup is
+# tolerant: parentheses and the "ال" definite-article prefix are
+# stripped, whitespace collapsed, so "سكن (أ)" / "السكن أ" / "سكن أ"
+# all resolve to the same row.
+
+def _normalize_zoning(s: str | None) -> str:
+    if not s:
+        return ""
+    s = str(s).strip()
+    # Strip ASCII + fullwidth parentheses
+    s = re.sub(r"[()（）]", "", s)
+    # Strip the leading "ال" definite article on each whitespace-separated word
+    s = " ".join(re.sub(r"^ال", "", w) for w in s.split())
+    # Collapse internal whitespace
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def resolve_fine_rates(zoning: str | None, fines_table: dict | None) -> dict | None:
+    """Return {'setback','building','floor'} JOD/m² rates for the given
+    zoning string, or None if unmatched / missing inputs."""
+    if not fines_table or not zoning:
+        return None
+    norm_input = _normalize_zoning(zoning)
+    if not norm_input:
+        return None
+    for key, rates in fines_table.items():
+        if _normalize_zoning(key) == norm_input:
+            return {
+                "setback":  float(rates.get("setback",  0)),
+                "building": float(rates.get("building", 0)),
+                "floor":    float(rates.get("floor",    0)),
+            }
+    return None
 
 
 TOOL_SCHEMAS: list[dict[str, Any]] = [
@@ -321,7 +362,24 @@ class ToolExecutor:
         )
         compliance_cfg = self.cfg.get("compliance", {}) or {}
         tolerance = float(compliance_cfg.get("street_edge_tolerance_m", 10.0))
-        fine_rate = float(compliance_cfg.get("fine_per_sqm_jd", 200.0))
+        fallback_rate = float(compliance_cfg.get("fine_per_sqm_jd", 200.0))
+
+        # ---- Resolve per-category fine rates from the deed/site-plan zoning.
+        # Deed PDF's `zoning_region` is the canonical short form (e.g. "سكن أ");
+        # fall back to the site-plan's `use_type` if the deed didn't extract.
+        # If neither resolves to a row in `fines_by_category`, leave rates as
+        # None so downstream validation flags the application as un-fineable
+        # (blocks submission per business rule).
+        deed_zoning = (self.job.pdf_result or {}).get("zoning_region") if self.job.pdf_result else None
+        sp_zoning   = (self.job.site_plan_result or {}).get("use_type") if self.job.site_plan_result else None
+        zoning_input = deed_zoning or sp_zoning
+        fines_table = compliance_cfg.get("fines_by_category") or {}
+        fine_rates  = resolve_fine_rates(zoning_input, fines_table)
+        # Setback fine uses the resolved category's setback rate; if zoning
+        # is unresolved, the setback fine falls back to the legacy flat rate
+        # so the geometry pipeline still produces a number — the missing
+        # category surfaces separately as a missing_data row.
+        fine_rate = float(fine_rates["setback"]) if fine_rates else fallback_rate
 
         cls_report = classify_edges(
             lot=lot,
@@ -373,6 +431,9 @@ class ToolExecutor:
         compliance.applied_special_provisions = [
             r.to_dict() for r in sp_result.applied_rules
         ]
+        compliance.fine_rates = fine_rates
+        compliance.zoning_category_used = zoning_input
+        compliance.zoning_unresolved = fine_rates is None
 
         handle = self.job.store("compliance", compliance)
         return {
@@ -395,6 +456,13 @@ class ToolExecutor:
             "pdf_corner_mismatch": cls_report.pdf_corner_mismatch,
             "applied_special_provisions": list(compliance.applied_special_provisions),
             "notes": list(compliance.notes),
+            # Per-category fine rates (JOD/m² per fine type) — drives the
+            # frontend setback / building / floor-coverage fine displays.
+            # `null` rates signal "zoning category required" to validation
+            # and the UI; submission is blocked in that case.
+            "fine_rates": fine_rates,
+            "zoning_category_used": zoning_input,
+            "zoning_unresolved": fine_rates is None,
         }
 
     # NOTE: `_render_visualization` was removed when the in-browser SVG
@@ -477,6 +545,9 @@ class ToolExecutor:
                 "edge_classifications": [c.to_dict() for c in compliance.edge_classifications],
                 "applied_special_provisions": list(compliance.applied_special_provisions),
                 "notes": list(compliance.notes),
+                "fine_rates": compliance.fine_rates,
+                "zoning_category_used": compliance.zoning_category_used,
+                "zoning_unresolved": compliance.zoning_unresolved,
             }
 
         # ── geometry_json — payload for the interactive in-browser SVG
