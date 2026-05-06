@@ -460,10 +460,8 @@
   }
 
   // Drive the lot-area compare tile. Status states match the server-side
-  // cross-doc validator (deed_cad_lot_area_mismatch): tolerance is the
-  // larger of 1.0 m² absolute or 1% of the CAD value. Keeping this in
-  // sync means the strip's verdict matches the missing_data row that
-  // would fire on this run.
+  // cross-doc validator (deed_cad_lot_area_mismatch): any non-zero gap
+  // between deed and CAD flags as mismatch.
   function updateLotAreaStatus() {
     if (!el.lotStatus || !el.lotCard) return;
     const cad = (banner.lastCad && typeof banner.lastCad.lot_area === "number")
@@ -475,8 +473,7 @@
     let i18nVars = {};
     if (cad != null && deed != null && cad > 0 && deed > 0) {
       const diff = Math.abs(cad - deed);
-      const tol = Math.max(1.0, cad * 0.01);
-      if (diff <= tol) {
+      if (diff === 0) {
         state = "ok";
         i18nKey = "rb.lotcheck.match";
       } else {

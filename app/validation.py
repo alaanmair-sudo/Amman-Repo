@@ -385,12 +385,6 @@ DOC_DEED_VS_SITE_PLAN      = "السند مقابل مخطط موقع تنظيم
 DOC_FLOOR_VS_SITE_PLAN     = "خطة الطوابق مقابل مخطط موقع تنظيمي"
 DOC_FLOOR_RATIO            = "نسبة التغطية الطابقية"
 
-# Lot area agreement tolerance: |deed - cad| > max(1.0 m², 1% of cad).
-# DWG measurements differ from deed printing by a few decimals routinely;
-# we want to flag only the differences a reviewer would call meaningful.
-LOT_AREA_TOLERANCE_ABS_M2 = 1.0
-LOT_AREA_TOLERANCE_REL = 0.01  # 1%
-
 # Floor-coverage epsilon — same shape as the existing coverage_pct check
 # (agent.py: 0.05) so we don't fire on floating-point noise.
 FLOOR_RATIO_EPSILON_PCT = 0.05
@@ -450,14 +444,13 @@ def _split_numbered_label(combined) -> tuple[str, str]:
 
 
 def cross_doc_lot_area_mismatch(pdf_result: dict, cad_result: dict) -> dict | None:
-    """Deed area_m2 should agree with the CAD lot polygon area within tolerance."""
+    """Deed area_m2 must equal the CAD lot polygon area exactly."""
     deed_area = _to_float((pdf_result or {}).get("area_m2"))
     cad_area = _to_float((cad_result or {}).get("lot_area"))
     if deed_area is None or cad_area is None or deed_area <= 0 or cad_area <= 0:
         return None
     diff = abs(deed_area - cad_area)
-    tolerance = max(LOT_AREA_TOLERANCE_ABS_M2, cad_area * LOT_AREA_TOLERANCE_REL)
-    if diff <= tolerance:
+    if diff == 0:
         return None
     return _row(
         "deed_cad_lot_area_mismatch",
