@@ -157,16 +157,16 @@ body.dash-body {
 .dash-new-btn { padding: 10px 16px; }
 
 /* ---- Stats strip ----
-   5 stat cards (total / pending / needs-revision / approved / rejected)
-   share one row on wide screens. The cards collapse to 3 columns on
-   medium widths and 2 on phones so labels and the value digit don't
+   6 stat cards (total / pending / needs-revision / approved / rejected /
+   fines) share one row on wide screens. The cards collapse to 3 columns
+   on medium widths and 2 on phones so labels and the value digit don't
    crowd. */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
 }
-@media (max-width: 1100px) {
+@media (max-width: 1280px) {
   .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 700px) {
@@ -199,6 +199,7 @@ body.dash-body {
 .stat-needs-revision::before { background: #c2410c; }
 .stat-approved::before { background: var(--c-success); }
 .stat-rejected::before { background: var(--c-error); }
+.stat-fines::before    { background: var(--c-error); }
 
 .stat-top {
   display: flex;

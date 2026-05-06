@@ -201,9 +201,21 @@
       approved: 0,
       rejected: 0,
     };
+    let finesTotal = 0;
+    let finesAppCount = 0;
     for (const a of ALL_APPS) {
       const s = a.review_status || "pending";
       if (counts[s] != null) counts[s]++;
+      // Per-app fine: prefer the aggregate (setback + building + floor)
+      // computed server-side, fall back to the older setback-only value
+      // for archived analyses. Mirrors the per-row fine cell.
+      const fine = (typeof a.total_estimated_fine_jd === "number")
+        ? a.total_estimated_fine_jd
+        : a.compliance_fine_jd;
+      if (typeof fine === "number" && fine > 0) {
+        finesTotal += fine;
+        finesAppCount++;
+      }
     }
 
     $("stat-total").textContent = counts.total;
@@ -211,6 +223,11 @@
     if ($("stat-needs-revision")) $("stat-needs-revision").textContent = counts.needs_revision;
     $("stat-approved").textContent = counts.approved;
     $("stat-rejected").textContent = counts.rejected;
+    if ($("stat-fines")) {
+      $("stat-fines").textContent = finesTotal > 0
+        ? Math.round(finesTotal).toLocaleString("en-US")
+        : "0";
+    }
 
     const hint = $("stat-total-hint");
     if (hint) hint.textContent = counts.total === 0 ? "لا توجد طلبات بعد" : `${counts.total} عبر جميع الحالات`;
@@ -221,6 +238,13 @@
     }
     $("stat-approved-hint").textContent = counts.approved === 1 ? "تمت الموافقة على طلب واحد" : `${counts.approved} تمت الموافقة`;
     $("stat-rejected-hint").textContent = counts.rejected === 1 ? "تم رفض طلب واحد" : `${counts.rejected} مرفوضة`;
+    if ($("stat-fines-hint")) {
+      $("stat-fines-hint").textContent = finesAppCount === 0
+        ? "لا توجد غرامات تقديرية"
+        : finesAppCount === 1
+          ? "غرامة تقديرية على طلب واحد"
+          : `غرامات تقديرية على ${finesAppCount} طلبات`;
+    }
   }
 
   // ---- Filter + sort
