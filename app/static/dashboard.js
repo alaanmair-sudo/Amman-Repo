@@ -224,9 +224,10 @@
     $("stat-approved").textContent = counts.approved;
     $("stat-rejected").textContent = counts.rejected;
     if ($("stat-fines")) {
-      $("stat-fines").textContent = finesTotal > 0
-        ? Math.round(finesTotal).toLocaleString("en-US")
-        : "0";
+      $("stat-fines").textContent = finesTotal.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
     }
 
     const hint = $("stat-total-hint");
@@ -240,10 +241,10 @@
     $("stat-rejected-hint").textContent = counts.rejected === 1 ? "تم رفض طلب واحد" : `${counts.rejected} مرفوضة`;
     if ($("stat-fines-hint")) {
       $("stat-fines-hint").textContent = finesAppCount === 0
-        ? "لا توجد غرامات تقديرية"
+        ? "لا توجد غرامات"
         : finesAppCount === 1
-          ? "غرامة تقديرية على طلب واحد"
-          : `غرامات تقديرية على ${finesAppCount} طلبات`;
+          ? "غرامة على طلب واحد"
+          : `غرامات على ${finesAppCount} طلبات`;
     }
   }
 
@@ -394,17 +395,20 @@
              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 3l3 3-3 3"/></svg>
            </a>`;
 
-      // Total estimated fines = setback + building-area + floor-coverage,
-      // computed server-side in main.py:_total_estimated_fine_jd so it
-      // matches the "إجمالي الغرامات التقديرية" tile inside the application.
-      // Falls back to the older setback-only field for archived analyses
-      // saved before the aggregate landed.
+      // Total fines = setback + building-area + floor-coverage, computed
+      // server-side in main.py:_total_estimated_fine_jd so it matches the
+      // "إجمالي الغرامات" tile inside the application. Falls back to the
+      // older setback-only field for archived analyses saved before the
+      // aggregate landed.
       const fine = (typeof a.total_estimated_fine_jd === "number")
         ? a.total_estimated_fine_jd
         : a.compliance_fine_jd;
       const fineHtml =
         typeof fine === "number" && fine > 0
-          ? `<span class="app-fine-value">${Math.round(fine).toLocaleString("en-US")} د.أ</span>`
+          ? `<span class="app-fine-value">${fine.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })} د.أ</span>`
           : `<span class="app-cell-muted">—</span>`;
 
       // Subtitle slot under the application name — used to surface the

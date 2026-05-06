@@ -440,7 +440,7 @@ const I18N = {
     "rb.compare.floors_violation":   "⚠ Exceeds allowed by {over} floor(s)",
     "rb.compare.bldg_ok":            "✓ Within allowed building area",
     "rb.compare.bldg_violation":     "⚠ Exceeds allowed by {over} m²",
-    "rb.compare.fine_jd":            "Estimated fine: {fine} JOD",
+    "rb.compare.fine_jd":            "Fine: {fine} JOD",
     "rb.kpi.floor_totals":           "Floors total",
     "rb.kpi.building_sqm":           "Building area",
     "rb.kpi.building_pct":           "Coverage",
@@ -450,7 +450,7 @@ const I18N = {
     "rb.compare.floor_computed":     "Computed (compliance)",
     "rb.compare.allowed_derived_floor": "Allowed (lot × ratio %)",
     "rb.compare.floor_violation_sqm":   "⚠ Exceeds allowed floor area by {over} m²",
-    "rb.kpi.total_fines":            "Total estimated fines",
+    "rb.kpi.total_fines":            "Total fines",
     "rb.hint.total_fines_clean":     "No violations",
     "rb.hint.total_fines_zoning_required": "Zoning category required to compute fines",
     "rb.fine.component.setbacks":      "Setbacks",
@@ -465,7 +465,7 @@ const I18N = {
     "rb.other":            "Other extracted data",
     "rb.plot_title":       "Plot {plot}",
     "rb.plot_title_village":"Plot {plot} · {village}",
-    "rb.penalty.zero_jod": "0 JOD",
+    "rb.penalty.zero_jod": "0.00 JOD",
     "rb.penalty.jod":      "{total} JOD",
     "rb.penalty.no_violations_threshold": "No violations · threshold {threshold} m",
     "rb.penalty.sides_below_one":  "1 side below {threshold} m",
@@ -863,7 +863,7 @@ const I18N = {
     "rb.compare.floors_violation":   "⚠ تجاوز الحد الأقصى بـ {over} طابق",
     "rb.compare.bldg_ok":            "✓ ضمن مساحة المبنى المسموحة",
     "rb.compare.bldg_violation":     "⚠ تجاوز المساحة المسموحة بـ {over} م²",
-    "rb.compare.fine_jd":            "غرامة تقديرية: {fine} د.أ",
+    "rb.compare.fine_jd":            "غرامة: {fine} د.أ",
     "rb.kpi.floor_totals":           "إجمالي الطوابق",
     "rb.kpi.building_sqm":           "مساحة المبنى",
     "rb.kpi.building_pct":           "نسبة المئويه",
@@ -873,7 +873,7 @@ const I18N = {
     "rb.compare.floor_computed":     "المحتسب (للتغطية)",
     "rb.compare.allowed_derived_floor": "المسموح (القطعة × النسبة)",
     "rb.compare.floor_violation_sqm":   "⚠ تجاوز المساحة الطابقية المسموحة بـ {over} م²",
-    "rb.kpi.total_fines":            "إجمالي الغرامات التقديرية",
+    "rb.kpi.total_fines":            "إجمالي الغرامات",
     "rb.hint.total_fines_clean":     "لا توجد مخالفات",
     "rb.hint.total_fines_zoning_required": "فئة التنظيم مطلوبة لاحتساب الغرامات",
     "rb.fine.component.setbacks":      "الارتدادات",
@@ -888,7 +888,7 @@ const I18N = {
     "rb.other":            "بيانات أخرى مستخرجة",
     "rb.plot_title":       "قطعة {plot}",
     "rb.plot_title_village":"قطعة {plot} · {village}",
-    "rb.penalty.zero_jod": "0 دينار",
+    "rb.penalty.zero_jod": "0.00 دينار",
     "rb.penalty.jod":      "{total} دينار",
     "rb.penalty.no_violations_threshold": "لا توجد مخالفات · الحد {threshold} م",
     "rb.penalty.sides_below_one":  "جهة واحدة دون {threshold} م",
@@ -5310,7 +5310,10 @@ function applyComplianceToBanner(compliance) {
   rbComplianceTile.hidden = false;
   const fine = Number(compliance.fine_jd || 0);
   const area = Number(compliance.total_violation_area_m2 || 0);
-  const fmtFine = fine.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  const fmtFine = fine.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
   // Big text shows the total violation area; "0 م²" when below the rounding
   // threshold (clean / sub-millimeter envelope intersections).
   rbComplianceFine.textContent = (area >= 0.005)
@@ -5324,14 +5327,14 @@ function applyComplianceToBanner(compliance) {
   } else if (compliance.envelope_infeasible) {
     rbComplianceTile.classList.add("rb-kpi--violated");
     setI18n(rbComplianceHint, "rb.hint.compliance_infeasible");
-  } else if (fine >= 0.5 || area >= 0.005) {
+  } else if (fine >= 0.005 || area >= 0.005) {
     // Treat as a violation only when at least one of fine / area is
     // large enough to render as non-zero after rounding. Shapely
     // produces sub-millimeter intersections (~1e-4 m², ~0.02 JOD) on
     // lots whose building edge nearly coincides with the setback
     // envelope; those used to flip the tile red while the UI said
-    // "JOD 0 · 0.00 م²". Thresholds match the display precision:
-    //   fine — toLocaleString(maximumFractionDigits: 0) → 0.5 cutoff
+    // "JOD 0.00 · 0.00 م²". Thresholds match the display precision:
+    //   fine — toLocaleString(2 fraction digits) → 0.005 cutoff
     //   area — toFixed(2) → 0.005 cutoff
     rbComplianceTile.classList.add("rb-kpi--violated");
     rbComplianceHint.removeAttribute("data-i18n");

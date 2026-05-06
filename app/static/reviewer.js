@@ -355,7 +355,10 @@
       return;
     }
     const fine = excessSqm * rate;
-    const fineStr = Math.round(fine).toLocaleString();
+    const fineStr = fine.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
     const vars = { fine: fineStr };
     fineEl.hidden = false;
     fineEl.setAttribute("data-i18n", "rb.compare.fine_jd");
@@ -431,15 +434,18 @@
     const total = setbackFine + buildingFine + floorFine;
     // Mirror the same sub-JOD threshold the setback tile uses (0.5 JOD)
     // to avoid flipping the tile red on shapely's micro-intersections.
-    const violated = total >= 0.5;
-    const totalStr = Math.round(total).toLocaleString();
+    const violated = total >= 0.005;
+    const totalStr = total.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
     const vars = { total: totalStr };
     el.totalFinesValue.setAttribute("data-i18n",
       violated ? "rb.penalty.jod" : "rb.penalty.zero_jod");
     el.totalFinesValue.setAttribute("data-i18n-vars", JSON.stringify(vars));
     el.totalFinesValue.textContent = violated
       ? tr("rb.penalty.jod", `${totalStr} JOD`, vars)
-      : tr("rb.penalty.zero_jod", "0 JOD");
+      : tr("rb.penalty.zero_jod", "0.00 JOD");
     el.totalFinesTile.classList.toggle("rb-kpi--violated", violated);
     if (el.totalFinesHint) {
       if (!violated) {
