@@ -204,8 +204,10 @@
   function fmtArea(v) {
     if (v == null || !isFinite(v)) return "—";
     const n = Number(v);
-    if (n >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " m²";
-    return n.toLocaleString(undefined, { maximumFractionDigits: 1 }) + " m²";
+    return n.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + " m²";
   }
   function fmtPct(v) {
     if (v == null || !isFinite(v)) return "—";
