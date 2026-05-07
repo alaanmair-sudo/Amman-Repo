@@ -1,5 +1,11 @@
 autocad_mcp:
   repo_dir: autocad-mcp
+  # Path to the autocad-mcp venv's Python interpreter.
+  # Windows:  autocad-mcp/.venv/Scripts/python.exe
+  # macOS/Linux: autocad-mcp/.venv/bin/python
+  # The autocad-mcp backend itself only runs on Windows (it drives AutoCAD
+  # LT 2024+ via COM); on macOS this is only useful for working on the web
+  # app code — the CAD pipeline tools will fail to connect.
   python_exe: autocad-mcp/.venv/Scripts/python.exe
   backend: file_ipc
   ipc_timeout: "60"
